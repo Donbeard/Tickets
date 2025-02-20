@@ -1,121 +1,282 @@
 <template>
-  <div class="min-h-screen bg-gray-100 py-8 px-4 sm:px-6 lg:px-8">
-    <div class="max-w-7xl mx-auto">
-      <h1 class="text-3xl font-bold text-gray-900 mb-8">Solicitudes</h1>            
-       <!-- Contenedor de búsqueda, filtros y botón -->
-      <div class="flex flex-wrap items-center gap-4 mb-6">
-      <!-- Botón de nueva solicitud -->
-      <div class="flex-shrink-0">
-        <button 
-          @click="showModalCreate = true"
-          class="bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 px-4 rounded-md transition duration-300 ease-in-out"
-        >
-          Nueva Solicitud
-        </button>
-      </div>
-      <!-- Campo de búsqueda -->
-      <div class="flex-grow min-w-[200px]">
-        <label for="search" class="sr-only">Buscar</label>
-        <div class="relative">
-          <input 
-            id="search"
-            type="text" 
-            v-model="searchQuery"   
-            @input="filterSolicitudes" 
-            placeholder="Buscar por ID o motivo de cancelación"
-            class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition duration-150 ease-in-out"
-          />
-          <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-            <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
-            </svg>
+    <div class="w-full bg-gray-100">
+      <div class="w-full bg-white shadow-md ml-2 mr-2 sm:ml-4 sm:mr-4 mt-2 sm:mt-4">
+
+
+      <!-- Título -->
+      <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-8 pt-4 sm:pt-6 px-4 sm:px-6 lg:px-8">
+        <h1 class="text-3xl font-bold text-gray-900">
+          Solicitudes ¡Bienvenido, <span class="text-indigo-600">{{ nombreCompleto }}</span>!
+        </h1>
+        
+        <div class="flex flex-col sm:flex-row gap-4 mt-4 sm:mt-0">
+          <!-- Barra de búsqueda -->
+          <div class="relative">
+            <input
+              type="text"
+              v-model="searchQuery"
+              placeholder="Buscar solicitud..."
+              class="w-full sm:w-64 pl-10 pr-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            />
+            <span class="absolute left-3 top-2.5 text-gray-400">
+              <MagnifyingGlassIcon class="h-5 w-5" />
+            </span>
+          </div>
+
+          <!-- Botón Nueva Solicitud -->
+          <div class="mb-4">
+            <button
+              type="button"
+              @click.stop="handleNewSolicitud"
+              class="flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+            >
+              <PlusIcon class="h-5 w-5 mr-2" />
+              Nueva Solicitud
+            </button>
           </div>
         </div>
       </div>
 
-      <!-- Filtro por prioridad -->
-      <div class="flex-shrink-0">
-        <label for="priority" class="sr-only">Filtrar por Prioridad</label>
-        <select 
-          id="priority"
-          v-model="filterPrioridad" 
-          @change="filterSolicitudes" 
-          class="block w-full pl-3 pr-10 py-2 text-base border border-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
-        >
-          <option value="">Todas las prioridades</option>
-          <option v-for="prioridad in prioridades" :key="prioridad" :value="prioridad">
-            {{ getModuloName(prioridad) }}
-          </option>
-        </select>
-      </div>
-
-      <!-- Filtro por estado -->
-      <div class="flex-shrink-0">
-        <label for="status" class="sr-only">Filtrar por Estado</label>
-        <select 
-          id="status"
-          v-model="filterEstado" 
-          @change="filterSolicitudes" 
-          class="block w-full pl-3 pr-10 py-2 text-base border border-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
-        >
-          <option value="">Todos los estados</option>
-          <option v-for="estado in estados" :key="estado" :value="estado">
-            {{ getModuloName(estado) }}
-          </option>
-        </select>
-      </div>
-
-
-    </div>
-
-
-      <!-- Tabla de solicitudes adaptable -->
-      <div class="bg-white shadow-md rounded-lg overflow-hidden">
-        <div class="overflow-x-auto">
-          <table class="min-w-full divide-y divide-gray-200">
+      <!-- Tabla de solicitudes -->
+      <div class="w-full overflow-x-auto">
+        <table class="min-w-full divide-y divide-gray-200">
             <thead class="bg-gray-50">
-              <tr>
-                <th 
-                  v-for="column in columns" 
-                  :key="column.key" 
-                  class="px-6 py-2 text-left text-xm font-medium text-black-500 uppercase tracking-wider cursor-pointer select-none"
-                  @click="sortTable(column.key)"
-                  :class="{ 'relative': true }"
-                  :style="{ width: columnWidths[column.key] + 'px' }"
-                >
+          <tr class="divide-x divide-gray-100">
+            <th class="w-8 px-1 py-2"></th>
+            <th
+              v-for="column in filteredColumns"
+              :key="column.key"
+              class="px-1 py-1 text-left text-xs text-black tracking-wider cursor-pointer select-none relative"
+            >
+              <div class="flex items-center justify-between">
+                <span @click="sortTable(column.key)">
                   {{ column.label }}
-                  <span v-if="sortBy === column.key">{{ sortOrder === 'asc' ? '' : '' }}</span>
-                  <div class="absolute top-0 right-0 bottom-0 w-1 cursor-col-resize" @mousedown="startResize($event, column.key)"></div>
-                </th>
-
-              </tr>
-            </thead>
-            <tbody class="bg-white divide-y divide-gray-200">
-              <tr v-for="solicitud in filteredSolicitudes" :key="solicitud.id" class="hover:bg-gray-50">
-                <td v-for="column in columns" :key="column.key" 
-                    class="px-3 py-2 whitespace-normal text-sm text-black-500 break-words"
-                    :style="{ width: columnWidths[column.key] + 'px' }"
+                  <span v-if="sortBy === column.key" class="ml-1">
+                    {{ sortOrder === 'asc' ? '▲' : '▼' }}
+                  </span>
+                </span>
+                <!-- Solo mostrar el botón de filtro si NO es ID, título o acciones -->
+                <div v-if="!['id', 'titulo', 'version_error'].includes(column.key)" class="dropdown-container">
+                  <button 
+                    @click="(event) => toggleDropdown(column.key, event)"
+                    class="ml-2 p-1 hover:bg-gray-100 rounded-md"
+                  >
+                    <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path d="M19 9l-7 7-7-7"></path>
+                    </svg>
+                  </button>
+                </div>
+              </div>
+              <!-- Menú desplegable -->
+              <Teleport to="body">
+                <div
+                  v-if="dropdownOpen[column.key]"
+                  class="origin-top-right fixed rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 focus:outline-none"
+                  :style="{
+                    zIndex: 1000,
+                    top: `${dropdownPosition.y}px`,
+                    left: `${dropdownPosition.x}px`,
+                    maxHeight: '80vh',
+                    overflowY: 'auto',
+                    minWidth: '200px'
+                  }"
                 >
-                  <template v-if="column.key === 'usuario_cliente_nombre'">
-                    {{ getModuloName(solicitud.usuario_cliente_nombre) }} <!-- Mostrar el nombre aquí -->
+                  <div class="py-1">
+                    <template v-for="option in columnOptions[column.key]" :key="option.id">
+                      <div class="flex items-center px-4 py-2">
+                        <input
+                          type="checkbox"
+                          :id="`${column.key}-${option.id}`"
+                          :value="option.id"
+                          v-model="filters[column.key]"
+                          @change="filterSolicitudes"
+                          class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
+                        />
+                        <label :for="`${column.key}-${option.id}`" class="ml-2 text-sm text-gray-700">
+                          {{ option.nombre }}
+                        </label>
+                      </div>
+                    </template>
+                  </div>
+                </div>
+              </Teleport>
+            </th>
+          </tr>
+        </thead>
+          <tbody class="bg-white divide-y divide-gray-200">
+            <template v-for="solicitud in paginatedSolicitudes" :key="solicitud.id">
+              <!-- Fila principal -->
+              <tr class="hover:bg-gray-50 divide-x divide-gray-100">
+                <!-- Columna de flecha para expandir tareas -->
+                <td class="px-1 py-2 text-left cursor-pointer w-8" @click="toggleTareas(solicitud)">
+                  <span class="text-black-500 hover:text-gray-700 transition-transform duration-200">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      class="h-4 w-4 transform transition-transform"
+                      :class="{ 'rotate-90': solicitud.showTareas }"
+                      viewBox="0 0 20 20"
+                      fill="currentColor"
+                    >
+                      <path
+                        fill-rule="evenodd"
+                        d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z"
+                        clip-rule="evenodd"
+                      />
+                    </svg>
+                  </span>
+                </td>
+
+                <!-- Columnas dinámicas -->
+                <td
+                  v-for="column in filteredColumns"
+                  :key="column.key"
+                  :style="getColumnStyle(column.key)"
+                  class="px-1 py-1 whitespace-normal text-xs text-black-500 break-words"
+                >
+                  <!-- Prioridad (editable) -->
+                  <template v-if="column.key === 'prioridad'">
+                    <template v-if="editingRowId === solicitud.id && editingField === 'prioridad'">
+                      <select
+                        v-model="solicitud.prioridad"
+                        @blur="saveField(solicitud, 'prioridad')"
+                        class="w-full px-2 py-1 border rounded focus:ring-indigo-500 focus:border-indigo-500"
+                      >
+                        <option v-for="prioridad in prioridades" :key="prioridad.id" :value="prioridad.id">
+                          {{ prioridad.nombre }}
+                        </option>
+                      </select>
+                    </template>
+                    <template v-else>
+                      <span
+                        v-if="userType === 'S' || userType === 'A'"
+                        @click="startEditing(solicitud.id, 'prioridad')"
+                        class="cursor-pointer"
+                      >
+                        <span :class="[
+                          'px-2 inline-flex text-xs leading-5 font-semibold rounded-full',
+                          solicitud.prioridad === 1 ? 'bg-red-100 text-red-800' :
+                          solicitud.prioridad === 2 ? 'bg-yellow-100 text-yellow-800' :
+                          solicitud.prioridad === 3 ? 'bg-green-100 text-green-800' :
+                          solicitud.prioridad === 4 ? 'bg-black text-white' :
+                          'bg-gray-100 text-gray-800'
+                        ]">
+                          {{ getModuloName(solicitud.prioridad, 'prioridades') }}
+                        </span>
+                      </span>
+                      <span v-else>
+                        {{ getModuloName(solicitud.prioridad, 'prioridades') }}
+                      </span>
+                    </template>
+                  </template>
+
+                  <!-- Estado (editable) -->
+                  <template v-else-if="column.key === 'estado'">
+                    <template v-if="editingRowId === solicitud.id && editingField === 'estado'">
+                      <select
+                        v-model="solicitud.estado"
+                        @change="saveField(solicitud, 'estado')"
+                        class="w-full px-2 py-1 border rounded focus:ring-indigo-500 focus:border-indigo-500"
+                      >
+                        <option v-for="estado in estados" :key="estado.id" :value="estado.id">
+                          {{ getModuloName(estado.id, 'estados') }}
+                        </option>
+                      </select>
+                    </template>
+                    <template v-else>
+                      <span
+                        v-if="userType === 'S' || userType === 'A'"
+                        @click="startEditing(solicitud.id, 'estado')"
+                        class="cursor-pointer"
+                      >
+                        {{ getModuloName(solicitud.estado, 'estados') }}
+                      </span>
+                      <span v-else>
+                        {{ getModuloName(solicitud.estado, 'estados') }}
+                      </span>
+                    </template>
+                  </template>
+
+                  <!-- Orden (editable) -->
+                  <template v-else-if="column.key === 'orden'">
+                    <template v-if="editingRowId === solicitud.id && editingField === 'orden'">
+                      <input
+                        v-model="solicitud.orden"
+                        @blur="saveField(solicitud, 'orden')"
+                        type="number"
+                        class="w-16 px-2 py-1 text-sm border rounded focus:ring-indigo-500 focus:border-indigo-500 text-center"
+                        min="0"
+                      />
+                    </template>
+                    <template v-else>
+                      <span
+                        v-if="userType === 'S' || userType === 'A'"
+                        @click="startEditing(solicitud.id, 'orden')"
+                        class="inline-flex items-center px-2 py-1 text-xs font-medium text-gray-600 bg-gray-100 rounded hover:bg-gray-200 cursor-pointer transition-colors duration-200"
+                      >
+                        <template v-if="solicitud.orden">
+                          {{ solicitud.orden }}
+                        </template>
+                        <template v-else>
+                          <svg 
+                            class="h-3 w-3 mr-1" 
+                            xmlns="http://www.w3.org/2000/svg" 
+                            fill="none" 
+                            viewBox="0 0 24 24" 
+                            stroke="currentColor"
+                          >
+                            <path 
+                              stroke-linecap="round" 
+                              stroke-linejoin="round" 
+                              stroke-width="2" 
+                              d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
+                            />
+                          </svg>
+                          Editar
+                        </template>
+                      </span>
+                      <span v-else>
+                        {{ solicitud.orden || 'N/A' }}
+                      </span>
+                    </template>
+                  </template>
+
+                  <!-- Otros campos no editables -->
+                  <template v-else-if="column.key === 'usuario_cliente_nombre'">
+                    {{ solicitud.usuario_cliente_nombre }}
+                  </template>
+                  <template v-else-if="column.key === 'usuario_soporte_nombre'">
+                    {{ solicitud.usuario_soporte_nombre }}
+                  </template>
+                  <template v-else-if="column.key === 'accion'">
+                    {{ solicitud.accion_nombre }}
+                  </template>
+                  <template v-else-if="column.key === 'opcion'">
+                    {{ getModuloName(solicitud[column.key], 'opciones') }}
+                  </template>
+                  <template v-else-if="column.key === 'submodulo'">
+                    {{ solicitud.submodulo_nombre }}
+                  </template>
+                  <template v-else-if="column.key === 'modulo'">
+                    {{ getModuloName(solicitud.modulo, 'modulos') }}
                   </template>
                   <template v-else-if="column.key === 'acciones'">
                     <div class="flex flex-wrap gap-2">
-                      <button @click="showSolicitudDetails(solicitud.id)" class="text-indigo-600 hover:text-indigo-900">V</button>
-                      <button @click="editSolicitud(solicitud.id)" class="text-yellow-600 hover:text-yellow-900">Ed</button>
-                      <button @click="openTareasModal(solicitud.id)" class="text-indigo-600 hover:text-indigo-900">T</button>
-                      <button @click="deleteSolicitud(solicitud.id)" class="text-red-600 hover:text-red-900">X</button>
+                      <button @click="showSolicitudDetails(solicitud.id)" class="text-indigo-600 hover:text-indigo-900 text-xs">Ver</button>
+                      <button
+                        v-if="userType !== 'C' || (userType === 'C' && solicitud.estado === 'S')"
+                        @click="editSolicitud(solicitud.id)"
+                        class="text-yellow-600 hover:text-yellow-900 text-xs"
+                      >
+                        Edit
+                      </button>
+                      <button
+                        v-if="userType !== 'C' && 'S'"
+                        @click="deleteSolicitud(solicitud.id)"
+                        class="text-red-600 hover:text-red-900 text-xs"
+                      >
+                        X
+                      </button>
                     </div>
-                  </template>
-                  <template v-else-if="column.key === 'prioridad'">
-                    <span :class="[
-                      'px-2 inline-flex text-xs leading-5 font-semibold rounded-full',
-                      solicitud.prioridad === 'B' ? 'bg-green-100 text-green-800' :
-                      solicitud.prioridad === 'M' ? 'bg-yellow-100 text-yellow-800' :
-                      'bg-red-100 text-red-800'
-                    ]">
-                      {{ getModuloName(solicitud[column.key]) }}
-                    </span>
                   </template>
                   <template v-else-if="column.key.includes('fecha')">
                     {{ formatDate(solicitud[column.key]) }}
@@ -125,169 +286,473 @@
                   </template>
                 </td>
               </tr>
-            </tbody>
-          </table>
-        </div>
+
+              <!-- Fila expandible para tareas -->
+              <tr v-if="solicitud.showTareas">
+                <td :colspan="filteredColumns.length + 1" class="px-4 py-2 bg-gray-50">
+                  <div class="max-w-2xl mx-auto bg-white shadow-md rounded-lg p-2">
+                    <!-- Título -->
+                    <h4 class="text-sm font-medium text-gray-800 mb-2">Tareas de la Solicitud #{{ solicitud.id }}</h4>
+
+                    <!-- Encabezados de la tabla -->
+                    <div class="flex justify-between text-gray-600 text-xs font-semibold border-b pb-1">
+                      <span class="flex-1">Descripción</span>
+                      <span class="w-24 text-center">Fecha</span>
+                      <span v-if="userType !== 'C'" class="w-16 text-center">Acción</span>
+                    </div>
+
+                    <!-- Lista de tareas -->
+                    <ul class="divide-y divide-gray-200">
+                      <li v-for="tarea in solicitud.tareas" :key="tarea.id" class="py-2 flex items-center min-w-0">
+                        <p class="flex-1 text-sm text-gray-700 break-words break-all min-w-0">
+                          {{ tarea.descripcion }}
+                        </p>
+                        <p class="w-24 text-sm text-gray-700 text-center">
+                          {{ formatDate(tarea.fecha_creacion) }}
+                        </p>
+                        <button
+                          v-if="userType !== 'C'"
+                          @click="deleteTarea(solicitud, tarea.id)"
+                          class="w-16 text-red-600 hover:text-red-800"
+                        >
+                          Eliminar
+                        </button>
+                      </li>
+                    </ul>
+
+                    <!-- Formulario para agregar tareas -->
+                    <div v-if="userType !== 'C'" class="mt-4">
+                      <input
+                        v-model="solicitud.nuevaTarea"
+                        type="text"
+                        placeholder="Nueva tarea"
+                        class="w-full px-4 py-2 border rounded-md focus:ring-indigo-500 focus:border-indigo-500"
+                      />
+                      <button @click="createTarea(solicitud)" class="mt-2 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-md">
+                        Agregar
+                      </button>
+                    </div>
+                  </div>
+                </td>
+              </tr>
+            </template>
+          </tbody>
+        </table>
       </div>
 
-      <p v-if="errorMessage" class="mt-4 text-red-600 text-sm">{{ errorMessage }}</p>
-    </div>
+      <!-- Controles de paginación -->
+      <div class="flex items-center justify-between py-6 px-6 bg-white border-t border-gray-200 mt-4">
+        <!-- Selector de registros por página -->
+        <div class="flex items-center space-x-3">
+          <label for="pageSize" class="text-sm font-medium text-gray-700">Mostrar:</label>
+          <select 
+            v-model="pageSize" 
+            id="pageSize"
+            class="h-9 px-3 border border-gray-300 bg-white rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+          >
+            <option :value="10">10</option>
+            <option :value="20">20</option>
+            <option :value="50">50</option>
+            <option :value="100">100</option>
+          </select>
+          <span class="text-sm text-gray-600">registros</span>
+        </div>
 
-      <!-- Modal para Ver Detalles -->
-    <div v-if="showModalDetails" class="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
-      <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-        <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" aria-hidden="true"></div>
-        <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
-        <div class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
-          <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
-            <h3 class="text-lg leading-6 font-medium text-gray-900" id="modal-title">Detalles de Solicitud</h3>
-            <div class="mt-2">
-              <div v-if="detalleSolicitud">
-                <p class="text-sm text-gray-500"><strong>Fecha de Creación:</strong> {{ formatDate(detalleSolicitud.fecha_creacion) }}</p>
-                <p class="text-sm text-gray-500"><strong>Descripcion:</strong> {{ detalleSolicitud.descripcion }}</p>
-                <p class="text-sm text-gray-500"><strong>Motivo de Cancelación:</strong> {{ detalleSolicitud.motivo_cancelacion || 'N/A' }}</p>
-                <h4 class="font-semibold mt-4 text-sm text-gray-700">Anexos:</h4>
-                <ul class="mt-1 space-y-1">
-                  <li v-for="anexo in anexos" :key="anexo.id" class="flex items-center justify-between">
-                    <span class="text-sm text-gray-600">{{ anexo.descripcion || 'Sin descripción' }}</span>
-                    <a 
-                      :href="anexo.archivo" 
-                      download 
-                      class="text-sm text-indigo-600 hover:text-indigo-900 flex items-center"
-                      @click.prevent="downloadAnexo(anexo)"
-                    >
-                      <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
-                      </svg>
-                      Descargar
-                    </a>
-                  </li>
-                </ul>
+        <!-- Información y controles de paginación -->
+        <div class="flex items-center gap-6">
+          <!-- Información de registros -->
+          <div class="text-sm text-gray-700">
+            <span class="font-medium">{{ (currentPage - 1) * pageSize + 1 }}</span>
+            -
+            <span class="font-medium">{{ Math.min(currentPage * pageSize, filteredAndSortedSolicitudes.length) }}</span>
+            de
+            <span class="font-medium">{{ filteredAndSortedSolicitudes.length }}</span>
+            registros
+          </div>
+
+          <!-- Botones de navegación -->
+          <div class="flex items-center space-x-2">
+            <!-- Botón Primera Página -->
+            <button 
+              @click="currentPage = 1" 
+              :disabled="currentPage === 1"
+              class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <svg class="h-5 w-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 19l-7-7 7-7m8 14l-7-7 7-7" />
+              </svg>
+              Primera
+            </button>
+
+            <button 
+              @click="prevPage" 
+              :disabled="currentPage === 1"
+              class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <svg class="h-5 w-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+              </svg>
+              Anterior
+            </button>
+            
+            <!-- Número de página actual -->
+            <span class="px-4 py-2 text-sm text-gray-700 bg-gray-100 rounded-md">
+              Página {{ currentPage }} de {{ totalPages }}
+            </span>
+
+            <button 
+              @click="nextPage" 
+              :disabled="currentPage >= totalPages"
+              class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Siguiente
+              <svg class="h-5 w-5 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+              </svg>
+            </button>
+
+            <!-- Botón Última Página -->
+            <button 
+              @click="currentPage = totalPages" 
+              :disabled="currentPage >= totalPages"
+              class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Última
+              <svg class="h-5 w-5 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 5l7 7-7 7M5 5l7 7-7 7" />
+              </svg>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+    <!-- Modal para Crear Solicitud -->
+  <div v-if="showModalCreate" class="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+    <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+      <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity backdrop-blur-sm" aria-hidden="true"></div>
+      <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+
+      <div class="inline-block align-bottom bg-white rounded-xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-3xl sm:w-full border border-gray-200">
+        <!-- Header con gradiente -->
+        <div class="bg-gradient-to-r from-indigo-600 to-blue-500 px-6 py-4">
+          <h3 class="text-2xl font-bold text-white flex items-center">
+            <svg class="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+            </svg>
+            Nueva Solicitud
+          </h3>
+        </div>
+
+        <!-- Contenido del formulario de creación -->
+        <div class="bg-white px-6 pt-6 pb-4 sm:p-8 sm:pb-6">
+          <div v-if="statusMessage" :class="['mt-4 p-2 rounded', isSuccess ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700']">
+            {{ statusMessage }}
+          </div>
+          <!-- Título -->
+          <h3 class="text-2xl font-semibold text-gray-900 mb-6" id="modal-title">Crear Solicitud</h3>
+
+          <!-- Campos del formulario -->
+          <div class="space-y-6">
+            <!-- Título y Módulo -->
+            <div class="flex items-center">
+              <label class="w-1/4 text-sm font-medium text-gray-700">Título:</label>
+              <div class="w-3/4 relative">
+                <input 
+                  v-model="newSolicitud.titulo" 
+                  type="text" 
+                  maxlength="30"
+                  class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition duration-200" 
+                  placeholder="Describa de forma resumida el nombre del incidente"
+                >
+                <span class="absolute right-2 bottom-2 text-xs text-gray-400">
+                  {{ newSolicitud.titulo?.length || 0 }}/30
+                </span>
               </div>
             </div>
+
+            <!-- Título y Submódulo -->
+            <div class="flex items-center">
+              <label class="w-1/4 text-sm font-medium text-gray-700">
+                Módulo <span class="text-red-500">*</span>
+              </label>
+              <div class="w-3/4">
+                <select
+                  v-model="newSolicitud.modulo"
+                  @change="handleModuloChange"
+                  class="w-3/4 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition duration-200"
+                  :class="{ 'border-red-500': showError && !newSolicitud.modulo }"
+                >
+                  <option value="">Seleccione un módulo</option>
+                  <option v-for="modulo in modulos" :key="modulo.id" :value="modulo.id">
+                    {{ modulo.nombre }}
+                  </option>
+                </select>
+                <div v-if="showError && !newSolicitud.modulo" class="text-red-500 text-xs mt-1">
+                  El módulo es requerido
+                </div>
+              </div>
+            </div>
+
+            <!-- Título y Submódulo -->
+            <div class="flex items-center">
+              <label class="w-1/4 text-sm font-medium text-gray-700">
+                Submódulo <span class="text-red-500">*</span>
+              </label>
+              <div class="w-3/4">
+                <select
+                  v-model="newSolicitud.submodulo"
+                  :disabled="!newSolicitud.modulo"
+                  class="w-3/4 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition duration-200"
+                  :class="{ 'border-red-500': showError && !newSolicitud.submodulo }"
+                >
+                  <option value="">
+                    {{ !newSolicitud.modulo ? 'Primero seleccione un módulo' : 'Seleccione un submódulo (opcional)' }}
+                  </option>
+                  <option v-for="submodulo in filteredSubmodulos" :key="submodulo.id" :value="submodulo.id">
+                    {{ submodulo.nombre }}
+                  </option>
+                </select>
+                <div v-if="showError && !newSolicitud.submodulo" class="text-red-500 text-xs mt-1">
+                  El submódulo es requerido
+                </div>
+              </div>
+            </div>
+
+            <!-- Acción -->
+            <div class="flex items-center">
+              <label for="new-accion" class="w-1/4 text-sm font-medium text-gray-700">Acción:</label>
+              <select id="new-accion" v-model="newSolicitud.accion" class="w-3/4 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition duration-200">
+                <option value="">Seleccione una acción</option>
+                <option v-for="accion in acciones" :key="accion.id" :value="accion.id">
+                  {{ accion.nombre }}
+                </option>
+              </select>
+            </div>
+
+            <!-- Descripción -->
+            <div>
+              <label for="new-descripcion" class="block text-sm font-medium text-gray-700 mb-2">Descripción del error:</label>
+              <textarea id="new-descripcion" v-model="newSolicitud.descripcion" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition duración-200 resize-none" rows="4" placeholder="Describa paso a paso el problema que se ha detectado y el codigo de error generado en el programa"></textarea>
+            </div>
+
+            <!-- Manejo de anexos -->
+            <div class="flex items-center">
+              <label class="w-1/4 text-sm font-medium text-gray-700">Adjuntar Anexo:</label>
+              <div class="w-3/4">
+                <input
+                  type="file"
+                  @change="handleFileUpload"
+                  class="w-3/4 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition duration-200"
+                >
+              </div>
+            </div>
+
+            <!-- Descripción del anexo -->
+            <div class="flex items-center">
+              <label for="new-descripcionanexo" class="w-1/4 text-sm font-medium text-gray-700">Descripción del anexo:</label>
+              <input id="new-descripcionanexo" v-model="newSolicitud.descripcion_anexo" type="text" class="w-3/4 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition duration-200" placeholder="Ingresa descripción del anexo">
+            </div>
+
+            <!-- Versión -->
+            <div class="flex items-center">
+              <label for="new-version" class="w-1/4 text-sm font-medium text-gray-700">Versión:</label>
+              <input 
+                id="new-version" 
+                v-model="newSolicitud.version" 
+                type="text" 
+                class="w-3/4 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition duration-200" 
+                placeholder="Ingrese la versión"
+              >
+            </div>
           </div>
-          <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
-            <button @click="closeModal" type="button" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-indigo-600 text-base font-medium text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:ml-3 sm:w-auto sm:text-sm">
-              Cerrar
+        </div>
+
+        <!-- Footer -->
+        <div class="bg-gradient-to-r from-gray-50 to-white px-6 py-4 sm:px-8 sm:flex sm:flex-row-reverse gap-3 border-t border-gray-200">
+          <button 
+            @click="createSolicitud"
+            type="button" 
+            class="w-full sm:w-auto inline-flex justify-center items-center rounded-md px-6 py-2.5 bg-gradient-to-r from-indigo-600 to-blue-500 text-white font-medium shadow-sm hover:from-indigo-700 hover:to-blue-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all duration-200"
+          >
+            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+            </svg>
+            Crear Solicitud
+          </button>
+          <button @click="closeModal" type="button" class="mt-3 sm:mt-0 w-full sm:w-auto inline-flex justify-center items-center rounded-md px-6 py-2.5 border border-gray-300 bg-white text-gray-700 font-medium shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all duración-200">
+            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+            </svg>
+            Cancelar
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+    <!-- Modal para Editar Solicitud -->
+    <div v-if="showModalEdit" class="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+      <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+        <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity backdrop-blur-sm" aria-hidden="true"></div>
+        <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+
+        <div class="inline-block align-bottom bg-white rounded-xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-3xl sm:w-full border border-gray-200">
+          <!-- Header con gradiente -->
+          <div class="bg-gradient-to-r from-blue-600 to-indigo-500 px-6 py-4">
+            <h3 class="text-2xl font-bold text-white flex items-center">
+              <svg class="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+              </svg>
+              Editar Solicitud
+            </h3>
+          </div>
+
+          <!-- Contenido del formulario de edición -->
+          <div class="bg-white px-6 pt-6 pb-4 sm:p-8 sm:pb-6">
+            <h3 class="text-2xl font-semibold text-gray-900 mb-6">Editar Solicitud</h3>
+
+            <div class="space-y-6">
+              <!-- Título -->
+              <div class="flex items-center">
+                <label for="edit-titulo" class="w-1/4 text-sm font-medium text-gray-700">Título:</label>
+                <input 
+                  id="edit-titulo" 
+                  v-model="editableSolicitud.titulo" 
+                  type="text" 
+                  class="w-3/4 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                >
+              </div>
+
+              <!-- Módulo -->
+              <div class="flex items-center">
+                <label for="edit-modulo" class="w-1/4 text-sm font-medium text-gray-700">Módulo:</label>
+                <select 
+                  id="edit-modulo" 
+                  v-model="editableSolicitud.modulo" 
+                  class="w-3/4 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                >
+                  <option value="">Seleccione un módulo</option>
+                  <option v-for="modulo in modulos" :key="modulo.id" :value="modulo.id">
+                    {{ modulo.nombre }}
+                  </option>
+                </select>
+              </div>
+
+              <!-- Submódulo -->
+              <div class="flex items-center">
+                <label for="edit-submodulo" class="w-1/4 text-sm font-medium text-gray-700">Submódulo:</label>
+                <select 
+                  id="edit-submodulo" 
+                  v-model="editableSolicitud.submodulo" 
+                  class="w-3/4 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                >
+                  <option value="">Seleccione un submódulo</option>
+                  <option v-for="submodulo in submodulos" :key="submodulo.id" :value="submodulo.id">
+                    {{ submodulo.nombre }}
+                  </option>
+                </select>
+              </div>
+
+              <!-- Acción -->
+              <div class="flex items-center">
+                <label for="edit-accion" class="w-1/4 text-sm font-medium text-gray-700">Acción:</label>
+                <select 
+                  id="edit-accion" 
+                  v-model="editableSolicitud.accion" 
+                  class="w-3/4 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                >
+                  <option value="">Seleccione una acción</option>
+                  <option v-for="accion in acciones" :key="accion.id" :value="accion.id">
+                    {{ accion.nombre }}
+                  </option>
+                </select>
+              </div>
+
+              <!-- Descripción -->
+              <div>
+                <label for="edit-descripcion" class="block text-sm font-medium text-gray-700 mb-2">Descripción:</label>
+                <textarea 
+                  id="edit-descripcion" 
+                  v-model="editableSolicitud.descripcion" 
+                  rows="4"
+                  class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 resize-none"
+                ></textarea>
+              </div>
+
+              <!-- Campos solo para usuarios de soporte y admin -->
+              <template v-if="userType !== 'C'">
+                <!-- Estado -->
+                <div class="flex items-center">
+                  <label for="edit-estado" class="w-1/4 text-sm font-medium text-gray-700">Estado:</label>
+                  <select 
+                    id="edit-estado" 
+                    v-model="editableSolicitud.estado"
+                    class="w-3/4 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                  >
+                    <option v-for="estado in estados" :key="estado.id" :value="estado.id">
+                      {{ estado.nombre }}
+                    </option>
+                  </select>
+                </div>
+
+                <!-- Prioridad -->
+                <div class="flex items-center">
+                  <label for="edit-prioridad" class="w-1/4 text-sm font-medium text-gray-700">Prioridad:</label>
+                  <select 
+                    id="edit-prioridad" 
+                    v-model="editableSolicitud.prioridad"
+                    class="w-3/4 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                  >
+                    <option v-for="prioridad in prioridades" :key="prioridad.id" :value="prioridad.id">
+                      {{ prioridad.nombre }}
+                    </option>
+                  </select>
+                </div>
+
+                <!-- Usuario Soporte -->
+                <div class="flex items-center">
+                  <label for="edit-soporte" class="w-1/4 text-sm font-medium text-gray-700">Usuario Soporte:</label>
+                  <select 
+                    id="edit-soporte" 
+                    v-model="editableSolicitud.usuario_soporte"
+                    class="w-3/4 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                  >
+                    <option value="">Seleccione usuario de soporte</option>
+                    <option v-for="(nombre, id) in usuariosSoporteMap" :key="id" :value="id">
+                      {{ nombre }}
+                    </option>
+                  </select>
+                </div>
+              </template>
+            </div>
+          </div>
+
+          <!-- Footer -->
+          <div class="bg-gradient-to-r from-gray-50 to-white px-6 py-4 sm:px-8 sm:flex sm:flex-row-reverse gap-3 border-t border-gray-200">
+            <button 
+              @click="updateSolicitud"
+              type="button" 
+              class="w-full sm:w-auto inline-flex justify-center items-center rounded-md px-6 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-500 text-white font-medium shadow-sm hover:from-blue-700 hover:to-indigo-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200"
+            >
+              <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+              </svg>
+              Guardar Cambios
+            </button>
+            <button @click="closeModal" type="button" class="mt-3 sm:mt-0 w-full sm:w-auto inline-flex justify-center items-center rounded-md px-6 py-2.5 border border-gray-300 bg-white text-gray-700 font-medium shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duración-200">
+              <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+              </svg>
+              Cancelar
             </button>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- Modal Editar -->
-    <div v-if="showModalEdit" class="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
-      <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-        <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" aria-hidden="true"></div>
-        <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
-        <div class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
-          <form @submit.prevent="updateSolicitud">
-            <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
-              <h3 class="text-lg leading-6 font-medium text-gray-900" id="modal-title">Editar Solicitud</h3>
-              <div class="mt-2 space-y-4">
-                <div>
-                  <label for="edit-modulo" class="block text-sm font-medium text-gray-700">Módulo:</label>
-                  <select id="edit-modulo" v-model="editableSolicitud.modulo" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md">
-                    <option v-for="modulo in modulos" :key="modulo" :value="modulo">{{ modulosMap[modulo] }}</option>
-                  </select>
-                </div>
-                <div>
-                  <label for="edit-prioridad" class="block text-sm font-medium text-gray-700">Prioridad:</label>
-                  <select id="edit-prioridad" v-model="editableSolicitud.prioridad" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md">
-                    <option v-for="prioridad in prioridades" :key="prioridad" :value="prioridad">{{ modulosMap[prioridad] }}</option>
-                  </select>
-                </div>
-                <div>
-                <label for="edit-estado" class="block text-sm font-medium text-gray-700">Estado:</label>
-                <select 
-                  id="edit-estado" 
-                  v-model="editableSolicitud.estado" 
-                  @change="handleEstadoChange"
-                  class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
-                >
-                  <option v-for="estado in estados" :key="estado" :value="estado">{{ modulosMap[estado] }}</option>
-                </select>
-                </div>
-
-                <div>
-                  <label for="edit-fecha-asignacion" class="block text-sm font-medium text-gray-700">Fecha de Asignación:</label>
-                  <input 
-                    id="edit-fecha-asignacion" 
-                    v-model="editableSolicitud.fecha_asignacion" 
-                    type="text" 
-                    readonly
-                    class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                  >
-                </div>
-                <div>
-                  <label for="edit-motivo" class="block text-sm font-medium text-gray-700">Motivo de Cancelación:</label>
-                  <input id="edit-motivo" v-model="editableSolicitud.motivo_cancelacion" type="text" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" placeholder="Ingrese motivo de cancelación (si aplica)">
-                </div>
-              </div>
-            </div>
-            <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
-              <button type="submit" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-indigo-600 text-base font-medium text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:ml-3 sm:w-auto sm:text-sm">
-                Guardar
-              </button>
-              <button @click="closeModal" type="button" class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
-                Cancelar
-              </button>
-            </div>
-          </form>
-        </div>
-      </div>
-    </div>
-
-    <!-- Modal Crear -->
-    <div v-if="showModalCreate" class="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
-      <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-        <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" aria-hidden="true"></div>
-        <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
-        <div class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
-          <form @submit.prevent="createSolicitud">
-            <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
-              <h3 class="text-lg leading-6 font-medium text-gray-900" id="modal-title">Crear Solicitud</h3>
-              <div class="mt-2 space-y-4">
-                <div>
-                  <label for="new-modulo" class="block text-sm font-medium text-gray-700">Módulo:</label>
-                  <select id="new-modulo" v-model="newSolicitud.modulo" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md" placeholder="Seleccione un modulo">
-                    <option v-for="modulo in modulos" :key="modulo" :value="modulo">{{ modulosMap[modulo] }}</option> 
-                  </select>
-                </div>
-                <input id="new-titulo" v-model="newSolicitud.titulo" type="text" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" placeholder="Ingresa un titulo">
-                <div>
-                  <label for="new-descripcion" class="block text-sm font-medium text-gray-700">Descripción del error:</label>
-                  <textarea id="new-descripcion" v-model="newSolicitud.descripcion" class="mt-1 block w-full h-32 border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" placeholder="Ingresa una descripción">
-                  </textarea>
-                </div>
-                <label for="usuario_cliente">Usuario Cliente</label>
-                  <input 
-                    id="usuario_cliente"
-                    type="text"
-                    v-model="newSolicitud.usuario_cliente"
-                    readonly
-                    class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                  />
-                <div>
-                  <label for="new-file" class="block text-sm font-medium text-gray-700">Adjuntar Anexo:</label>
-                  <input id="new-file" type="file" @change="handleFileUpload" class="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100">
-                </div>
-                <input id="new-descripcionanexo" v-model="newSolicitud.descripcion_anexo" type="text" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" placeholder="Ingresa descripción del anexo">
-              </div>
-            </div>
-            <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
-              <button type="submit" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-indigo-600 text-base font-medium text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:ml-3 sm:w-auto sm:text-sm">
-                Crear
-              </button>
-              <button @click="closeModal" type="button" class="w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 fo:ml-3 sm:w-auto sm:text-sm">
-                Cancelar
-              </button>
-            </div>
-          </form>
-        </div>
-      </div>
-    </div>
-          <!-- Modal Tareas -->
+    <!-- Modal Tareas -->
     <div v-if="showTareasModal" class="fixed inset-0 z-50 overflow-y-auto">
       <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
         <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" aria-hidden="true"></div>
@@ -300,12 +765,13 @@
             <ul class="divide-y divide-gray-200 mt-4">
               <li v-for="tarea in tareas" :key="tarea.id" class="py-4 flex justify-between items-center">
                 <p class="text-sm text-gray-700">{{ tarea.descripcion }}</p>
-                <button @click="deleteTarea(tarea.id)" class="text-red-600 hover:text-red-800">Eliminar</button>
+                <p class="text-sm text-gray-700">{{ formatDate(tarea.fecha_creacion) }}</p>
+                <button v-if="userType !== 'C'" @click="deleteTarea(tarea.id)" class="text-red-600 hover:text-red-800">Eliminar</button>
               </li>
             </ul>
 
             <!-- Formulario nueva tarea -->
-            <div class="mt-4">
+            <div class="mt-4" v-if="userType !== 'C'">
               <input
                 v-model="nuevaTarea"
                 type="text"
@@ -322,61 +788,214 @@
       </div>
     </div>
 
+  <!-- Toast notification usando Teleport -->
+  <Teleport to="body">
+    <Transition
+      enter-active-class="transform ease-out duration-300 transition"
+      enter-from-class="translate-y-2 opacity-0 sm:translate-y-0 sm:translate-x-2"
+      enter-to-class="translate-y-0 opacity-100 sm:translate-x-0"
+      leave-active-class="transition ease-in duration-100"
+      leave-from-class="opacity-100"
+      leave-to-class="opacity-0"
+    >
+      <div
+        v-if="showToast"
+        style="position: fixed; top: 1rem; right: 1rem; z-index: 9999; pointer-events: auto;"
+        class="max-w-sm w-full bg-white shadow-lg rounded-lg ring-1 ring-black ring-opacity-5 overflow-hidden"
+      >
+        <div class="p-4">
+          <div class="flex items-start">
+            <div class="flex-shrink-0">
+              <svg
+                v-if="isSuccess"
+                class="h-6 w-6 text-green-400"
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+              </svg>
+              <svg
+                v-else
+                class="h-6 w-6 text-red-400"
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </div>
+            <div class="ml-3 w-0 flex-1 pt-0.5">
+              <p :class="[isSuccess ? 'text-green-700' : 'text-red-700']" class="text-sm font-medium">
+                {{ statusMessage }}
+              </p>
+            </div>
+            <div class="ml-4 flex-shrink-0 flex">
+              <button
+                @click="showToast = false"
+                class="bg-white rounded-md inline-flex text-gray-400 hover:text-gray-500 focus:outline-none"
+              >
+                <span class="sr-only">Cerrar</span>
+                <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                  <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
+                </svg>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </Transition>
+  </Teleport>
+
+  <!-- Modal para Ver Detalles -->
+  <div v-if="showModalDetails" class="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+    <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+      <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity backdrop-blur-sm" aria-hidden="true"></div>
+      <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+
+      <div class="inline-block align-bottom bg-white rounded-xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-2xl sm:w-full border border-gray-200">
+        <div class="bg-gradient-to-r from-indigo-600 to-blue-500 px-6 py-4">
+          <h3 class="text-2xl font-bold text-white flex items-center">
+            <svg class="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+            </svg>
+            Detalles de Solicitud
+          </h3>
+        </div>
+
+        <div class="bg-white px-6 pt-6 pb-4 sm:p-8">
+          <div v-if="detalleSolicitud" class="space-y-6">
+            <!-- Información básica en cards -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div class="bg-gray-50 p-4 rounded-lg shadow-sm border border-gray-200">
+                <label class="block text-sm font-semibold text-gray-700 mb-1">Título</label>
+                <p class="text-gray-800">{{ detalleSolicitud.titulo }}</p>
+              </div>
+              <div class="bg-gray-50 p-4 rounded-lg shadow-sm border border-gray-200">
+                <label class="block text-sm font-semibold text-gray-700 mb-1">Estado</label>
+                <span :class="[
+                  'px-2 py-1 text-sm font-medium rounded-full',
+                  detalleSolicitud.estado === 'S' ? 'bg-yellow-100 text-yellow-800' :
+                  detalleSolicitud.estado === 'P' ? 'bg-blue-100 text-blue-800' :
+                  detalleSolicitud.estado === 'T' ? 'bg-green-100 text-green-800' :
+                  'bg-gray-100 text-gray-800'
+                ]">
+                  {{ getModuloName(detalleSolicitud.estado, 'estados') }}
+                </span>
+              </div>
+            </div>
+
+            <!-- Descripción con mejor formato -->
+            <div class="bg-white p-4 rounded-lg border border-gray-200">
+              <label class="block text-sm font-semibold text-gray-700 mb-2">Descripción</label>
+              <p class="text-gray-700 whitespace-pre-wrap">{{ detalleSolicitud.descripcion }}</p>
+            </div>
+
+            <!-- Anexos con mejor diseño -->
+            <div class="bg-white rounded-lg">
+              <h4 class="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                <svg class="w-5 h-5 mr-2 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"></path>
+                </svg>
+                Anexos
+              </h4>
+              <div v-if="anexos && anexos.length > 0" class="space-y-3">
+                <div v-for="anexo in anexos" :key="anexo.id" 
+                     class="flex items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-200 hover:bg-gray-100 transition-colors duration-200">
+                  <span class="text-sm text-gray-700 font-medium">{{ anexo.descripcion || 'Sin descripción' }}</span>
+                  <button 
+                    @click="downloadAnexo(anexo)"
+                    class="inline-flex items-center px-4 py-2 border border-indigo-500 text-sm font-medium rounded-md text-indigo-600 bg-white hover:bg-indigo-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors duration-200"
+                  >
+                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+                    </svg>
+                    Descargar
+                  </button>
+                </div>
+              </div>
+              <p v-else class="text-sm text-gray-500 italic">No hay anexos disponibles</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Footer con gradiente y botón mejorado -->
+        <div class="bg-gradient-to-r from-gray-50 to-white px-6 py-4 sm:px-8 sm:flex sm:flex-row-reverse border-t border-gray-200">
+          <button 
+            @click="closeModal" 
+            type="button" 
+            class="w-full sm:w-auto inline-flex justify-center items-center rounded-md px-6 py-2.5 bg-gradient-to-r from-indigo-600 to-blue-500 text-white font-medium shadow-sm hover:from-indigo-700 hover:to-blue-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all duration-200"
+          >
+            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+            </svg>
+            Cerrar
+          </button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
+<script setup>
+import { MagnifyingGlassIcon, PlusIcon } from '@heroicons/vue/24/outline'
+import { Teleport } from 'vue'
+// ... resto de las importaciones
+</script>
+
 <script>
 import apiClient from '@/apiClient';
-
+import { memoize } from 'lodash';
 export default {
+  name: 'FormSolicitud',
+  components: {
+    MagnifyingGlassIcon,
+    PlusIcon,
+    Teleport
+  },
   data() {
     return {
+      allSolicitudes: [],
+      currentPage: 1,     
+      pageSize: 10,       
+      editingField: null, 
+      editingRowId: null, 
+      dropdownOpen: {},
+      filters: {},
       solicitudes: [],
       filteredSolicitudes: [],
+      usuariosSoporte: [],
       searchQuery: '',
-      filterPrioridad: '',
-      filterEstado: '',
-      sortBy: 'id',
-      sortOrder: 'asc',
-      modulos: ["GE", "PA", "CO", "CP", "CC", "IN", "VE", "PE", "NO", "PP", "AF", "TA", "CF"],
-      modulosMap: {
-        GE: "General",
-        PA: "Parametrización",
-        CO: "Contabilidad",
-        CP: "C por Pag",
-        CC: "C por Cobrar",
-        IN: "Inventario y Compras",
-        VE: "Ventas",
-        PE: "Pedidos",
-        NO: "Nómina",
-        PP: "Puntos de Pago",
-        AF: "Activos Fijos",
-        TA: "Taller Automotriz",
-        CF: "Cartera Financiera",
-        A: "Alta",
-        M: "Media",
-        B: "Baja",
-        S: "Sin asignar",
-        P: "Asignada",
-        C: "Cancelada",
-        T: "Terminada",
-      },
-      prioridades: ["A", "M", "B"],
-      estados: ["S", "P", "C", "T"],
+      filterPrioridades: [],
+      filterEstados: [],
+      filterModulos: [],
+      sortBy: 'fecha_creacion',
+      sortOrder: 'desc',
+      startDate: '',
+      endDate: '',
+      isSuccess: false,
+      modulos: [],
+      submodulos: [],
+      prioridades: [],
+      estados: [],
+      acciones: [],
       detalleSolicitud: null,
       editableSolicitud: {
         usuario_soporte: null,
         fecha_asignacion: "",
+        orden: null,
       },
       isFechaAsignada: false,
       newSolicitud: {
-        prioridad: "B",
-        estado: "S",
-        motivo_cancelacion: "N/A",
+        titulo: '',
         modulo: '',
+        submodulo: '',
+        accion: '',
         descripcion: '',
-        usuario_cliente: '',
-        usuario_cliente_nombre: '',
+        descripcion_anexo: '',
+        version_error: ''  
       },
       anexos: [],
       selectedFile: null,
@@ -384,6 +1003,7 @@ export default {
       showModalEdit: false,
       showModalCreate: false,
       errorMessage: '',
+      statusMessage: '',
       tareasSolicitud: [],
       showModalTareas: false,
       showTareasModal: false,
@@ -393,119 +1013,547 @@ export default {
       tareas: [],
       nuevaTarea: '',
       columnWidths: {
-        id: 80,
-        usuario_cliente: 150,
-        fecha_creacion: 100,
-        fecha_asignacion: 100,
-        fecha_finalizacion: 100,
-        titulo: 200,
-        prioridad: 80,
-        soporte: 150,
-        estado: 100,
+        id: 11,
+        fecha_creacion: 80,
+        fecha_asignacion: 80,
+        fecha_finalizacion: 80,
+        titulo: 200,              
         modulo: 100,
-        acciones: 120
+        submodulo: 100,
+        accion: 100,
+        estado: 50,
+        prioridad: 30,           
+        orden: 25,
+        version_error: 11,
+        acciones: 50
       },
       columns: [
-        { key: 'id', label: 'ID' },
-        { key: 'usuario_cliente_nombre', label: 'Clie' },
+        { key: 'id', label: '#' },
         { key: 'fecha_creacion', label: 'F.Crea' },
-        { key: 'fecha_asignacion', label: 'F.Asignación' },
-        { key: 'fecha_finalizacion', label: 'F.Fin' },
+        { key: 'clie', label: 'Empresa' },
+        { key: 'usuario_cliente_nombre', label: 'Q.Repo' },
         { key: 'titulo', label: 'Título' },
-        { key: 'prioridad', label: 'Prio' },
-        { key: 'soporte', label: 'Soporte' },
-        { key: 'estado', label: 'Estado' },
         { key: 'modulo', label: 'Módulo' },
-        { key: 'acciones', label: 'Acciones' }
+        { key: 'submodulo', label: 'Submodulo' },
+        { key: 'accion', label: 'Acción' },
+        { key: 'estado', label: 'Estado' },
+        { key: 'prioridad', label: 'Pr' },
+        { key: 'usuario_soporte_nombre', label: 'Resp' },
+        { key: 'fecha_asignacion', label: 'F.Asig' },
+        { key: 'orden', label: 'Orden' },
+        { key: 'version_error', label: 'Vrs' },
+        { key: 'fecha_finalizacion', label: 'F.Fin' },
+        { key: 'acciones', label: 'Acciones' },
       ],
+      nombreCompleto: '',
+      userType: '',
+      usuariosSoporteMap: {},
+      usuariosSoporteList: [],
+      colombiaTime: null,
+      dropdownPosition: {
+        x: 0,
+        y: 0
+      },
+      columnOptions: {
+        fecha_creacion: [
+          { id: 'today', nombre: 'Hoy' },
+          { id: 'week', nombre: 'Esta semana' },
+          { id: 'month', nombre: 'Este mes' },
+          { id: 'year', nombre: 'Este año' },
+          { id: 'past', nombre: 'Años anteriores' }
+        ],
+        fecha_asignacion: [
+          { id: 'today', nombre: 'Hoy' },
+          { id: 'week', nombre: 'Esta semana' },
+          { id: 'month', nombre: 'Este mes' },
+          { id: 'year', nombre: 'Este año' },
+          { id: 'past', nombre: 'Años anteriores' }
+        ],
+      },
+      showToast: false,
+      toastTimeout: null,
+      originalEstado: null,
+      usuariosMap: {}, // Para almacenar el mapeo de IDs a nombres de usuario
+      showError: false,
     };
+  },
+  computed: {
+    filteredAndSortedSolicitudes() {
+      let result = [...this.allSolicitudes];
+
+      // Aplicar búsqueda global
+      if (this.searchQuery) {
+        const searchLower = this.searchQuery.toLowerCase();
+        result = result.filter(solicitud => {
+          return (
+            // Datos básicos
+            String(solicitud.id)?.toLowerCase().includes(searchLower) ||
+            solicitud.titulo?.toLowerCase().includes(searchLower) ||
+            solicitud.descripcion?.toLowerCase().includes(searchLower) ||
+            
+            // Usuarios
+            solicitud.usuario_cliente_nombre?.toLowerCase().includes(searchLower) ||
+            solicitud.usuario_soporte_nombre?.toLowerCase().includes(searchLower) ||
+            
+            // Estados y prioridades
+            this.getModuloName(solicitud.estado, 'estados')?.toLowerCase().includes(searchLower) ||
+            this.getModuloName(solicitud.prioridad, 'prioridades')?.toLowerCase().includes(searchLower) ||
+            
+            // Módulos y submódulos
+            this.getModuloName(solicitud.modulo, 'modulos')?.toLowerCase().includes(searchLower) ||
+            solicitud.submodulo_nombre?.toLowerCase().includes(searchLower) ||
+            
+            // Fechas
+            this.formatDate(solicitud.fecha_creacion)?.includes(searchLower) ||
+            this.formatDate(solicitud.fecha_asignacion)?.includes(searchLower) ||
+            this.formatDate(solicitud.fecha_finalizacion)?.includes(searchLower)
+          );
+        });
+      }
+
+      // Aplicar filtros específicos (mantener el código existente de filtros)
+      result = this.filterSolicitudes(result);
+
+      // Aplicar ordenamiento
+      if (this.sortBy) {
+        result.sort((a, b) => {
+          let aValue = a[this.sortBy];
+          let bValue = b[this.sortBy];
+
+          // Convertir a fechas si es necesario
+          if (this.sortBy.includes('fecha')) {
+            aValue = new Date(aValue);
+            bValue = new Date(bValue);
+          }
+
+          if (this.sortOrder === 'asc') {
+            return aValue > bValue ? 1 : -1;
+          } else {
+            return aValue < bValue ? 1 : -1;
+          }
+        });
+      }
+
+      return result;
+    },
+    filteredOpciones() {
+      if (!this.newSolicitud.modulo) {
+        return [];
+      }
+      return this.opciones.filter(opcion => opcion.startsWith(this.newSolicitud.modulo));
+    },
+    filteredSubmodulos() {
+      if (!this.newSolicitud.modulo) {
+        return [];
+      }
+      return this.submodulos.filter(submodulos => 
+        submodulos.modulo === this.newSolicitud.modulo
+      );
+    },
+    filteredColumns() {
+      const restrictedColumns = {
+        C: ["clie", "prioridad", "orden", "id", "usuario_soporte"],
+        S: [],
+        A: []  
+      };
+
+      return this.columns.filter(column => 
+        !(restrictedColumns[this.userType] || []).includes(column.key)
+      );
+    },
+    paginatedSolicitudes() {
+      const start = (this.currentPage - 1) * this.pageSize;
+      const end = start + this.pageSize;
+      return this.filteredAndSortedSolicitudes.slice(start, end);
+    },
+    totalPages() {
+      return Math.ceil(this.filteredAndSortedSolicitudes.length / this.pageSize);
+    },
   },
   created() {
     const user = JSON.parse(localStorage.getItem('user'));
+    const userData = localStorage.getItem('user');
+    if (userData) {
+      const user = JSON.parse(userData);
+      if (user && user.tipo) {
+        this.userType = user.tipo; // Asignar el tipo de usuario
+      } else {
+        this.userType = 'C'; // Valor predeterminado si no hay tipo de usuario
+      }
+    } else {
+      this.userType = 'C'; // Valor predeterminado si no hay usuario en localStorage
+    }
+    if (user) {
+      this.userType = user.tipo; // Asignar el tipo de usuario
+    }
     if (user) {
       this.newSolicitud.usuario_cliente = user.id;
       this.newSolicitud.usuario_cliente_nombre = user.username;
+      this.newSolicitud.usuario_cliente_email = user.email;
+
+
+
     } else {
       alert('No se encontró información del usuario. Por favor, inicia sesión.');
       this.$router.push('/');
     }
     this.initializeColumnWidths();
+    this.fetchUsuariosSoporte();
+    this.fetchUsuarios(); // Método para cargar todos los usuarios
+
+    // Inicializar filtros
+    this.filteredColumns.forEach(column => {
+      this.filters[column.key] = [];
+      this.dropdownOpen[column.key] = false;
+    });
+    
+    this.columnOptions = {};
+    this.filteredColumns.forEach(column => {
+      this.columnOptions[column.key] = this.getColumnOptions(column.key);
+    });
   },
+  
   mounted() {
     this.fetchSolicitudes();
+    this.cargarUsuario();
+    this.sortTable('fecha_creacion'); 
+    this.fetchUsuariosSoporte();
+    window.addEventListener('click', this.closeDropdowns); 
+    this.fetchAcciones();
+    this.fetchEstados();
+    this.fetchModulos();
+    this.fetchPrioridades();
+    this.fetchSubmodulos();
+    this.sortOrder = 'desc';
+  },
+  beforeUnmount() {
+    window.removeEventListener('click', this.closeDropdowns);
+    if (this.toastTimeout) {
+      clearTimeout(this.toastTimeout)
+    }
   },
   methods: {
+    async fetchAcciones() {
+    try {
+      const response = await apiClient.get('/acciones/');
+      this.acciones = response.data;
+    } catch (error) {
+      console.error('Error al obtener acciones:', error);
+    }
+  },
+  async fetchEstados() {
+    try {
+      const response = await apiClient.get('/estados/');
+      this.estados = response.data;
+    } catch (error) {
+      console.error('Error al obtener estados:', error);
+    }
+  },
+  async fetchModulos() {
+      try {
+        const response = await apiClient.get('/modulos/');
+        this.modulos = response.data;
+      } catch (error) {
+        console.error('Error al obtener módulos:', error);
+      }
+    },
+  async fetchPrioridades() {
+    try {
+      const response = await apiClient.get('/prioridades/');
+      this.prioridades = response.data;
+    } catch (error) {
+      console.error('Error al obtener prioridades:', error);
+    }
+  },
+  async fetchSubmodulos() {
+      try {
+        const response = await apiClient.get('/submodulos/');
+        this.submodulos = response.data;
+      } catch (error) {
+        console.error('Error al obtener submódulos:', error);
+      }
+    },
+    startEditing(rowId, field) {
+      if (this.userType === 'S' || this.userType === 'A') {
+        this.editingRowId = rowId;
+        this.editingField = field;
+      }
+    },
+    async saveField(solicitud, field) {
+      try {
+        const colombiaTime = await this.getColombiaTime();
+        let dataToUpdate = {
+          titulo: solicitud.titulo,
+          descripcion: solicitud.descripcion,
+          modulo: solicitud.modulo,
+          submodulo: solicitud.submodulo,
+          accion: solicitud.accion,
+          estado: solicitud.estado,
+          prioridad: solicitud.prioridad,
+          usuario_cliente: solicitud.usuario_cliente,
+          usuario_soporte: solicitud.usuario_soporte || null,
+          orden: solicitud.orden || null
+        };
+
+        if (field === 'estado') {
+          dataToUpdate.fecha_asignacion = solicitud.estado !== 'S' ? colombiaTime.toISOString() : null;
+          dataToUpdate.fecha_finalizacion = solicitud.estado === 'T' ? colombiaTime.toISOString() : null;
+        }
+
+        const token = localStorage.getItem('access_token');
+        const response = await apiClient.put(
+          `/solicitudes/${solicitud.id}/`, 
+          dataToUpdate,
+          {
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json'
+            }
+          }
+        );
+
+        if (response.status === 200) {
+          this.editingRowId = null;
+          this.editingField = null;
+          this.statusMessage = 'Cambios guardados correctamente';
+          this.isSuccess = true;
+          await this.fetchSolicitudes();
+        }
+      } catch (error) {
+        this.statusMessage = error.response?.data?.detail || 'Error al guardar los cambios';
+        this.isSuccess = false;
+        
+        const originalSolicitud = this.solicitudes.find(s => s.id === solicitud.id);
+        if (originalSolicitud) {
+          solicitud[field] = originalSolicitud[field];
+        }
+      }
+    },
+    cargarUsuario() {
+      const userData = localStorage.getItem('user');
+        if (userData) {
+          const user = JSON.parse(userData);
+          if (user) {
+            this.nombreCompleto = `${user.nombres} ${user.apellidos}`; // Asignar el nombre completo
+          }
+        }
+    },
+
+    async getColombiaTime() {
+      try {
+        const response = await fetch('http://worldtimeapi.org/api/timezone/America/Bogota');
+        const data = await response.json();
+        return new Date(data.datetime);
+      } catch (error) {
+        console.error('Error al obtener la hora de Colombia:', error);
+        return new Date(); // Fallback a la hora local si hay un error
+      }
+    },
+    
     formatDate(dateString) {
       if (!dateString) return '';
+      
       const date = new Date(dateString);
-      return new Intl.DateTimeFormat('en-CA').format(date);
+      
+      // Ajustar la fecha para la zona horaria de Colombia (UTC-5)
+      const adjustedDate = new Date(date.getTime());
+      
+      return adjustedDate.toLocaleString('es-CO', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: true
+      });
     },
-    setFechaSistema() {
+    async setFechaSistema() {
       if (this.editableSolicitud.estado !== "S" && !this.isFechaAsignada) {
-        const now = new Date();
-        this.editableSolicitud.fecha_asignacion = now.toISOString().split("T")[0];
+        this.colombiaTime = await this.getColombiaTime();
+        this.editableSolicitud.fecha_asignacion = this.formatDate(this.colombiaTime);
         this.isFechaAsignada = true;
       }
     },
-    filterSolicitudes() {
-      this.filteredSolicitudes = this.solicitudes.filter((solicitud) => {
-        const matchesSearchQuery =
-          this.searchQuery === '' ||
-          solicitud.id.toString().includes(this.searchQuery) ||
-          solicitud.motivo_cancelacion?.toLowerCase().includes(this.searchQuery.toLowerCase());
-
-        const matchesPrioridad =
-          this.filterPrioridad === '' || solicitud.prioridad === this.filterPrioridad;
-
-        const matchesEstado =
-          this.filterEstado === '' || solicitud.estado === this.filterEstado;
-
-        return matchesSearchQuery && matchesPrioridad && matchesEstado;
-      });
-      this.sortTable(this.sortBy);
+    isWithinDateRange(date) {
+      if (!this.startDate && !this.endDate) return true;
+      const solicitudDate = new Date(date);
+      const start = this.startDate ? new Date(this.startDate) : new Date(0);
+      const end = this.endDate ? new Date(this.endDate) : new Date();
+      return solicitudDate >= start && solicitudDate <= end;
     },
-    sortTable(column) {
-      // Validar que column sea un string válido
-      if (!column || typeof column !== 'string') {
-        console.error('Columna inválida:', column);
-        return;
-      }
+    toggleDropdown(columnKey, event) {
+      // Cerrar otros dropdowns abiertos
+      Object.keys(this.dropdownOpen).forEach(key => {
+        if (key !== columnKey) {
+          this.dropdownOpen[key] = false;
+        }
+      });
 
-      // Alternar el orden de la columna actual o cambiar la columna de orden
-      if (this.sortBy === column) {
+      // Toggle del dropdown actual
+      this.dropdownOpen[columnKey] = !this.dropdownOpen[columnKey];
+
+      if (this.dropdownOpen[columnKey]) {
+        const rect = event.target.getBoundingClientRect();
+        this.dropdownPosition = {
+          x: rect.left,
+          y: rect.bottom + window.scrollY
+        };
+      }
+    },
+    getColumnOptions(columnKey) {
+      if (this.columnOptions[columnKey]) {
+        return this.columnOptions[columnKey];
+      }
+      return [];
+    },
+    sortTable(columnKey) {
+      if (this.sortBy === columnKey) {
         this.sortOrder = this.sortOrder === 'asc' ? 'desc' : 'asc';
       } else {
-        this.sortBy = column;
-        this.sortOrder = 'asc';
+        this.sortBy = columnKey;
+        this.sortOrder = 'desc';
       }
-
-      // Ordenar las solicitudes
-      this.filteredSolicitudes.sort((a, b) => {
-        let valA = a[column] ?? ''; // Valor por defecto si es undefined
-        let valB = b[column] ?? ''; // Valor por defecto si es undefined
-
-        // Manejar columnas con fechas
-        if (column.includes('fecha')) {
-          valA = valA ? new Date(valA) : new Date(0); // Fecha mínima por defecto
-          valB = valB ? new Date(valB) : new Date(0);
+      
+      // Ordenar allSolicitudes
+      this.allSolicitudes.sort((a, b) => {
+        if (columnKey === 'fecha_creacion') {
+          return this.sortOrder === 'desc'
+            ? new Date(b[columnKey]) - new Date(a[columnKey])
+            : new Date(a[columnKey]) - new Date(b[columnKey]);
         }
 
-        // Comparar valores
-        if (valA < valB) return this.sortOrder === 'asc' ? -1 : 1;
-        if (valA > valB) return this.sortOrder === 'asc' ? 1 : -1;
-        return 0;
+        const valueA = a[columnKey]?.toString().toLowerCase() ?? '';
+        const valueB = b[columnKey]?.toString().toLowerCase() ?? '';
+        
+        return this.sortOrder === 'desc'
+          ? valueB.localeCompare(valueA)
+          : valueA.localeCompare(valueB);
       });
+
+      // Aplicar paginación después de ordenar
+      this.applyPagination();
     },
-    async fetchSolicitudes() {
-      try {
-        const response = await apiClient.get('/solicitudes/');
-        this.solicitudes = response.data;
-        this.filterSolicitudes();
-      } catch (error) {
-        console.error('Error al obtener solicitudes:', error);
-        this.errorMessage = error.response?.data?.detail || 'Error al obtener solicitudes';
-      }
+    filterSolicitudes() {
+  if (!Array.isArray(this.allSolicitudes)) return [];
+
+  let filtered = [...this.allSolicitudes];
+
+  Object.keys(this.filters).forEach(key => {
+    if (this.filters[key] && this.filters[key].length > 0) {
+      filtered = filtered.filter(solicitud => {
+        // Filtros de fecha
+        if (key === 'fecha_creacion' || key === 'fecha_asignacion') {
+          const fechaSolicitud = new Date(solicitud[key]);
+          return this.filters[key].some(filterId => {
+            const today = new Date();
+            const fechaComparar = new Date(fechaSolicitud);
+
+            switch (filterId) {
+              case 'today': {
+                return fechaComparar.toDateString() === today.toDateString();
+              }
+              case 'week': {
+                const startOfWeek = new Date(today);
+                startOfWeek.setDate(today.getDate() - today.getDay() + (today.getDay() === 0 ? -6 : 1)); // Ajuste para que la semana empiece en lunes
+                startOfWeek.setHours(0, 0, 0, 0); // Inicio del día
+                const endOfWeek = new Date(startOfWeek);
+                endOfWeek.setDate(startOfWeek.getDate() + 6);
+                endOfWeek.setHours(23, 59, 59, 999); // Fin del día
+                return fechaComparar >= startOfWeek && fechaComparar <= endOfWeek;
+              }
+              case 'month': {
+                const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+                startOfMonth.setHours(0, 0, 0, 0); // Inicio del día
+                const endOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+                endOfMonth.setHours(23, 59, 59, 999); // Fin del día
+                return fechaComparar >= startOfMonth && fechaComparar <= endOfMonth;
+              }
+              case 'year': {
+                const startOfYear = new Date(today.getFullYear(), 0, 1);
+                startOfYear.setHours(0, 0, 0, 0); // Inicio del día
+                const endOfYear = new Date(today.getFullYear(), 11, 31);
+                endOfYear.setHours(23, 59, 59, 999); // Fin del día
+                return fechaComparar >= startOfYear && fechaComparar <= endOfYear;
+              }
+              case 'past': {
+                const startOfYear = new Date(today.getFullYear(), 0, 1);
+                startOfYear.setHours(0, 0, 0, 0); // Inicio del día
+                return fechaComparar < startOfYear;
+              }
+              default:
+                return false;
+            }
+          });
+        }
+            // Filtro de quien reporta
+            else if (key === 'usuario_cliente_nombre') {
+              return this.filters[key].includes(solicitud.usuario_cliente);
+            }
+            // Filtro de responsable
+            else if (key === 'usuario_soporte_nombre') {
+              return this.filters[key].includes(solicitud.usuario_soporte);
+            }
+            // Filtros de selección múltiple (estado, prioridad, etc.)
+            else if (['estado', 'prioridad', 'modulo', 'submodulo', 'accion'].includes(key)) {
+              return this.filters[key].includes(solicitud[key]);
+            }
+            // Filtro de texto para título
+            else if (key === 'titulo' && this.filters[key]) {
+              return solicitud[key]?.toLowerCase().includes(this.filters[key].toLowerCase());
+            }
+            // Otros filtros
+            else {
+              return this.filters[key].includes(solicitud[key]);
+            }
+          });
+        }
+      });
+
+      return filtered;
     },
+  
+  async fetchSolicitudes() {
+    try {
+      await this.fetchUsuarios(); // Método para cargar todos los usuarios
+      const response = await apiClient.get('/solicitudes/');
+      
+      // Mapear y enriquecer los datos
+      this.allSolicitudes = response.data.map(solicitud => ({
+        ...solicitud,
+        usuario_cliente_nombre: this.getUserFullName(solicitud.usuario_cliente),
+        usuario_soporte_nombre: this.getUserFullName(solicitud.usuario_soporte),
+        submodulo_nombre: this.getSubmoduloName(solicitud.submodulo),
+        accion_nombre: this.getAccionName(solicitud.accion)
+      }));
+
+      // Ordenar por fecha de creación
+      this.allSolicitudes.sort((a, b) => 
+        new Date(b.fecha_creacion) - new Date(a.fecha_creacion)
+      );
+    } catch (error) {
+      this.statusMessage = 'Error al cargar las solicitudes';
+      this.isSuccess = false;
+    }
+  },
+
+  applyPagination() {
+    const startIndex = (this.currentPage - 1) * this.pageSize;
+    const endIndex = startIndex + this.pageSize;
+    this.solicitudes = this.allSolicitudes.slice(startIndex, endIndex);
+  },
+
+  prevPage() {
+    if (this.currentPage > 1) {
+      this.currentPage--;
+    }
+  },
+
+  nextPage() {
+    if (this.currentPage < this.totalPages) {
+      this.currentPage++;
+    }
+  },
+
     async showSolicitudDetails(id) {
       try {
         const solicitudResponse = await apiClient.get(`/solicitudes/${id}/`);
@@ -514,70 +1562,116 @@ export default {
         this.anexos = anexosResponse.data;
         this.showModalDetails = true;
       } catch (error) {
-        console.error('Error al cargar los detalles de la solicitud:', error);
-        this.errorMessage = 'Hubo un problema al cargar los detalles de la solicitud.';
+        this.isSuccess = false;
+        this.statusMessage = 'Hubo un problema al cargar los detalles de la solicitud.';
       }
     },
-    getModuloName(codigo) {
-      return this.modulosMap[codigo] || codigo;
+    closeDetailsModal() {
+      this.showModalDetails = false;
+      this.currentSolicitudId = null;
+    },
+    closeEditModal() {
+      this.showModalEdit = false;
+      this.currentSolicitudId = null;
+      this.editableSolicitud = {
+        usuario_soporte: null,
+        fecha_asignacion: "",
+        orden: null,
+      };
+    },
+    getModuloName(id, tipo) {
+      try {
+        let lista;
+        switch (tipo) {
+          case 'prioridades':
+            lista = this.prioridades;
+            break;
+          case 'estados':
+            lista = this.estados;
+            break;
+          case 'modulos':
+            lista = this.modulos;
+            break;
+          default:
+            return id;
+        }
+        
+        const item = lista.find(item => item.id === id);
+        return item ? item.nombre : id;
+      } catch (error) {
+        return id;
+      }
     },
     async downloadAnexo(anexo) {
       try {
-        console.log('Downloading anexo:', anexo);
-
         const token = localStorage.getItem('access_token');
-        console.log('Retrieved token:', token);
-
         if (!token) {
           throw new Error('No se encontró el token de autenticación');
         }
 
-        const downloadUrl = `${apiClient.defaults.baseURL}/anexos/${anexo.id}/solicitud-anexos/`;
-        
-        console.log('Attempting download from:', downloadUrl);
-
-        const response = await apiClient.get(downloadUrl, {
-          responseType: 'blob',
+        // Paso 1: Obtener la información del anexo
+        const anexoInfoUrl = `${apiClient.defaults.baseURL}anexos/${anexo.id}/`;
+        const anexoInfoResponse = await apiClient.get(anexoInfoUrl, {
           headers: {
-            'Authorization': `Bearer ${token}`,
-            'Accept': '*/*'
-          }
+            Authorization: `Bearer ${token}`,
+          },
         });
 
-        console.log('Response received:', response.status, response.headers);
-
-        if (!response.data || response.data.type === 'text/html') {
-          throw new Error('Respuesta inválida del servidor');
+        // Obtener la URL del archivo
+        const fileUrl = anexoInfoResponse.data.archivo;
+        if (!fileUrl) {
+          throw new Error('No se encontró la URL del archivo');
         }
 
-        const blob = new Blob([response.data], { 
-          type: response.headers['content-type'] || 'application/octet-stream' 
+        // Paso 2: Descargar el archivo
+        const response = await apiClient.get(fileUrl, {
+          responseType: 'blob',
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        // Verificar que la respuesta sea un archivo binario
+        if (!response.data || response.data.type === 'application/json') {
+          const errorText = await response.data.text();
+          console.error('Error del servidor:', errorText);
+          throw new Error('El servidor no devolvió un archivo válido');
+        }
+
+        // Crear un enlace temporal para descargar el archivo
+        const blob = new Blob([response.data], {
+          type: response.headers['content-type'] || 'application/octet-stream',
         });
         const url = window.URL.createObjectURL(blob);
         const link = document.createElement('a');
         link.href = url;
-        
+
+        // Obtener el nombre del archivo
         const contentDisposition = response.headers['content-disposition'];
-        const filename = contentDisposition 
+        const filename = contentDisposition
           ? contentDisposition.split('filename=')[1]?.replace(/"/g, '')
           : anexo.descripcion || 'archivo_adjunto';
-          
+
         link.setAttribute('download', filename);
         document.body.appendChild(link);
         link.click();
-        
+
+        // Limpiar
         link.remove();
         window.URL.revokeObjectURL(url);
+
+        console.log('Descarga completada con éxito');
         
-        console.log('Download completed successfully');
       } catch (error) {
+        this.isSuccess = false;
+        this.statusMessage = 'Hubo un problema al descargar el archivo.';
         console.error('Error detallado al descargar el anexo:', {
           message: error.message,
           status: error.response?.status,
           data: error.response?.data,
-          headers: error.response?.headers
+          headers: error.response?.headers,
         });
-        
+
         let errorMessage = 'Hubo un problema al descargar el archivo.';
         if (error.message === 'No se encontró el token de autenticación') {
           errorMessage = 'Su sesión ha expirado. Por favor, vuelva a iniciar sesión.';
@@ -586,11 +1680,16 @@ export default {
         } else if (error.response?.status === 401) {
           errorMessage = 'Su sesión ha expirado. Por favor, vuelva a iniciar sesión.';
         }
-        
-        alert(errorMessage);
+
+        this.statusMessage = errorMessage;
       }
     },
-    
+    async toggleTareas(solicitud) {
+      if (!solicitud.showTareas) {
+        await this.fetchTareas(solicitud);
+      }
+      solicitud.showTareas = !solicitud.showTareas;
+    },
     async openTareasModal(solicitudId) {
       this.currentSolicitudId = solicitudId;
       this.tareas = [];
@@ -598,49 +1697,49 @@ export default {
       await this.fetchTareas(solicitudId);
     },
 
-    async fetchTareas(solicitudId) {
+    // Obtener tareas de una solicitud
+    async fetchTareas(solicitud) {
       try {
-        const response = await apiClient.get(`/tareas/${solicitudId}/solicitud-tareas/`);
+        const response = await apiClient.get(`/tareas/${solicitud.id}/solicitud-tareas/`);
+        solicitud.tareas = response.data;
+        solicitud.nuevaTarea = ''; // Reiniciar el campo de nueva tarea
+      } catch (error) {
+        this.statusMessage = 'Error al cargar las tareas.';
+        this.isSuccess = false;
+      }
+    },
+
+    // Crear una nueva tarea
+    async createTarea(solicitud) {
+      if (!solicitud.nuevaTarea.trim()) return;
+
+      try {
+        const colombiaTime = await this.getColombiaTime();
         
-        if (Array.isArray(response.data)) {
-          this.tareas = response.data;
-          this.errorMessage = '';
-        } else {
-          console.error('Respuesta inesperada de la API:', response.data);
-          this.errorMessage = 'Error al cargar las tareas.';
-          this.tareas = [];
-        }
-      } catch (error) {
-        console.error('Error al obtener tareas:', error);
-        this.errorMessage = 'Error al cargar las tareas. Por favor, intente de nuevo.';
-        this.tareas = [];
-      }
-    },
-
-    async createTarea() {
-      if (!this.nuevaTarea.trim()) return;
-
-      try {
-        const response = await apiClient.post('https://wxsoporte.onrender.com/api/tareas/', {
-          descripcion: this.nuevaTarea,
-          solicitud: this.currentSolicitudId,
+        const response = await apiClient.post('/tareas/', {
+          descripcion: solicitud.nuevaTarea,
+          solicitud: solicitud.id,
+          fecha_creacion: colombiaTime.toISOString(), // Guarda la fecha y hora completa
         });
-        this.tareas.push(response.data);
-        this.nuevaTarea = '';
-        console.log('Tarea creada:', response.data);
+        
+        solicitud.tareas.push(response.data);
+        solicitud.nuevaTarea = '';
+        this.statusMessage = 'Tarea creada correctamente';
+        this.isSuccess = true;
       } catch (error) {
-        console.error('Error al crear tarea:', error);
-        this.errorMessage = 'Error al crear la tarea. Por favor, intente de nuevo.';
+        this.statusMessage = 'Error al crear la tarea.';
+        this.isSuccess = false;
       }
     },
 
-    async deleteTarea(tareaId) {
+    // Eliminar una tarea
+    async deleteTarea(solicitud, tareaId) {
       try {
         await apiClient.delete(`/tareas/${tareaId}/`);
-        this.tareas = this.tareas.filter(tarea => tarea.id !== tareaId);
+        solicitud.tareas = solicitud.tareas.filter(tarea => tarea.id !== tareaId);
       } catch (error) {
-        console.error('Error al eliminar tarea:', error);
-        this.errorMessage = 'Error al eliminar la tarea. Por favor, intente de nuevo.';
+        this.statusMessage = 'Error al eliminar la tarea.';
+        this.isSuccess = false;
       }
     },
 
@@ -651,64 +1750,127 @@ export default {
       this.nuevaTarea = '';
     },
 
+    // Editar solicitud
     async editSolicitud(id) {
       try {
         const response = await apiClient.get(`/solicitudes/${id}/`);
-        this.editableSolicitud = { ...response.data };
+        this.editableSolicitud = { 
+          ...response.data,
+          orden: response.data.orden || null,
+          fecha_finalizacion: response.data.fecha_finalizacion || null,
+        };
         this.originalEstado = this.editableSolicitud.estado;
         this.showModalEdit = true;
+        
+        // Cargar los usuarios de soporte al abrir el modal
+        await this.fetchUsuariosSoporte();
+
       } catch (error) {
-        console.error('Error al cargar la solicitud para editar:', error);
-        this.errorMessage = error.response?.data?.detail || 'Error al cargar solicitud para editar';
+        this.statusMessage = error.response?.data?.detail || "Error al cargar solicitud para editar";
+        this.isSuccess = false;
       }
     },
 
     handleEstadoChange() {
       if (this.originalEstado === 'S' && this.editableSolicitud.estado !== 'S' && !this.editableSolicitud.fecha_asignacion) {
-        this.editableSolicitud.fecha_asignacion = new Date().toISOString().split('T')[0];
+        this.editableSolicitud.fecha_asignacion = new Date().toISOString().split("T")[0];
+      } else if (this.editableSolicitud.estado === 'T') {
+        this.editableSolicitud.fecha_finalizacion = new Date().toISOString().split("T")[0];
+      }
+
+      if (this.editableSolicitud.estado === 'P' && !this.editableSolicitud.usuario_soporte && this.usuariosSoporte.length > 0) {
+        this.editableSolicitud.usuario_soporte = this.usuariosSoporte[0].id;
       }
     },
     
     async updateSolicitud() {
       try {
-        await apiClient.put(`/solicitudes/${this.editableSolicitud.id}/`, this.editableSolicitud);
-        this.fetchSolicitudes();
+        const colombiaTime = await this.getColombiaTime();
+        
+        const solicitudToUpdate = {
+          ...this.editableSolicitud,
+          fecha_asignacion: this.editableSolicitud.estado !== 'S' ? colombiaTime.toISOString() : null,
+          fecha_finalizacion: this.editableSolicitud.estado === 'T' ? colombiaTime.toISOString() : null,
+        };
+
+        await apiClient.put(`/solicitudes/${this.editableSolicitud.id}/`, solicitudToUpdate);
+        await this.fetchSolicitudes();
         this.closeModal();
-        alert('Solicitud actualizada correctamente');
+        this.statusMessage = 'Solicitud actualizada correctamente';
+        this.isSuccess = true;
       } catch (error) {
-        console.error('Error al actualizar la solicitud:', error);
-        this.errorMessage = error.response?.data?.detail || 'Error al actualizar la solicitud';
+        this.statusMessage = '❌ Error al actualizar la solicitud:';
+        this.isSuccess = false;
+        this.statusMessage = error.response?.data?.detail || "Error al actualizar la solicitud";
       }
     },
 
     async createSolicitud() {
-      if (!this.newSolicitud.modulo || !this.newSolicitud.titulo || !this.newSolicitud.descripcion) {
-        alert('Por favor, completa todos los campos obligatorios.');
-        return;
-      }
-      const formData = new FormData();
-      for (const [key, value] of Object.entries(this.newSolicitud)) {
-        formData.append(key, value);
-      }
-      if (this.selectedFile) {
-        formData.append("archivo", this.selectedFile);
-      }
       try {
-        await apiClient.post("/solicitudes/", formData);
+        // Validar campos requeridos
+        if (!this.newSolicitud.modulo || !this.newSolicitud.titulo || 
+            !this.newSolicitud.descripcion || !this.newSolicitud.accion) {
+          this.statusMessage = "Por favor, complete todos los campos requeridos.";
+          this.isSuccess = false;
+          return;
+        }
+
+        const currentUser = JSON.parse(localStorage.getItem('user'));
+
+        // Preparar datos de la solicitud
+        const solicitudData = {
+          titulo: this.newSolicitud.titulo,
+          descripcion: this.newSolicitud.descripcion,
+          modulo: this.newSolicitud.modulo,
+          submodulo: this.newSolicitud.submodulo || null,
+          accion: this.newSolicitud.accion,
+          prioridad: 3,
+          estado: 2,
+          usuario_cliente: currentUser.id,
+          version_error: this.newSolicitud.version ? parseInt(this.newSolicitud.version) : null 
+        };
+
+
+        // Crear la solicitud
+        const solicitudResponse = await apiClient.post('/solicitudes/', solicitudData);
+
+        // Manejar anexos si existen
+        if (this.selectedFile) {
+          const formData = new FormData();
+          formData.append('archivo', this.selectedFile);
+          formData.append('solicitud', solicitudResponse.data.id);
+          formData.append('descripcion', this.newSolicitud.descripcion_anexo || '');
+
+          try {
+            await apiClient.post('/anexos/', formData, {
+              headers: {
+                'Content-Type': 'multipart/form-data'
+              }
+            });
+          } catch (anexoError) {
+            this.statusMessage('Error al subir anexo:', anexoError);
+          }
+        }
+
+        this.statusMessage = "Solicitud creada exitosamente";
+        this.isSuccess = true;
         this.closeModal();
         this.fetchSolicitudes();
-        alert('Solicitud creada correctamente');
       } catch (error) {
-        console.error('Error al crear la solicitud:', error);
-        console.error('Detalles del error:', error.response.data);
-        this.errorMessage = error.response?.data?.detail || 'Error al crear la solicitud';
+        if (error.response?.data) {
+          const errorMessages = Object.entries(error.response.data)
+            .map(([key, value]) => `${key}: ${value}`)
+            .join(', ');
+          this.statusMessage = "Error al crear la solicitud: " + errorMessages;
+        } else {
+          this.statusMessage = "Error al crear la solicitud";
+        }
+        this.isSuccess = false;
       }
     },
-
     handleFileUpload(event) {
       this.selectedFile = event.target.files[0];
-    },
-
+    }, 
     closeModal() {
       this.showModalDetails = false;
       this.showModalEdit = false;
@@ -718,11 +1880,14 @@ export default {
         usuario_soporte: null,
       };
       this.newSolicitud = {
-        prioridad: "B",
-        estado: "S",
-        motivo_cancelacion: "N/A",
+        titulo: '',
         modulo: '',
+        submodulo: '',
         descripcion: '',
+        prioridad: 3,
+        estado: 1,
+        descripcion_anexo: '',
+        version: ''  // Agregamos el campo versión
       };
       this.selectedFile = null;
       this.closeModalTareas = null;
@@ -733,36 +1898,313 @@ export default {
         try {
           await apiClient.delete(`/solicitudes/${id}/`);
           this.fetchSolicitudes();
-          alert('Solicitud eliminada correctamente');
+          this.statusMessage = 'Solicitud eliminada correctamente';
+          this.isSuccess = true;
         } catch (error) {
-          console.error('Error al eliminar solicitud:', error);
-          this.errorMessage = error.response?.data?.detail || 'Error al eliminar solicitud';
+          this.isSuccess = false;
+          this.statusMessage = error.response?.data?.detail || 'Error al eliminar solicitud';
         }
       }
     },
 
     initializeColumnWidths() {
-      this.columns.forEach(column => {
-        this.columnWidths[column.key] = 150;
+      this.columns.forEach((column) => {
+        if (!this.columnWidths[column.key]) {
+          this.columnWidths[column.key] = 50; // Establece valores iniciales si no existen
+        }
       });
     },
 
     startResize(event, columnKey) {
-      const startX = event.pageX;
+      const startX = event.clientX;
       const startWidth = this.columnWidths[columnKey];
 
       const doDrag = (e) => {
-        this.columnWidths[columnKey] = startWidth + (e.pageX - startX);
+        const newWidth = startWidth + (e.clientX - startX);
+        if (newWidth > 10) {
+          this.columnWidths[columnKey] = newWidth;
+        }
       };
 
       const stopDrag = () => {
-        document.removeEventListener('mousemove', doDrag, false);
-        document.removeEventListener('mouseup', stopDrag, false);
+        document.removeEventListener('mousemove', doDrag);
+        document.removeEventListener('mouseup', stopDrag);
       };
 
-      document.addEventListener('mousemove', doDrag, false);
-      document.addEventListener('mouseup', stopDrag, false);
+      document.addEventListener('mousemove', doDrag);
+      document.addEventListener('mouseup', stopDrag);
     },
+    async fetchUsuariosSoporte() {
+      try {
+        const response = await apiClient.get("/usuarios/", {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("access_token")}`,
+          },
+        });
+
+        // Filtrar solo los usuarios tipo "S"
+        const usuariosSoporteFiltrados = response.data.filter(user => user.tipo === "S");
+
+        // Actualizar usuariosSoporteMap con nombre completo
+        this.usuariosSoporteMap = {};
+        usuariosSoporteFiltrados.forEach(user => {
+          const nombreCompleto = `${user.first_name || ''} ${user.last_name || ''}`.trim();
+          this.usuariosSoporteMap[user.id] = nombreCompleto || user.username;
+        });
+
+        // Guardar la lista completa
+        this.usuariosSoporteList = usuariosSoporteFiltrados;
+
+
+      } catch (error) {
+        this.statusMessage("❌ Error al obtener usuarios de soporte:", error);
+      }
+    },
+    initializeColumnOptions() {
+      try {
+        // Obtener valores únicos para quien reporta
+        const reportadoresUnicos = this.allSolicitudes
+          .filter(s => s.usuario_cliente && s.usuario_cliente_nombre)
+          .map(s => ({
+            id: s.usuario_cliente,
+            nombre: s.usuario_cliente_nombre
+          }))
+          .filter((v, i, a) => a.findIndex(t => t.id === v.id) === i); // Eliminar duplicados
+
+        this.columnOptions = {
+          // Mantener las opciones existentes
+          fecha_creacion: [
+            { id: 'today', nombre: 'Hoy' },
+            { id: 'week', nombre: 'Esta semana' },
+            { id: 'month', nombre: 'Este mes' },
+            { id: 'year', nombre: 'Este año' },
+            { id: 'past', nombre: 'Años anteriores' }
+          ],
+          estado: this.estados,
+          prioridad: this.prioridades,
+          modulo: this.modulos,
+          submodulo: this.submodulos,
+          accion: this.acciones,
+          // Agregar las opciones de quien reporta
+          usuario_cliente: reportadoresUnicos
+        };
+
+      } catch (error) {
+        console.error('Error al inicializar opciones:', error);
+      }
+    },
+    handleNewSolicitud() {
+      console.log('Botón clickeado') // Debug
+      this.showModalCreate = true
+      this.newSolicitud = {
+        titulo: '',
+        modulo: '',
+        submodulo: '',
+        accion: '',
+        descripcion: '',
+        descripcion_anexo: '',
+        version: ''  // Agregamos el campo versión
+      }
+    },
+    getPrioridadClase(prioridad) {
+      const nombre = this.getModuloName(prioridad, 'prioridades')
+      switch (nombre) {
+        case 'Alto':
+          return 'bg-red-100 text-red-800'
+        case 'Medio':
+          return 'bg-yellow-100 text-yellow-800'
+        case 'Bajo':
+          return 'bg-green-100 text-green-800'
+        case 'Bloqueante':
+          return 'bg-purple-100 text-purple-800'
+        default:
+          return 'bg-gray-100 text-gray-800'
+      }
+    },
+    // Método para cargar todos los usuarios
+    async fetchUsuarios() {
+      try {
+        const response = await apiClient.get('/usuarios/');
+        // Crear un mapa de ID -> nombre completo
+        this.usuariosMap = response.data.reduce((acc, user) => {
+          acc[user.id] = `${user.first_name} ${user.last_name}`.trim() || user.username;
+          return acc;
+        }, {});
+      } catch (error) {
+        console.error('Error al cargar usuarios:', error);
+      }
+    },
+
+    // Método para obtener el nombre del usuario
+    getUserFullName(userId) {
+      return this.usuariosMap[userId] || 'No asignado';
+    },
+
+    // Método para obtener el nombre del submodulo
+    getSubmoduloName(submoduloId) {
+      const submodulo = this.submodulos.find(s => s.id === submoduloId);
+      return submodulo ? submodulo.nombre : 'No asignado';
+    },
+
+    // Método para obtener el nombre de la acción
+    getAccionName(accionId) {
+      const accion = this.acciones.find(a => a.id === accionId);
+      return accion ? accion.nombre : 'No asignado';
+    },
+
+    // Asegúrate de que este método se llame cuando cambien los datos
+    updateColumnOptions() {
+      this.filteredColumns.forEach(column => {
+        this.columnOptions[column.key] = this.getColumnOptions(column.key);
+      });
+    },
+    handleModuloChange() {
+      // Resetear el submódulo cuando cambia el módulo
+      this.newSolicitud.submodulo = '';
+    },
+    validateForm() {
+      this.showError = true;
+      return this.newSolicitud.modulo && 
+             this.newSolicitud.submodulo && 
+             this.newSolicitud.titulo && 
+             this.newSolicitud.descripcion;
+    },
+    // Método auxiliar para obtener la fecha actual en Colombia
+    getCurrentDate() {
+      return new Date();
+    },
+    getColumnStyle(columnKey) {
+      // Para el resto de columnas, mantener el control estricto del ancho
+      return {
+        width: `${this.columnWidths[columnKey]}px`,
+        minWidth: `${this.columnWidths[columnKey]}px`
+      };
+    },
+    memoizedGetModuloName: memoize(function(id, tipo) {
+      try {
+        let lista;
+        switch (tipo) {
+          case 'prioridades':
+            lista = this.prioridades;
+            break;
+          case 'estados':
+            lista = this.estados;
+            break;
+          case 'modulos':
+            lista = this.modulos;
+            break;
+          default:
+            return id;
+        }
+        
+        const item = lista.find(item => item.id === id);
+        return item ? item.nombre : id;
+      } catch (error) {
+        return id;
+      }
+    }, function(id, tipo) {
+      return `${id}-${tipo}`;
+    }),
+
+    memoizedFormatDate: memoize(function(dateString) {
+      if (!dateString) return '';
+      
+      const date = new Date(dateString);
+      return date.toLocaleString('es-CO', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: true
+      });
+    }),
+  },
+  watch: {
+    filters: {
+      handler() {
+        this.filteredSolicitudes = this.filterSolicitudes();
+      },
+      deep: true
+    },
+    searchQuery: {
+      handler() {
+        try {
+          this.filteredSolicitudes = this.filterSolicitudes();
+        } catch (error) {
+          console.error('Error en la búsqueda:', error);
+        }
+      },
+      immediate: true,
+      deep: true
+    },
+    solicitudes: {
+      handler() {
+        this.updateColumnOptions();
+        this.filteredSolicitudes = this.filterSolicitudes();
+      },
+      deep: true
+    },
+    statusMessage(newMessage) {
+      if (newMessage) {
+        this.showToast = true
+        
+        // Limpiar timeout anterior si existe
+        if (this.toastTimeout) {
+          clearTimeout(this.toastTimeout)
+        }
+        
+        // Establecer nuevo timeout
+        this.toastTimeout = setTimeout(() => {
+          this.showToast = false
+          this.statusMessage = ''
+        }, 3000) // Duración de 3 segundos
+      }
+    },
+    // Observar cambios en solicitudes para actualizar opciones
+    currentPage() {
+      this.applyPagination(); // Actualizar las solicitudes paginadas cuando cambia la página
+    },
+    pageSize() {
+      this.currentPage = 1; // Reset a la primera página cuando cambia el tamaño
+    },
+    allSolicitudes: {
+      handler() {
+        this.applyPagination();
+      },
+      deep: true
+    },
+    // Actualizar las opciones cuando cambien las listas base
+    prioridades: {
+      handler() {
+        this.initializeColumnOptions();
+      },
+      immediate: true
+    },
+    estados: {
+      handler() {
+        this.initializeColumnOptions();
+      },
+      immediate: true
+    },
+    modulos: {
+      handler() {
+        this.initializeColumnOptions();
+      },
+      immediate: true
+    },
+    submodulos: {
+      handler() {
+        this.initializeColumnOptions();
+      },
+      immediate: true
+    },
+    acciones: {
+      handler() {
+        this.initializeColumnOptions();
+      },
+      immediate: true
+    }
   },
 };
 </script>
@@ -770,5 +2212,70 @@ export default {
 <style scoped>
 .cursor-col-resize {
   cursor: col-resize;
+}
+.cursor-pointer {
+  cursor: pointer;
+}
+
+.cursor-pointer:hover {
+  background-color: #f3f4f6; /* Cambia el color de fondo al pasar el mouse */
+  border-radius: 4px;
+}
+
+/* Asegurar que los estilos de Tailwind se apliquen correctamente */
+.bg-red-100 { background-color: rgb(254, 226, 226); }
+.text-red-800 { color: rgb(153, 27, 27); }
+
+.bg-yellow-100 { background-color: rgb(254, 249, 195); }
+.text-yellow-800 { color: rgb(133, 77, 14); }
+
+.bg-green-100 { background-color: rgb(220, 252, 231); }
+.text-green-800 { color: rgb(22, 101, 52); }
+
+.bg-purple-100 { background-color: rgb(243, 232, 255); }
+.text-purple-800 { color: rgb(107, 33, 168); }
+
+.bg-gray-100 { background-color: rgb(243, 244, 246); }
+.text-gray-800 { color: rgb(31, 41, 55); }
+
+/* Asegurar que el toast esté por encima de todo */
+.toast-container {
+  position: fixed;
+  top: 0;
+  right: 0;
+  z-index: 9999;
+  pointer-events: none;
+}
+
+.toast-container > * {
+  pointer-events: auto;
+}
+
+/* Estilos para el selector de registros por página */
+select {
+  appearance: none;
+  background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3E%3Cpath stroke='%236B7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3E%3C/svg%3E");
+  background-position: right 0.5rem center;
+  background-repeat: no-repeat;
+  background-size: 1.5em 1.5em;
+  padding-right: 2.5rem;
+}
+
+/* Estilos para botones deshabilitados */
+button:disabled {
+  cursor: not-allowed;
+}
+
+.btn-tareas {
+  width: 30px;
+  min-width: 30px;
+  padding: 2px 5px;
+}
+
+/* Si estás usando un ícono de flecha, puedes ajustar su tamaño también */
+.btn-tareas i, 
+.btn-tareas svg {
+  width: 16px;
+  height: 16px;
 }
 </style>

@@ -49,12 +49,12 @@ apiClient.interceptors.response.use(
           localStorage.removeItem('accessToken');
           localStorage.removeItem('refreshToken');
           localStorage.removeItem('user');
-          router.push('/login');
+          router.push('/');
           return Promise.reject(err);
         }
       } else {
         // No hay refresh token, redirigir a login
-        router.push('/login');
+        router.push('/');
       }
     }
 

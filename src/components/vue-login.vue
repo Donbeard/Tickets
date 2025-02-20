@@ -1,5 +1,6 @@
 <template>
-  <div class="min-h-screen flex-1 flex-col justify-center px-6 py-12 lg:px-8">
+  <div class="min-h-screen flex-1 flex-col justify-center px-6 py-5 lg:px-8">
+
     <div class="sm:mx-auto sm:w-full sm:max-w-sm">
       <img class="mx-auto h-10 w-auto" src="https://static.wixstatic.com/media/7a7799_d00b73646de9440f88c6f421422244a3.png" alt="Your Company" />
       <h2 class="mt-10 text-center text-2xl font-bold leading-9 tracking-tight text-gray-900">Iniciar Sesión</h2>
@@ -30,10 +31,25 @@
           </button>
         </div>
       </form>
-
       <p v-if="errorMessage" class="mt-2 text-center text-sm text-red-600">
         {{ errorMessage }}
       </p>
+      <div class="mt-4 text-center">
+          <p class="text-sm text-gray-600">
+            ¿Quieres registrarte?
+            <router-link to="/register" class="font-medium text-indigo-600 hover:text-indigo-500">
+              Registro
+            </router-link>
+          </p>
+        </div>
+        <div class="mt-4 text-center">
+          <p class="text-sm text-gray-600">
+            ¿Olvidaste tu contraseña?
+            <router-link to="/password-reset" class="font-medium text-indigo-600 hover:text-indigo-500">
+              Recuperar
+            </router-link>
+          </p>
+        </div>
     </div>
   </div>
 </template>
@@ -55,7 +71,10 @@ export default {
         try {
             const response = await axios.post('https://wxsoporte.onrender.com/api/login/', {
                 email: this.email,
-                password: this.password
+                password: this.password,
+                tipo: this.tipo,
+                username: this.username,
+
             });
 
             // Verificar si hay tokens en la respuesta (indicador de éxito)
@@ -67,7 +86,6 @@ export default {
                 // Opcional: almacenar información del usuario
                 localStorage.setItem('user', JSON.stringify(response.data.user));
 
-                alert(`Bienvenido, ${response.data.user.username}`);
                 this.$router.push('/solicitudes'); // Redirige al usuario
             } else {
                 this.errorMessage = 'Error desconocido. Intente nuevamente.';

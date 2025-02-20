@@ -1,123 +1,169 @@
 <template>
-  <div class="min-h-screen bg-gray-100 py-8 px-4 sm:px-6 lg:px-8">
-    <div class="max-w-7xl mx-auto">
-      <h1 class="text-3xl font-bold text-gray-900 mb-8">Gestión de Tareas</h1>
-      
-      <!-- Controls Section -->
-      <div class="bg-white shadow-md rounded-lg p-6 mb-8">
-        <div class="flex flex-wrap items-center gap-4 mb-6">
-          <button 
-            @click="showModalCreate = true"
-            class="bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 px-4 rounded-md transition duration-300 ease-in-out"
-          >
-            Nueva Tarea
-          </button>
-          
-          <!-- Search Input -->
-          <div class="flex-grow">
-            <label for="search" class="sr-only">Buscar</label>
-            <div class="relative">
-              <input 
-                id="search"
-                type="text" 
-                v-model="searchQuery" 
-                @input="filterTareas" 
-                placeholder="Buscar por descripción"
-                class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition duration-150 ease-in-out"
-              />
-              <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
-                </svg>
+  <div class="min-h-screen bg-gray-50 py-6">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <!-- Encabezado -->
+      <div class="mb-8">
+        <h1 class="text-2xl font-bold text-gray-900">Gestión de Tareas</h1>
+        <p class="mt-1 text-sm text-gray-600">Administre y organice las tareas del sistema</p>
+      </div>
+
+      <!-- Panel de Control -->
+      <div class="bg-white rounded-2xl shadow-sm mb-6">
+        <div class="p-6">
+          <div class="flex flex-col sm:flex-row items-center gap-4">
+            <!-- Botón Nueva Tarea -->
+            <button 
+              @click="showModalCreate = true"
+              class="w-full sm:w-auto inline-flex items-center justify-center px-6 py-3 border border-transparent rounded-lg text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all duration-200"
+            >
+              <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
+              </svg>
+              Nueva Tarea
+            </button>
+            
+            <!-- Barra de búsqueda -->
+            <div class="flex-grow">
+              <div class="relative">
+                <input 
+                  type="text" 
+                  v-model="searchQuery" 
+                  @input="filterTareas" 
+                  placeholder="Buscar tareas..."
+                  class="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 bg-gray-50 hover:bg-white"
+                />
+                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <svg class="h-6 w-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                  </svg>
+                </div>
               </div>
             </div>
           </div>
         </div>
       </div>
 
-      <!-- Tareas Table -->
-      <div class="bg-white shadow-md rounded-lg overflow-hidden">
-        <table class="min-w-full divide-y divide-gray-200">
-          <thead class="bg-gray-50">
-            <tr>
-              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
-              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Descripción</th>
-              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fecha de Creación</th>
-              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Solicitud</th>
-              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones</th>
-            </tr>
-          </thead>
-          <tbody class="bg-white divide-y divide-gray-200">
-            <tr v-for="tarea in filteredTareas" :key="tarea.id" class="hover:bg-gray-50">
-              <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ tarea.id }}</td>
-              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ tarea.descripcion }}</td>
-              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ formatDate(tarea.fecha_creacion) }}</td>
-              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ tarea.solicitud }}</td>
-              <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                <button @click="editTarea(tarea.id)" class="text-indigo-600 hover:text-indigo-900 mr-2">Editar</button>
-                <button @click="deleteTarea(tarea.id)" class="text-red-600 hover:text-red-900">Eliminar</button>
-              </td>
-            </tr>
-          </tbody>
-        </table>
+      <!-- Tabla de Tareas -->
+      <div class="bg-white rounded-2xl shadow-sm overflow-hidden">
+        <div class="overflow-x-auto">
+          <table class="min-w-full divide-y divide-gray-200">
+            <thead>
+              <tr class="bg-gray-50">
+                <th scope="col" class="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
+                <th scope="col" class="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Descripción</th>
+                <th scope="col" class="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fecha</th>
+                <th scope="col" class="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Solicitud</th>
+                <th scope="col" class="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones</th>
+              </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-gray-200">
+              <tr v-for="tarea in filteredTareas" 
+                  :key="tarea.id" 
+                  class="hover:bg-gray-50 transition-colors duration-200">
+                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ tarea.id }}</td>
+                <td class="px-6 py-4 text-sm text-gray-500 max-w-md truncate">{{ tarea.descripcion }}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ formatDate(tarea.fecha_creacion) }}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ tarea.solicitud }}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-3">
+                  <button 
+                    @click="editTarea(tarea.id)"
+                    class="text-indigo-600 hover:text-indigo-900 transition-colors duration-200"
+                  >
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                    </svg>
+                  </button>
+                  <button 
+                    @click="deleteTarea(tarea.id)"
+                    class="text-red-600 hover:text-red-900 transition-colors duration-200"
+                  >
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                    </svg>
+                  </button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
       </div>
 
-      <p v-if="errorMessage" class="mt-4 text-red-600 text-sm">{{ errorMessage }}</p>
-    </div>
+      <!-- Modal de Crear/Editar -->
+      <div v-if="showModalCreate || showModalEdit" 
+           class="fixed inset-0 z-50 overflow-y-auto"
+           aria-labelledby="modal-title" 
+           role="dialog" 
+           aria-modal="true">
+        <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+          <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" 
+               aria-hidden="true"
+               @click="closeModal"></div>
 
-    <!-- Modal Crear/Editar -->
-    <div v-if="showModalCreate || showModalEdit" class="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
-      <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-        <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" aria-hidden="true"></div>
-        <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
-        <div class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
-          <form @submit.prevent="showModalCreate ? createTarea() : updateTarea()">
-            <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
-              <h3 class="text-lg leading-6 font-medium text-gray-900" id="modal-title">
-                {{ showModalCreate ? 'Crear Nueva Tarea' : 'Editar Tarea' }}
-              </h3>
-              <div class="mt-2 space-y-4">
-                <div>
-                  <label for="descripcion" class="block text-sm font-medium text-gray-700">Descripción:</label>
-                  <input 
-                    id="descripcion" 
-                    v-model="currentTarea.descripcion" 
-                    type="text" 
-                    required
-                    class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                  >
-                </div>
-                <div>
-                  <label for="solicitud" class="block text-sm font-medium text-gray-700">Solicitud:</label>
-                  <select 
-                    id="solicitud" 
-                    v-model="currentTarea.solicitud" 
-                    required
-                    class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
-                  >
-                    <option v-for="solicitud in solicitudes" :key="solicitud.id" :value="solicitud.id">
-                      {{ solicitud.id }} - {{ solicitud.modulo }}
-                    </option>
-                  </select>
+          <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+
+          <div class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
+            <form @submit.prevent="showModalCreate ? createTarea() : updateTarea()">
+              <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4">
+                  {{ showModalCreate ? 'Crear Nueva Tarea' : 'Editar Tarea' }}
+                </h3>
+                
+                <div class="space-y-4">
+                  <!-- Campo Descripción -->
+                  <div>
+                    <label for="descripcion" class="block text-sm font-medium text-gray-700 mb-1">
+                      Descripción
+                    </label>
+                    <textarea
+                      id="descripcion"
+                      v-model="currentTarea.descripcion"
+                      rows="3"
+                      required
+                      class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200"
+                      placeholder="Ingrese la descripción de la tarea"
+                    ></textarea>
+                  </div>
+
+                  <!-- Campo Solicitud -->
+                  <div>
+                    <label for="solicitud" class="block text-sm font-medium text-gray-700 mb-1">
+                      Solicitud
+                    </label>
+                    <select
+                      id="solicitud"
+                      v-model="currentTarea.solicitud"
+                      required
+                      class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200"
+                    >
+                      <option value="" disabled>Seleccione una solicitud</option>
+                      <option v-for="solicitud in solicitudes" 
+                              :key="solicitud.id" 
+                              :value="solicitud.id">
+                        {{ solicitud.id }} - {{ solicitud.modulo }}
+                      </option>
+                    </select>
+                  </div>
                 </div>
               </div>
-            </div>
-            <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
-              <button 
-                type="submit" 
-                class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-indigo-600 text-base font-medium text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:ml-3 sm:w-auto sm:text-sm"
-              >
-                {{ showModalCreate ? 'Crear' : 'Guardar' }}
-              </button>
-              <button 
-                @click="closeModal" 
-                type="button" 
-                class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm"
-              >
-                Cancelar
-              </button>
-            </div>
-          </form>
+
+              <!-- Botones del Modal -->
+              <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+                <button
+                  type="submit"
+                  class="w-full inline-flex justify-center rounded-lg border border-transparent shadow-sm px-4 py-2 bg-indigo-600 text-base font-medium text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:ml-3 sm:w-auto sm:text-sm transition-all duration-200"
+                >
+                  {{ showModalCreate ? 'Crear' : 'Guardar' }}
+                </button>
+                <button
+                  type="button"
+                  @click="closeModal"
+                  class="mt-3 w-full inline-flex justify-center rounded-lg border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm transition-all duration-200"
+                >
+                  Cancelar
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
       </div>
     </div>

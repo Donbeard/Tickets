@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>Redirecting...</title>
+    <script>
+      // Verifica si la ruta actual no es la raíz
+      if (window.location.pathname !== '/Tickets/') {
+        // Guarda la ruta original en sessionStorage
+        sessionStorage.redirect = window.location.pathname;
+        // Redirige a la raíz de la aplicación
+        window.location.href = '/Tickets/';
+      }
+    </script>
+  </head>
+  <body>
+    <p>Redirecting...</p>
+  </body>
+</html>

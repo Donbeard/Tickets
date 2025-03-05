@@ -37,7 +37,7 @@
                 type="number"
                 v-model="form.nit"
                 required
-                placeholder="Ingrese su NIT"
+                placeholder="Ingrese el NIT de la empresa"
                 class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500"
               />
             </div>

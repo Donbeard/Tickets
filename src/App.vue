@@ -21,7 +21,7 @@
       <!-- Navigation Items -->
       <nav>
         <router-link
-          v-for="item in navigation"
+          v-for="item in updatedNavigation"
           :key="item.name"
           :to="item.href"
           :class="[
@@ -87,7 +87,7 @@
                 </div>
                 <nav>
                   <router-link
-                    v-for="item in navigation"
+                    v-for="item in updatedNavigation"
                     :key="item.name"
                     :to="item.href"
                     :class="[
@@ -127,23 +127,31 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
-import { useRouter } from 'vue-router'
-import { Bars3Icon, XMarkIcon, HomeIcon, ChevronLeftIcon, ChevronRightIcon, DocumentTextIcon, BookmarkIcon } from '@heroicons/vue/24/outline'
+import { ref, computed } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
+import { Bars3Icon, XMarkIcon, HomeIcon, ChevronLeftIcon, ChevronRightIcon, DocumentTextIcon, BookmarkIcon, BuildingOfficeIcon } from '@heroicons/vue/24/outline'
 import LogoutIcon from '@heroicons/vue/24/outline/ArrowRightOnRectangleIcon'
 
 const router = useRouter()
+const route = useRoute()
 const mobileMenuOpen = ref(false)
 const isCollapsed = ref(true)
 
-const navigation = [
-  { name: 'Solicitudes', href: '/solicitudes', icon: HomeIcon, current: true },
-  //{ name: '', href: '', icon: UsersIcon, current: false },
-  { name: 'Tareas', href: '/tareas', icon: BookmarkIcon, current: false },
-  //{ name: '', href: '', icon: CalendarIcon, current: false },
-  { name: 'Modulos', href: '/modulos', icon: DocumentTextIcon, current: false },
-  //{ name: 'Submodulos', href: '/submodulos', icon: BookmarkIcon, current: false },
-]
+const navigation = ref([
+  { name: 'Solicitudes', href: '/solicitudes', icon: HomeIcon },
+  { name: 'Tareas', href: '/tareas', icon: BookmarkIcon },
+  { name: 'Modulos', href: '/modulos', icon: DocumentTextIcon },
+  { name: 'Empresas', href: '/empresas', icon: BuildingOfficeIcon },
+])
+
+const updatedNavigation = computed(() => {
+  return navigation.value.map(item => {
+    return {
+      ...item,
+      current: item.href === route.path
+    }
+  })
+})
 
 const toggleSidebar = () => {
   isCollapsed.value = !isCollapsed.value
@@ -155,9 +163,10 @@ const logout = () => {
   localStorage.removeItem('user')
   router.push('/')
 }
+
 if (sessionStorage.redirect) {
-    const redirect = sessionStorage.redirect;
-    delete sessionStorage.redirect;
-    window.location.href = redirect;
-  }
+  const redirect = sessionStorage.redirect;
+  delete sessionStorage.redirect;
+  window.location.href = redirect;
+}
 </script>

@@ -2,11 +2,23 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Vue 3 App</title>
-    <script type="module" src="/src/main.js"></script>
+    <title>Wxsoporte</title>
+    <script>
+      // Verificar si hay una redirección pendiente
+      (function() {
+        var redirect = sessionStorage.redirect;
+        delete sessionStorage.redirect;
+        if (redirect && redirect !== location.href) {
+          // Guardar la redirección para que el router la use cuando se monte
+          sessionStorage.redirect = redirect;
+        }
+      })();
+    </script>
   </head>
   <body>
     <div id="app"></div>
+    <script type="module" src="/src/main.js"></script>
   </body>
 </html>

@@ -4,14 +4,13 @@ import path from 'path'
 
 export default defineConfig({
   plugins: [vue()],
-  base: '/Tickets/',
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
     },
   },
+  base: process.env.NODE_ENV === 'production' ? '/Tickets/' : '/',
   server: {
-    host: '0.0.0.0',
-    port: 3000, 
+    port: 3000
   },
 });

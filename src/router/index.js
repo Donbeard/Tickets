@@ -10,9 +10,8 @@ import Submodulos from '@/components/Form/form-submodulos.vue';
 import GridEmpresa from '@/components/Grid/grid-empresa.vue';
 
 const router = createRouter({
-  history: createWebHistory('/Tickets/'),
+  history: createWebHistory(),
   routes : [
-    { path: '/Tickets', redirect: '/' },
     { path: '/', component: login, meta: { hideNavbar: true, allowWithoutAuth: true } },
     { path: '/solicitudes', component: formSolicitud, meta: { requiresAuth: true} },
     { path: '/tareas', component: formTareas, meta: { requiresAuth: true } },
@@ -28,19 +27,20 @@ const router = createRouter({
 
 // Guard de navegación mejorado
 router.beforeEach((to, from, next) => {
-  // Permitir rutas que no requieren autenticación
+  // Si la ruta es pública (login, register, etc.)
   if (to.meta.allowWithoutAuth) {
     return next();
   }
   
   // Verificar autenticación para rutas protegidas
   const isAuthenticated = !!localStorage.getItem('accessToken');
-  if (to.meta.requiresAuth && !isAuthenticated) {
+  if (!isAuthenticated) {
+    // Guardar la ruta a la que intentaba acceder
+    sessionStorage.setItem('redirectTo', to.fullPath);
     console.log('Ruta protegida, redirigiendo a login');
     return next('/');
   }
   
-  // Para cualquier otra ruta
   next();
 });
 

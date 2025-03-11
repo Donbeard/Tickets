@@ -31,15 +31,54 @@
               />
             </div>
             <div>
-              <label for="nit" class="block text-sm font-medium text-gray-700">NIT</label>
-              <input
-                id="nit"
-                type="number"
-                v-model="form.nit"
-                required
-                placeholder="Ingrese el NIT de la empresa"
-                class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500"
-              />
+              <label class="block text-sm font-medium text-gray-700">NITs de Empresas</label>
+              <div class="space-y-2">
+                <div v-for="(nit, index) in form.nits" :key="index" class="flex items-center space-x-2">
+                  <div class="flex-1 relative">
+                    <input
+                      type="number"
+                      v-model="form.nits[index].value"
+                      required
+                      placeholder="Ingrese el NIT de la empresa"
+                      class="block w-full px-4 py-2 border rounded-md focus:ring-indigo-500 focus:border-indigo-500"
+                      :class="[form.nits[index].isValid === false ? 'border-red-500' : form.nits[index].isValid ? 'border-green-500' : 'border-gray-300']"
+                      @blur="validateNit(index)"
+                    />
+                    <button 
+                      v-if="form.nits.length > 1"
+                      type="button" 
+                      @click="removeNit(index)" 
+                      title="Eliminar empresa"
+                      class="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-red-500 focus:outline-none"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                      </svg>
+                    </button>
+                    
+                    <!-- Mensaje de validación -->
+                    <div v-if="form.nits[index].isValid === false" class="text-red-500 text-xs mt-1">
+                      Empresa no encontrada
+                    </div>
+                    <div v-else-if="form.nits[index].isValid" class="text-green-600 text-xs mt-1">
+                      <strong>{{ form.nits[index].empresaNombre }}</strong>
+                    </div>
+                  </div>
+                  
+                  <!-- Botón + solo en el último input -->
+                  <button 
+                    v-if="index === form.nits.length - 1"
+                    type="button" 
+                    @click="addNit" 
+                    title="Añadir empresa"
+                    class="p-1.5 rounded-full bg-indigo-100 text-indigo-600 hover:bg-indigo-200 focus:outline-none"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                    </svg>
+                  </button>
+                </div>
+              </div>
             </div>
             <div>
               <label for="email" class="block text-sm font-medium text-gray-700">Correo Electrónico</label>
@@ -113,7 +152,12 @@ export default {
       form: {
         first_name: '',
         last_name: '',
-        nit: null,
+        nits: [{
+          value: null,
+          isValid: null,
+          empresaNombre: '',
+          terceroId: null
+        }],
         email: '',
         password: '',
         whatsapp: null,
@@ -126,42 +170,323 @@ export default {
       statusMessage: '',
       isSuccess: false,
       errors: [],
+      isValidatingNit: false,
     };
   },
+  computed: {
+    isFormValid() {
+      const hayNitsValidos = this.form.nits.some(nit => nit.isValid === true);
+      const todosNitsValidos = this.form.nits.every(nit => nit.isValid === true || nit.value === null || nit.value === '');
+      
+      return hayNitsValidos && todosNitsValidos;
+    }
+  },
   methods: {
+    addNit() {
+      const newNit = {
+        value: null,
+        isValid: null,
+        empresaNombre: '',
+        terceroId: null
+      };
+      
+      this.form.nits.push(newNit);
+      console.log('NIT añadido, array actual:', JSON.stringify(this.form.nits));
+    },
+    
+    removeNit(index) {
+      if (this.form.nits.length > 1) {
+        this.form.nits.splice(index, 1);
+      }
+    },
+    
+    async validateNit(index) {
+      const nit = this.form.nits[index].value;
+      
+      if (!nit) {
+        this.form.nits[index].isValid = null;
+        this.form.nits[index].empresaNombre = '';
+        this.form.nits[index].terceroId = null;
+        return;
+      }
+      
+      this.isValidatingNit = true;
+      
+      try {
+        this.form.nits[index].isValid = null;
+        this.form.nits[index].empresaNombre = '';
+        this.form.nits[index].terceroId = null;
+        
+        console.log(`Validando NIT ${nit} en índice ${index}...`);
+        
+        const response = await apiClient.get(`/terceros/`);
+        
+        console.log(`Respuesta RAW para NIT ${nit}:`, JSON.stringify(response.data));
+        
+        const tercero = response.data.find(t => t.nit.toString() === nit.toString());
+        
+        if (tercero) {
+          console.log(`Tercero encontrado para NIT ${nit}:`, JSON.stringify(tercero));
+          
+          const nitData = {
+            value: nit,
+            isValid: true,
+            empresaNombre: tercero.nombre || `Empresa ${tercero.id}`,
+            terceroId: tercero.id
+          };
+          
+          console.log(`Nuevo objeto para NIT ${nit}:`, JSON.stringify(nitData));
+          
+          this.form.nits[index] = nitData;
+          
+          console.log(`Array completo después de actualización:`, JSON.stringify(this.form.nits));
+        } else {
+          this.form.nits[index].isValid = false;
+          this.form.nits[index].empresaNombre = '';
+          this.form.nits[index].terceroId = null;
+          
+          console.log(`No se encontró tercero para NIT ${nit}`);
+        }
+      } catch (error) {
+        console.error(`Error al validar NIT ${nit}:`, error);
+        this.form.nits[index].isValid = false;
+        this.form.nits[index].empresaNombre = '';
+        this.form.nits[index].terceroId = null;
+      } finally {
+        this.isValidatingNit = false;
+      }
+    },
+    
+    traducirMensajeError(mensaje) {
+      const traducciones = {
+        "A user with that username already exists.": "Ya existe un usuario con ese nombre de usuario.",
+        "This field may not be blank.": "Este campo no puede estar vacío.",
+        "Enter a valid email address.": "Ingrese una dirección de correo electrónico válida.",
+        "Ensure this field has at least 8 characters.": "Asegúrese de que este campo tenga al menos 8 caracteres.",
+        "object does not exist": "El objeto no existe en el sistema.",
+        "The password is too similar to the username.": "La contraseña es muy similar al nombre de usuario.",
+        "This password is too common.": "Esta contraseña es demasiado común.",
+        "This password is entirely numeric.": "Esta contraseña es completamente numérica.",
+        "Invalid token.": "Token inválido.",
+        "User not found.": "Usuario no encontrado.",
+        // Añadir más traducciones según sea necesario
+      };
+      
+      // Buscar coincidencias exactas
+      if (traducciones[mensaje]) {
+        return traducciones[mensaje];
+      }
+      
+      // Buscar coincidencias parciales
+      for (const key in traducciones) {
+        if (mensaje.includes(key)) {
+          return traducciones[key];
+        }
+      }
+      
+      // Si no hay traducción, devolver el mensaje original
+      return mensaje;
+    },
+    
     async registerUser() {
       try {
         this.statusMessage = ''; 
         this.errors = [];
-        this.form.username = this.form.email;
-        this.form.nit = this.form.nit ? parseInt(this.form.nit) : null;
-        this.form.whatsapp = this.form.whatsapp ? parseInt(this.form.whatsapp) : null;
-
-        const response = await apiClient.post('/usuarios/', this.form);
         
-        console.log('Usuario registrado:', response.data);
-        this.statusMessage = 'Usuario registrado exitosamente';
-        this.isSuccess = true;
-        setTimeout(() => {
-          this.$router.push('/');
-        }, 2000);
+        if (!this.isFormValid) {
+          this.errors.push("Debe tener al menos un NIT válido para registrarse");
+          return;
+        }
+        
+        const nitsValidos = this.form.nits
+          .filter(nit => nit.isValid && nit.terceroId)
+          .map(nit => nit.terceroId);
+        
+        if (nitsValidos.length === 0) {
+          this.errors.push("Debe ingresar al menos un NIT de empresa válido");
+          return;
+        }
+        
+        if (!this.form.email) {
+          this.errors.push("El correo electrónico es obligatorio");
+          return;
+        }
+        
+        if (!this.form.password) {
+          this.errors.push("La contraseña es obligatoria");
+          return;
+        }
+        
+        if (this.form.password.length < 8) {
+          this.errors.push("La contraseña debe tener al menos 8 caracteres");
+          return;
+        }
+        
+        const formData = {
+          first_name: this.form.first_name,
+          last_name: this.form.last_name,
+          email: this.form.email,
+          password: this.form.password,
+          whatsapp: this.form.whatsapp ? parseInt(this.form.whatsapp) : null,
+          is_active: true,
+          is_staff: false,
+          is_superuser: false,
+          username: this.form.email,
+          nombre: `${this.form.first_name} ${this.form.last_name}`,
+          tipo: 'C',
+        };
+        
+        console.log('Datos de usuario a enviar:', formData);
+        
+        let usuarioCreado = false;
+        let relacionesExitosas = false;
+        let userResponse = null;
+        
+        try {
+          userResponse = await apiClient.post('/usuarios/', formData);
+          console.log('Usuario registrado:', userResponse.data);
+          usuarioCreado = true;
+          
+          const userId = userResponse.data.id;
+          
+          const relacionesPromises = nitsValidos.map(async (terceroId) => {
+            const usuarioTerceroData = {
+              usuario: userId,
+              tercero: terceroId
+            };
+            
+            return await apiClient.post('/usuariosTerceros/', usuarioTerceroData);
+          });
+          
+          await Promise.all(relacionesPromises);
+          relacionesExitosas = true;
+          console.log('Relaciones creadas sin token correctamente');
+        } catch (errorSinToken) {
+          console.log('Error al crear usuario o relaciones sin token:', errorSinToken);
+          
+          if (errorSinToken.response?.status === 400 && 
+              (errorSinToken.response?.data?.email || 
+               errorSinToken.response?.data?.username)) {
+            
+            this.isSuccess = false;
+            
+            if (errorSinToken.response?.data?.username) {
+              const mensajesUsername = Array.isArray(errorSinToken.response.data.username) ? 
+                errorSinToken.response.data.username : [errorSinToken.response.data.username];
+                
+              mensajesUsername.forEach(msg => {
+                const mensajeTraducido = this.traducirMensajeError(msg);
+                this.errors.push(mensajeTraducido);
+              });
+              
+              this.statusMessage = 'Este correo electrónico ya está registrado';
+            }
+            
+            if (errorSinToken.response?.data?.email) {
+              const mensajesEmail = Array.isArray(errorSinToken.response.data.email) ? 
+                errorSinToken.response.data.email : [errorSinToken.response.data.email];
+                
+              mensajesEmail.forEach(msg => {
+                const mensajeTraducido = this.traducirMensajeError(msg);
+                this.errors.push(mensajeTraducido);
+              });
+              
+              this.statusMessage = 'Este correo electrónico ya está registrado';
+            }
+            
+            return;
+          }
+          
+          if (usuarioCreado && userResponse?.data) {
+            try {
+              const loginResponse = await apiClient.post('/token/', {
+                username: this.form.email,
+                password: this.form.password
+              });
+              
+              if (!loginResponse.data || !loginResponse.data.access) {
+                throw new Error('No se pudo obtener token de autenticación');
+              }
+              
+              const token = loginResponse.data.access;
+              console.log('Token obtenido correctamente');
+              
+              const relacionesPromises = nitsValidos.map(async (terceroId) => {
+                const usuarioTerceroData = {
+                  usuario: userResponse.data.id,
+                  tercero: terceroId
+                };
+                
+                return await apiClient.post('/usuariosTerceros/', usuarioTerceroData, {
+                  headers: {
+                    'Authorization': `Bearer ${token}`
+                  }
+                });
+              });
+              
+              await Promise.all(relacionesPromises);
+              relacionesExitosas = true;
+              console.log('Relaciones creadas con token correctamente');
+            } catch (errorConToken) {
+              console.error('Error al crear relaciones con token:', errorConToken);
+              this.errors.push('No se pudieron vincular las empresas al usuario');
+            }
+          } else {
+            throw errorSinToken;
+          }
+        }
+        
+        if (relacionesExitosas) {
+          this.statusMessage = 'Usuario registrado exitosamente';
+          this.isSuccess = true;
+          setTimeout(() => {
+            this.$router.push('/');
+          }, 2000);
+        } else if (usuarioCreado) {
+          this.statusMessage = 'Usuario creado pero no se pudieron vincular las empresas';
+          this.errors.push('Se creó el usuario pero no se pudieron vincular las empresas. Por favor contacte al administrador.');
+          this.isSuccess = false;
+        }
       } catch (error) {
         console.error('Error al registrar usuario:', error);
+        console.log('Error detallado:', JSON.stringify(error.response?.data, null, 2));
         this.isSuccess = false;
-        if (error.response && error.response.data) {
+        
+        if (error.response?.status === 0 || !error.response) {
+          this.errors.push('No se pudo conectar con el servidor. Verifique su conexión a internet.');
+        } else if (error.response?.status === 400) {
           const errorData = error.response.data;
+          
           for (const key in errorData) {
             if (Array.isArray(errorData[key])) {
-              this.errors.push(`${key}: ${errorData[key].join(', ')}`);
+              errorData[key].forEach(msg => {
+                const mensajeTraducido = this.traducirMensajeError(msg);
+                this.errors.push(`${key}: ${mensajeTraducido}`);
+              });
             } else {
-              this.errors.push(`${key}: ${errorData[key]}`);
+              const mensajeTraducido = this.traducirMensajeError(errorData[key]);
+              this.errors.push(`${key}: ${mensajeTraducido}`);
             }
           }
+        } else if (error.response?.status === 401) {
+          this.errors.push('No tiene permisos para realizar esta acción. Por favor, inicie sesión nuevamente.');
+        } else if (error.response?.status === 404) {
+          this.errors.push('El servicio de registro no está disponible en este momento.');
+        } else if (error.response?.status === 500) {
+          this.errors.push('Error en el servidor. Por favor, intente más tarde o contacte con soporte.');
         } else {
           this.statusMessage = 'Hubo un problema al registrar el usuario. Por favor, intente de nuevo.';
         }
       }
     },
+  },
+  async mounted() {
+    try {
+      const response = await apiClient.get('/terceros/');
+      console.log('Terceros disponibles en el sistema:', JSON.stringify(response.data));
+    } catch (error) {
+      console.error('Error al consultar terceros:', error);
+    }
   },
 };
 </script>

@@ -300,7 +300,7 @@ export default {
 
     const handleSubmit = async () => {
       try {
-        const response = await apiClient.post('/empresas/', formData.value)
+        const response = await apiClient.post('/terceros/', formData.value)
         showToastMessage('Empresa creada correctamente', true)
         emit('created', response.data)
         emit('close')

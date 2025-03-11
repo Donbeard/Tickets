@@ -2,7 +2,7 @@ import axios from 'axios';
 
 //Solicita un token al iniciar la aplicación
 const api = axios.create({
-  baseURL: 'https://wxsoporte.onrender.com/api/token',
+  baseURL: 'http://144.76.41.52:8070/api/token',
   headers: {
     'Content-Type': 'application/json',
   },

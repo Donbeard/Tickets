@@ -127,7 +127,7 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { Bars3Icon, XMarkIcon, HomeIcon, ChevronLeftIcon, ChevronRightIcon, DocumentTextIcon, BookmarkIcon, BuildingOfficeIcon } from '@heroicons/vue/24/outline'
 import LogoutIcon from '@heroicons/vue/24/outline/ArrowRightOnRectangleIcon'
@@ -137,12 +137,53 @@ const route = useRoute()
 const mobileMenuOpen = ref(false)
 const isCollapsed = ref(true)
 
-const navigation = ref([
-  { name: 'Solicitudes', href: '/solicitudes', icon: HomeIcon },
-  { name: 'Tareas', href: '/tareas', icon: BookmarkIcon },
-  { name: 'Modulos', href: '/modulos', icon: DocumentTextIcon },
-  { name: 'Empresas', href: '/empresas', icon: BuildingOfficeIcon },
-])
+// Hacer el tipo de usuario reactivo
+const userType = ref(null)
+
+// Función para actualizar el tipo de usuario
+const updateUserType = () => {
+  const storedUser = localStorage.getItem('user')
+  if (storedUser) {
+    try {
+      const userData = JSON.parse(storedUser)
+      userType.value = userData.tipo
+      console.log('Tipo de usuario actualizado:', userType.value)
+    } catch (e) {
+      console.error('Error al parsear usuario:', e)
+    }
+  }
+}
+
+// Actualizar cuando cambie el localStorage
+window.addEventListener('storage', () => {
+  updateUserType()
+})
+
+// Actualizar cuando se monte el componente
+onMounted(() => {
+  updateUserType()
+})
+
+// Definir la navegación con control de acceso
+const navigation = computed(() => {
+  console.log('Calculando navegación para tipo:', userType.value)
+  
+  const allNavItems = [
+    { name: 'Solicitudes', href: '/solicitudes', icon: HomeIcon, allowedTypes: ['S', 'A', 'C'] },
+    { name: 'Tareas', href: '/tareas', icon: BookmarkIcon, allowedTypes: ['A', 'S'] },
+    { name: 'Modulos', href: '/modulos', icon: DocumentTextIcon, allowedTypes: ['A', 'S'] },
+    { name: 'Empresas', href: '/empresas', icon: BuildingOfficeIcon, allowedTypes: ['A', 'C', 'S'] },
+  ]
+
+  // Si no hay tipo de usuario, intentar obtenerlo de nuevo
+  if (!userType.value) {
+    updateUserType()
+  }
+
+  return allNavItems.filter(item => 
+    userType.value && item.allowedTypes.includes(userType.value)
+  )
+})
 
 const updatedNavigation = computed(() => {
   return navigation.value.map(item => {
@@ -161,12 +202,21 @@ const logout = () => {
   localStorage.removeItem('accessToken')
   localStorage.removeItem('refreshToken')
   localStorage.removeItem('user')
+  localStorage.removeItem('user_type')
+  userType.value = null
   router.push('/')
 }
 
+// Verificar redirección de GitHub Pages
 if (sessionStorage.redirect) {
-  const redirect = sessionStorage.redirect;
-  delete sessionStorage.redirect;
-  window.location.href = redirect;
+  const redirect = sessionStorage.redirect
+  delete sessionStorage.redirect
+  window.location.href = redirect
 }
+
+// Verificar el tipo de usuario cada vez que cambia la ruta
+router.beforeEach((to, from, next) => {
+  updateUserType()
+  next()
+})
 </script>

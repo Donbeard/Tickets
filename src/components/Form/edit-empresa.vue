@@ -239,7 +239,7 @@ export default {
 
     const handleSubmit = async () => {
       try {
-        const response = await apiClient.put(`/empresas/${props.empresa.id}/`, formData.value)
+        const response = await apiClient.put(`/terceros/${props.empresa.id}/`, formData.value)
         emit('updated', response.data)
       } catch (error) {
         console.error('Error updating empresa:', error)

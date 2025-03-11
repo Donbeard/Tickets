@@ -1,110 +1,124 @@
 <template>
   <div class="min-h-screen bg-gray-100 py-6">
-    <div class="max-w-6xl mx-auto">
-      <div class="p-6">
-        <!-- Grid container con responsive -->
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <!-- Primer cuadro - Lista de Módulos -->
-          <div class="bg-white rounded-lg shadow-md p-6 h-fit self-start">
-            <div class="flex justify-between items-center mb-4">
-              <h2 class="text-xl font-semibold text-gray-800">Módulos</h2>
-              <button
-                @click="handleNewModulo"
-                class="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-colors"
-              >
-                Nuevo Módulo
-              </button>
-            </div>
-            <div class="space-y-2">
-              <div 
-                v-for="modulo in modulos" 
-                :key="modulo.id"
-                @click="selectModulo(modulo)"
-                :class="[
-                  'p-4 rounded-lg border transition-all duration-200 cursor-pointer',
-                  selectedModulo?.id === modulo.id 
-                    ? 'border-indigo-500 bg-indigo-50'
-                    : 'border-gray-200 hover:border-indigo-300 hover:bg-gray-50'
-                ]"
-              >
-                <div class="flex items-center justify-between">
-                  <div class="flex items-center space-x-3">
-                    <span class="text-sm font-medium text-gray-600">
-                      {{ formatModuloCode(modulo.codigo) }}
-                    </span>
-                    <span class="font-medium text-gray-900">{{ modulo.nombre }}</span>
-                  </div>
-                  <div class="flex items-center space-x-2">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <!-- Sección de Módulos con Submódulos -->
+      <div class="bg-white rounded-lg shadow">
+        <div class="p-4 border-b border-gray-200 flex justify-between items-center">
+          <h2 class="text-lg font-medium text-gray-900">Módulos y Submódulos</h2>
+          <button
+            @click="handleNewModulo"
+            class="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+          >
+            Nuevo Módulo
+          </button>
+        </div>
+        
+        <!-- Tabla Maestro-Detalle -->
+        <div class="overflow-x-auto">
+          <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-50">
+              <tr>
+                <th class="w-10 px-6 py-3"></th> <!-- Columna para expandir/colapsar -->
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nombre</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Descripción</th>
+                <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones</th>
+              </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-gray-200">
+              <template v-for="modulo in modulos" :key="modulo.id">
+                <!-- Fila del Módulo -->
+                <tr class="hover:bg-gray-50">
+                  <td class="px-6 py-4">
+                    <button 
+                      @click="toggleModulo(modulo)"
+                      class="text-gray-500 hover:text-gray-700"
+                    >
+                      <ChevronRightIcon 
+                        class="h-5 w-5 transform transition-transform duration-200"
+                        :class="{'rotate-90': selectedModulo?.id === modulo.id}"
+                      />
+                    </button>
+                  </td>
+                  <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                    {{ modulo.nombre }}
+                  </td>
+                  <td class="px-6 py-4 text-sm text-gray-500">
+                    {{ modulo.descripcion || '-' }}
+                  </td>
+                  <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                     <button
-                      @click.stop="editModulo(modulo)"
-                      class="text-gray-400 hover:text-indigo-600 transition-colors"
+                      @click="editModulo(modulo)"
+                      class="text-indigo-600 hover:text-indigo-900 mx-2"
                     >
                       <PencilIcon class="h-5 w-5" />
                     </button>
                     <button
-                      @click.stop="handleDelete(modulo)"
-                      class="text-gray-400 hover:text-red-600 transition-colors"
+                      @click="handleDelete(modulo)"
+                      class="text-red-600 hover:text-red-900"
                     >
                       <TrashIcon class="h-5 w-5" />
                     </button>
-                  </div>
-                </div>
-                <p v-if="modulo.descripcion" class="mt-1 text-sm text-gray-500">
-                  {{ modulo.descripcion }}
-                </p>
-              </div>
-            </div>
-          </div>
+                  </td>
+                </tr>
 
-          <!-- Segundo cuadro - Lista de Submódulos -->
-          <div class="bg-white rounded-lg shadow-md p-6 h-fit self-start">
-            <div class="flex justify-between items-center mb-4">
-              <h2 class="text-xl font-semibold text-gray-800">Submódulos</h2>
-              <button
-                @click="handleNewSubmodulo"
-                :disabled="!selectedModulo"
-                class="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                Nuevo Submódulo
-              </button>
-            </div>
-            <div v-if="selectedModulo" class="space-y-2">
-              <div 
-                v-for="submodulo in filteredSubmodulos" 
-                :key="submodulo.id"
-                class="p-4 rounded-lg border border-gray-200 hover:border-indigo-300 transition-all duration-200"
-              >
-                <div class="flex items-center justify-between">
-                  <div class="flex items-center space-x-3">
-                    <span class="text-sm font-medium text-gray-600">
-                      {{ formatSubmoduloCode(submodulo) }}
-                    </span>
-                    <span class="font-medium text-gray-900">{{ submodulo.nombre }}</span>
-                  </div>
-                  <div class="flex items-center space-x-2">
-                    <button
-                      @click="editSubmodulo(submodulo)"
-                      class="text-gray-400 hover:text-indigo-600 transition-colors"
-                    >
-                      <PencilIcon class="h-5 w-5" />
-                    </button>
-                    <button
-                      @click="handleDeleteSubmodulo(submodulo)"
-                      class="text-gray-400 hover:text-red-600 transition-colors"
-                    >
-                      <TrashIcon class="h-5 w-5" />
-                    </button>
-                  </div>
-                </div>
-                <p v-if="submodulo.descripcion" class="mt-1 text-sm text-gray-500">
-                  {{ submodulo.descripcion }}
-                </p>
-              </div>
-            </div>
-            <div v-else class="text-center py-8 text-gray-500">
-              Selecciona un módulo para ver sus submódulos
-            </div>
-          </div>
+                <!-- Submódulos (expandibles) -->
+                <tr v-if="selectedModulo?.id === modulo.id">
+                  <td colspan="5" class="px-6 py-4 bg-gray-50">
+                    <div class="border rounded-lg overflow-hidden">
+                      <div class="bg-gray-100 px-4 py-2 flex justify-between items-center">
+                        <h3 class="text-sm font-medium text-gray-700">Submódulos</h3>
+                        <button
+                          @click="handleNewSubmodulo"
+                          class="px-3 py-1 bg-indigo-600 text-white text-sm rounded hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+                        >
+                          Nuevo Submódulo
+                        </button>
+                      </div>
+                      
+                      <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                          <tr>
+                            <th class="px-6 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nombre</th>
+                            <th class="px-6 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Descripción</th>
+                            <th class="px-6 py-2 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones</th>
+                          </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-200">
+                          <tr v-for="submodulo in filteredSubmodulos" :key="submodulo.id">
+                            <td class="px-6 py-3 whitespace-nowrap text-sm font-medium text-gray-900">
+                              {{ submodulo.nombre }}
+                            </td>
+                            <td class="px-6 py-3 text-sm text-gray-500">
+                              {{ submodulo.descripcion || '-' }}
+                            </td>
+                            <td class="px-6 py-3 whitespace-nowrap text-right text-sm font-medium">
+                              <button
+                                @click="editSubmodulo(submodulo)"
+                                class="text-indigo-600 hover:text-indigo-900 mx-2"
+                              >
+                                <PencilIcon class="h-5 w-5" />
+                              </button>
+                              <button
+                                @click="handleDeleteSubmodulo(submodulo)"
+                                class="text-red-600 hover:text-red-900"
+                              >
+                                <TrashIcon class="h-5 w-5" />
+                              </button>
+                            </td>
+                          </tr>
+                          <tr v-if="filteredSubmodulos.length === 0">
+                            <td colspan="4" class="px-6 py-4 text-center text-sm text-gray-500">
+                              No hay submódulos para este módulo
+                            </td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+                  </td>
+                </tr>
+              </template>
+            </tbody>
+          </table>
         </div>
       </div>
     </div>
@@ -270,12 +284,13 @@
 
 <script>
 import apiClient from '@/apiClient';
-import { PencilIcon, TrashIcon } from '@heroicons/vue/24/outline';
+import { PencilIcon, TrashIcon, ChevronRightIcon } from '@heroicons/vue/24/outline';
 
 export default {
   components: {
     PencilIcon,
-    TrashIcon
+    TrashIcon,
+    ChevronRightIcon
   },
   data() {
     return {
@@ -554,6 +569,10 @@ export default {
     formatSubmoduloCode(submodulo) {
       const modulo = this.modulos.find(m => m.id === submodulo.modulo);
       return `${modulo?.codigo}-${submodulo.codigo}`;
+    },
+
+    toggleModulo(modulo) {
+      this.selectedModulo = this.selectedModulo?.id === modulo.id ? null : modulo;
     }
   },
 

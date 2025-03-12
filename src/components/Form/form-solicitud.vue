@@ -310,7 +310,7 @@
                     
                     <!-- Botón Editar -->
                     <button
-                      v-if="userType !== 'C' || (userType === 'C' && solicitud.estado === 'S')"
+                      v-if="userType !== 'C' || (userType === 'C' && solicitud.estado === 5) && solicitud.estado !== 7 && solicitud.estado !== 8"
                       @click="editSolicitud(solicitud.id)"
                       class="text-yellow-600 hover:text-yellow-900 p-1 bg-yellow-50 rounded-full hover:bg-yellow-100 transition-colors duration-150"
                       title="Editar solicitud"
@@ -322,7 +322,7 @@
                     
                     <!-- Botón Eliminar -->
                     <button
-                      v-if="userType !== 'C' && 'S'"
+                      v-if="userType !== 'C' && userType !== 'S'"
                       @click="deleteSolicitud(solicitud.id)"
                       class="text-red-600 hover:text-red-900 p-1 bg-red-50 rounded-full hover:bg-red-100 transition-colors duration-150"
                       title="Eliminar solicitud"
@@ -346,8 +346,9 @@
             </tr>
 
             <!-- Fila expandible para tareas -->
-            <tr v-if="solicitud.showTareas">
-              <td :colspan="filteredColumns.length + 1" class="px-0 py-1 bg-gray-50">
+            <tr v-if="solicitud.showTareas && userType !== 'C'" class="bg-gray-50">
+              <td colspan="16" class="px-4 py-2">
+                <!-- Contenido de las tareas -->
                 <div class="bg-white shadow-sm rounded-lg">
                   <!-- Cabecera con botón de nueva tarea -->
                   <div class="bg-gradient-to-r from-indigo-50 to-blue-50 p-3 rounded-t-lg border-b border-indigo-100 flex justify-between items-center">
@@ -446,8 +447,9 @@
                           </td>
                           
                           <!-- Acciones -->
-                          <td class="px-2 py-2 text-xs text-center" v-if="userType !== 'C'">
+                          <td class="px-2 py-2 text-xs text-center" v-if="userType !== 'C' || tarea.estado === 'S'">
                             <div class="flex items-center justify-center gap-2">
+                              <!-- Botón Ver Detalles - visible para todos -->
                               <button 
                                 @click="DetalleTareas(tarea.id)" 
                                 class="text-blue-600 hover:text-blue-900"
@@ -458,7 +460,10 @@
                                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                                 </svg>
                               </button>
+                              
+                              <!-- Botón Editar - visible para no clientes o clientes con estado 'S' -->
                               <button 
+                                v-if="userType !== 'C' || tarea.estado === 'S'"
                                 @click="EditarTarea(tarea.id)" 
                                 class="text-indigo-600 hover:text-indigo-900"
                                 title="Editar tarea"
@@ -467,7 +472,10 @@
                                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                                 </svg>
                               </button>
+                              
+                              <!-- Botón Eliminar - solo visible para no clientes -->
                               <button 
+                                v-if="userType !== 'C'"
                                 @click="EliminarTarea(tarea.id)" 
                                 class="text-red-600 hover:text-red-900"
                                 title="Eliminar tarea"
@@ -610,7 +618,7 @@
                 <input 
                   v-model="newSolicitud.titulo" 
                   type="text" 
-                  maxlength="30"
+                  maxlength="40"
                   :class="['w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition duration-200', showError && !newSolicitud.titulo ? 'border-red-500' : 'border-gray-300']"
                   placeholder="Describa de forma resumida el nombre del incidente"
                 >
@@ -1314,7 +1322,7 @@ data() {
       modulo: null,
       submodulo: null,
       accion: null,
-      estado: 1, // Corrección: estado debe ser 1 (numérico)
+      estado: 5, // Corrección: estado debe ser 1 (numérico)
       prioridad: 1 // Corrección: prioridad debe ser 1 (numérico)
     },
     anexos: [],
@@ -1364,7 +1372,7 @@ data() {
       
     ],
     nombreCompleto: '',
-    userType: '',
+    userType: 'C', // Valor por defecto
     usuariosSoporteMap: {},
     usuariosSoporteList: [],
     colombiaTime: null,
@@ -1394,7 +1402,7 @@ data() {
     usuariosMap: {}, // Para almacenar el mapeo de IDs a nombres de usuario
     showError: false,
     debouncedSearchTimeout: null,
-    estadoCancelado: '3', // ID del estado "Cancelado" - ajustar según corresponda
+    estadoCancelado: '8', // ID del estado "Cancelado" - ajustar según corresponda
     terceroId: null,
     terceroNombre: 'Sin empresa',
     terceros: [],
@@ -1415,7 +1423,7 @@ data() {
       solicitud: null,
       usuario_asignado: null,
       usuario_reasignado: null,
-      estado: 1
+      estado: 5
     },
     };
 },
@@ -1585,7 +1593,7 @@ methods: {
     console.log('Componente creado - Iniciando carga de datos');
     try {
       this.isLoading = true;
-      const token = localStorage.getItem('access_token');
+      const token = localStorage.getItem('accessToken');
       
       if (!token) {
         console.error('No se encontró token de acceso');
@@ -1673,7 +1681,7 @@ methods: {
   },
     async fetchTerceros() {
       try {
-        const token = localStorage.getItem('access_token');
+        const token = localStorage.getItem('accessToken');
         const response = await apiClient.get('/terceros/', {
           headers: {
             'Authorization': `Bearer ${token}`
@@ -1761,7 +1769,7 @@ async fetchSubmodulos() {
         dataToUpdate.fecha_finalizacion = solicitud.estado === 'T' ? colombiaTime.toISOString() : null;
       }
 
-      const token = localStorage.getItem('access_token');
+      const token = localStorage.getItem('accessToken');
       const response = await apiClient.put(
         `/solicitudes/${solicitud.id}/`, 
         dataToUpdate,
@@ -1990,67 +1998,62 @@ async fetchSubmodulos() {
       async fetchSolicitudes() {
   try {
     console.log('Iniciando fetchSolicitudes()...');
+    const token = localStorage.getItem('accessToken');
     
-    // Obtener token y datos de usuario
-    const token = localStorage.getItem('access_token');
+    if (!token) {
+      console.error('No se encontró token de acceso');
+      return;
+    }
+    
+    // 1. Obtener datos de usuario
     const userStr = localStorage.getItem('user');
     const user = userStr ? JSON.parse(userStr) : {};
-
-    // Cargar usuarios-terceros
-    console.log('Cargando usuarios-terceros...');
-    const usuariosTercerosResponse = await apiClient.get('/usuariosTerceros/', {
-      headers: {
-        'Authorization': `Bearer ${token}`
-      }
-    });
+    console.log('Datos de usuario:', user);
     
-    // Log detallado de usuarios-terceros
-    console.log('Datos detallados de usuariosTerceros:');
-    usuariosTercerosResponse.data.forEach(ut => {
-      console.log(`UsuarioTercero ID: ${ut.id}, Usuario: ${ut.usuario?.username}, Tercero: ${ut.tercero?.nombre}`);
-    });
-
-    // Crear mapa de usuarios-terceros usando el ID de usuariosTerceros
+    // 2. Cargar relación usuario-tercero
+    const usuariosTercerosResponse = await apiClient.get('/usuariosTerceros/');
+    
+    // Crear mapa de relaciones usuario-tercero
     const usuariosTercerosMap = {};
     usuariosTercerosResponse.data.forEach(ut => {
-      if (ut.id) { // Usar el ID de usuariosTerceros como clave
+      if (ut.id) {
         usuariosTercerosMap[ut.id] = {
           tercero: ut.tercero,
           usuario: ut.usuario
         };
       }
     });
-
-    console.log('IDs de usuariosTerceros en el mapa:', Object.keys(usuariosTercerosMap));
-
-    // Intentar cargar las solicitudes
-    console.log('Intentando cargar las solicitudes...');
-    const response = await apiClient.get('/solicitudes/', {
-      headers: {
-        'Authorization': `Bearer ${token}`
-      }
-    });
     
-    let solicitudes = response.data;
-    
-    // Si el usuario tiene tipo y es cliente, filtrar manualmente
+    // 3. Encontrar relación específica para usuario actual
+    let usuarioTerceroRelacionId = null;
     if (user.tipo === 'C') {
-      solicitudes = solicitudes.filter(s => s.usuario_cliente == user.id);
+      const relacion = usuariosTercerosResponse.data.find(ut => 
+        ut.usuario && ut.tercero && 
+        ut.usuario.id === user.id
+      );
+      
+      if (relacion) {
+        usuarioTerceroRelacionId = relacion.id;
+        console.log(`Relación usuario-tercero encontrada: ${usuarioTerceroRelacionId}`);
+      } else {
+        console.warn('No se encontró relación usuario-tercero para este usuario');
+      }
     }
     
-    // Mapear los datos con manejo de posibles valores undefined
+    // 4. Cargar solicitudes
+    const response = await apiClient.get('/solicitudes/');
+    
+    // 5. Filtrar solicitudes según tipo de usuario
+    let solicitudes = response.data;
+    if (user.tipo === 'C' && usuarioTerceroRelacionId) {
+      solicitudes = solicitudes.filter(s => s.usuario_cliente == usuarioTerceroRelacionId);
+      console.log(`Solicitudes filtradas por relación ID ${usuarioTerceroRelacionId}: ${solicitudes.length}`);
+    }
+    
+    // 6. Procesar cada solicitud (mantener el código original)
     this.allSolicitudes = solicitudes.map(solicitud => {
       const usuarioTercero = usuariosTercerosMap[solicitud.usuario_cliente];
       
-      console.log(`Procesando solicitud ${solicitud.id}:`, {
-        usuario_cliente_id: solicitud.usuario_cliente,
-        usuarioTercero: usuarioTercero ? {
-          id: usuarioTercero.usuario?.id,
-          username: usuarioTercero.usuario?.username,
-          tercero: usuarioTercero.tercero?.nombre
-        } : null
-      });
-
       return {
         ...solicitud,
         clie: usuarioTercero ? usuarioTercero.tercero.nombre : 'Sin empresa',
@@ -2065,28 +2068,15 @@ async fetchSubmodulos() {
       };
     });
     
-    // Ordenar por fecha
-    this.allSolicitudes.sort((a, b) => {
-      return new Date(b.fecha_creacion || 0) - new Date(a.fecha_creacion || 0);
-    });
+    // 7. Ordenar y aplicar paginación (mantener el código original)
+    this.allSolicitudes.sort((a, b) => 
+      new Date(b.fecha_creacion) - new Date(a.fecha_creacion)
+    );
     
-    // Aplicar paginación
     this.applyPagination();
-    
-    this.statusMessage = `Se cargaron ${this.allSolicitudes.length} solicitudes correctamente`;
-    this.isSuccess = true;
     
   } catch (error) {
     console.error('Error al obtener solicitudes:', error);
-    this.isSuccess = false;
-    this.allSolicitudes = [];
-    this.solicitudes = [];
-    
-    if (error.response?.status === 401) {
-      this.statusMessage = 'Error de autenticación. Por favor, inicie sesión nuevamente.';
-    } else {
-      this.statusMessage = 'Error de conexión con el servidor. Por favor, intente más tarde.';
-    }
   }
 },
 
@@ -2110,6 +2100,11 @@ nextPage() {
 
   async showSolicitudDetails(id) {
     try {
+      // Debug del token
+      const token = localStorage.getItem('accessToken');
+      console.log('Token en showSolicitudDetails:', token ? 'Sí' : 'No');
+      console.log('Primeros 10 caracteres del token:', token ? token.substring(0, 10) + '...' : 'No hay token');
+
       const solicitudResponse = await apiClient.get(`/solicitudes/${id}/`);
       this.detalleSolicitud = solicitudResponse.data;
       const anexosResponse = await apiClient.get(`/anexos/${id}/solicitud-anexos/`);
@@ -2158,98 +2153,93 @@ nextPage() {
   },
   async downloadAnexo(anexo) {
     try {
-      const token = localStorage.getItem('access_token');
+      // Debug del token
+      const token = localStorage.getItem('accessToken');
+      console.log('Token encontrado:', token ? 'Sí' : 'No');
+      console.log('Primeros 10 caracteres del token:', token ? token.substring(0, 10) + '...' : 'No hay token');
+
       if (!token) {
         throw new Error('No se encontró el token de autenticación');
       }
 
       // Paso 1: Obtener la información del anexo
-      const anexoInfoUrl = `${apiClient.defaults.baseURL}anexos/${anexo.id}/`;
-      const anexoInfoResponse = await apiClient.get(anexoInfoUrl, {
+      const anexoInfoResponse = await apiClient.get(`/anexos/${anexo.id}/`, {
         headers: {
-          Authorization: `Bearer ${token}`,
-        },
+          'Authorization': `Bearer ${token}`
+        }
       });
 
-      // Obtener la URL del archivo
+      console.log('Respuesta del servidor:', anexoInfoResponse.data);
+
+      // Verificar que tenemos la URL del archivo
       const fileUrl = anexoInfoResponse.data.archivo;
       if (!fileUrl) {
-        throw new Error('No se encontró la URL del archivo');
+        throw new Error('URL del archivo no encontrada en la respuesta');
       }
 
       // Paso 2: Descargar el archivo
       const response = await apiClient.get(fileUrl, {
         responseType: 'blob',
         headers: {
-          Authorization: `Bearer ${token}`,
-        },
+          'Authorization': `Bearer ${token}`,
+          'Accept': '*/*'
+        }
       });
 
-      // Verificar que la respuesta sea un archivo binario
-      if (!response.data || response.data.type === 'application/json') {
-        const errorText = await response.data.text();
-        console.error('Error del servidor:', errorText);
-        throw new Error('El servidor no devolvió un archivo válido');
-      }
-
-      // Crear un enlace temporal para descargar el archivo
+      // Crear blob y descargar
       const blob = new Blob([response.data], {
-        type: response.headers['content-type'] || 'application/octet-stream',
+        type: response.headers['content-type'] || 'application/octet-stream'
       });
+
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
-
-      // Obtener el nombre del archivo
-      const contentDisposition = response.headers['content-disposition'];
-      const filename = contentDisposition
-        ? contentDisposition.split('filename=')[1]?.replace(/"/g, '')
-        : anexo.descripcion || 'archivo_adjunto';
-
-      link.setAttribute('download', filename);
+      link.setAttribute('download', anexo.descripcion || 'archivo_adjunto');
       document.body.appendChild(link);
       link.click();
 
       // Limpiar
-      link.remove();
-      window.URL.revokeObjectURL(url);
+      setTimeout(() => {
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(url);
+      }, 100);
 
-      console.log('Descarga completada con éxito');
-      
+      this.statusMessage = 'Archivo descargado correctamente';
+      this.isSuccess = true;
+
     } catch (error) {
-      this.isSuccess = false;
-      this.statusMessage = 'Hubo un problema al descargar el archivo.';
-      console.error('Error detallado al descargar el anexo:', {
+      console.error('Error detallado:', {
         message: error.message,
-        status: error.response?.status,
-        data: error.response?.data,
-        headers: error.response?.headers,
+        response: error.response?.data,
+        status: error.response?.status
       });
 
-      let errorMessage = 'Hubo un problema al descargar el archivo.';
+      this.isSuccess = false;
+      
       if (error.message === 'No se encontró el token de autenticación') {
-        errorMessage = 'Su sesión ha expirado. Por favor, vuelva a iniciar sesión.';
+        this.statusMessage = 'Sesión expirada. Por favor, actualice la página.';
       } else if (error.response?.status === 404) {
-        errorMessage = 'El archivo no se encuentra disponible.';
-      } else if (error.response?.status === 401) {
-        errorMessage = 'Su sesión ha expirado. Por favor, vuelva a iniciar sesión.';
+        this.statusMessage = 'El archivo no se encuentra disponible.';
+      } else {
+        this.statusMessage = 'Error al descargar el archivo. Por favor, intente nuevamente.';
       }
-
-      this.statusMessage = errorMessage;
     }
-  },
+},
+
   toggleTareas(solicitud) {
+    // Verificar tipo de usuario antes de permitir la acción
+    if (this.userType === 'C') {
+      return
+    }
 
     if (solicitud.showTareas === undefined) {
-    
-      solicitud.showTareas = false;
+      solicitud.showTareas = false
     }
     
-    solicitud.showTareas = !solicitud.showTareas;
+    solicitud.showTareas = !solicitud.showTareas
     
-    // Si estamos mostrando las tareas y no están cargadas, cargarlas
-    if (solicitud.showTareas && (!solicitud.tareas || solicitud.tareas.length === 0)) {
-      this.loadTareas(solicitud);
+    if (solicitud.showTareas) {
+      this.loadTareas(solicitud)
     }
   },
 
@@ -2287,13 +2277,18 @@ nextPage() {
   },
 
   handleEstadoChange() {
-    if (this.originalEstado === 1 && this.editableSolicitud.estado !== 1 && !this.editableSolicitud.fecha_asignacion) {
+    // Actualizar fecha de asignación solo cuando cambia de sin asignar (5) a asignado (6)
+    if (this.originalEstado === 5 && this.editableSolicitud.estado === 6) {
       this.editableSolicitud.fecha_asignacion = new Date().toISOString().split("T")[0];
-    } else if (this.editableSolicitud.estado === 3) {
+    }
+    
+    // Actualizar fecha de finalización cuando el estado es terminado (7) o cancelado (8)
+    if (this.editableSolicitud.estado === 7 || this.editableSolicitud.estado === 8) {
       this.editableSolicitud.fecha_finalizacion = new Date().toISOString().split("T")[0];
     }
 
-    if (this.editableSolicitud.estado === 2 && !this.editableSolicitud.usuario_soporte && this.usuariosSoporte.length > 0) {
+    // Asignar usuario de soporte automáticamente si cambia a asignado y no tiene uno
+    if (this.editableSolicitud.estado === 6 && !this.editableSolicitud.usuario_soporte && this.usuariosSoporte.length > 0) {
       this.editableSolicitud.usuario_soporte = this.usuariosSoporte[0].id;
     }
   },
@@ -2302,21 +2297,33 @@ nextPage() {
     try {
       const colombiaTime = await this.getColombiaTime();
       
-      const solicitudToUpdate = {
-        ...this.editableSolicitud,
-        fecha_asignacion: this.editableSolicitud.estado !== 2 ? colombiaTime.toISOString() : null,
-        fecha_finalizacion: this.editableSolicitud.estado === 4 ? colombiaTime.toISOString() : null,
-      };
+      // Copia base de la solicitud a actualizar
+      const solicitudToUpdate = { ...this.editableSolicitud };
+      
+      // Lógica para fecha de asignación
+      if (this.originalEstado === 5 && this.editableSolicitud.estado === 6) {
+        // Solo actualizar fecha de asignación cuando cambia de sin asignar (5) a asignado (6)
+        solicitudToUpdate.fecha_asignacion = colombiaTime.toISOString();
+        console.log('Actualizando fecha de asignación:', solicitudToUpdate.fecha_asignacion);
+      }
+      
+      // Lógica para fecha de finalización
+      if (this.editableSolicitud.estado === 7 || this.editableSolicitud.estado === 8) {
+        // Actualizar fecha de finalización cuando el estado es terminado (7) o cancelado (8)
+        solicitudToUpdate.fecha_finalizacion = colombiaTime.toISOString();
+        console.log('Actualizando fecha de finalización:', solicitudToUpdate.fecha_finalizacion);
+      }
 
+      // Enviar solicitud actualizada
       await apiClient.put(`/solicitudes/${this.editableSolicitud.id}/`, solicitudToUpdate);
       await this.fetchSolicitudes();
       this.closeModal();
       this.statusMessage = 'Solicitud actualizada correctamente';
       this.isSuccess = true;
     } catch (error) {
-      this.statusMessage = '❌ Error al actualizar la solicitud:';
       this.isSuccess = false;
       this.statusMessage = error.response?.data?.detail || "Error al actualizar la solicitud";
+      console.error('Error al actualizar solicitud:', error);
     }
   },
 
@@ -2344,7 +2351,7 @@ nextPage() {
     }
     
     // Comprobar el token
-    const token = localStorage.getItem('access_token');
+    const token = localStorage.getItem('accessToken');
     console.log('Token disponible:', !!token);
     
     // Cargar usuarios-terceros para validar la relación
@@ -2524,7 +2531,7 @@ nextPage() {
     try {
       const response = await apiClient.get("/usuarios/", {
         headers: {
-          Authorization: `Bearer ${localStorage.getItem("access_token")}`,
+          Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
         },
       });
 

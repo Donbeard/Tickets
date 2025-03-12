@@ -35,7 +35,7 @@
         </div>
       </div>
 
-      <!-- Tabla de Tareas - Filas más delgadas -->
+            <!-- Tabla de Tareas - Filas más delgadas -->
       <div class="bg-white rounded-lg shadow-sm w-full">
         <div class="w-full overflow-x-auto">
           <table class="w-full table-auto divide-y divide-indigo-200">
@@ -44,14 +44,308 @@
                 <th scope="col" class="px-2 py-1 text-left text-xs font-medium text-indigo-700 uppercase tracking-wider border-r border-indigo-100">ID</th>
                 <th scope="col" class="px-2 py-1 text-left text-xs font-medium text-indigo-700 uppercase tracking-wider border-r border-indigo-100 w-1/6">Descripción</th>
                 <th scope="col" class="px-2 py-1 text-left text-xs font-medium text-indigo-700 uppercase tracking-wider border-r border-indigo-100">Solicitud</th>
-                <th scope="col" class="px-2 py-1 text-left text-xs font-medium text-indigo-700 uppercase tracking-wider border-r border-indigo-100">F. Creación</th>
-                <th scope="col" class="px-2 py-1 text-left text-xs font-medium text-indigo-700 uppercase tracking-wider border-r border-indigo-100">F. Programada</th>
-                <th scope="col" class="px-2 py-1 text-left text-xs font-medium text-indigo-700 uppercase tracking-wider border-r border-indigo-100">F. Inicio</th>
-                <th scope="col" class="px-2 py-1 text-left text-xs font-medium text-indigo-700 uppercase tracking-wider border-r border-indigo-100">F. Fin</th>
+                
+                <!-- Encabezado con filtro de fecha de creación -->
+                <th scope="col" class="px-2 py-1 text-left text-xs font-medium text-indigo-700 uppercase tracking-wider border-r border-indigo-100">
+                  <div class="flex items-center justify-between">
+                    <span>F. Creación</span>
+                    <button 
+                      @click="toggleFilter('fechaCreacion')" 
+                      class="ml-1 text-indigo-500 hover:text-indigo-700"
+                      title="Filtrar por fecha de creación"
+                    >
+                      <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+                      </svg>
+                    </button>
+                  </div>
+                  <div v-if="activeFilter === 'fechaCreacion'" class="mt-2 bg-white p-2 rounded shadow-md border border-gray-200 absolute z-10">
+                    <div class="flex flex-col gap-2">
+                      <div class="flex items-center gap-1">
+                        <label class="text-xs text-gray-600">Desde:</label>
+                        <input 
+                          type="date" 
+                          v-model="dateFilters.startDate" 
+                          class="border border-gray-300 rounded-md text-xs p-1 w-full"
+                        />
+                      </div>
+                      <div class="flex items-center gap-1">
+                        <label class="text-xs text-gray-600">Hasta:</label>
+                        <input 
+                          type="date" 
+                          v-model="dateFilters.endDate" 
+                          class="border border-gray-300 rounded-md text-xs p-1 w-full"
+                        />
+                      </div>
+                      <div class="flex justify-between mt-1">
+                        <button 
+                          @click="applyFilters(); activeFilter = null"
+                          class="text-xs bg-indigo-600 text-white px-2 py-1 rounded hover:bg-indigo-700"
+                        >
+                          Aplicar
+                        </button>
+                        <button 
+                          @click="activeFilter = null"
+                          class="text-xs bg-gray-200 text-gray-700 px-2 py-1 rounded hover:bg-gray-300"
+                        >
+                          Cerrar
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </th>
+                
+                <!-- Encabezado con filtro de fecha programada -->
+                <th scope="col" class="px-2 py-1 text-left text-xs font-medium text-indigo-700 uppercase tracking-wider border-r border-indigo-100">
+                  <div class="flex items-center justify-between">
+                    <span>F. Programada</span>
+                    <button 
+                      @click="toggleFilter('fechaProgramada')" 
+                      class="ml-1 text-indigo-500 hover:text-indigo-700"
+                      title="Filtrar por fecha programada"
+                    >
+                      <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+                      </svg>
+                    </button>
+                  </div>
+                  <div v-if="activeFilter === 'fechaProgramada'" class="mt-2 bg-white p-2 rounded shadow-md border border-gray-200 absolute z-10">
+                    <div class="flex flex-col gap-2">
+                      <div class="flex items-center gap-1">
+                        <label class="text-xs text-gray-600">Desde:</label>
+                        <input 
+                          type="date" 
+                          v-model="programadaFilters.startDate" 
+                          class="border border-gray-300 rounded-md text-xs p-1 w-full"
+                        />
+                      </div>
+                      <div class="flex items-center gap-1">
+                        <label class="text-xs text-gray-600">Hasta:</label>
+                        <input 
+                          type="date" 
+                          v-model="programadaFilters.endDate" 
+                          class="border border-gray-300 rounded-md text-xs p-1 w-full"
+                        />
+                      </div>
+                      <div class="flex justify-between mt-1">
+                        <button 
+                          @click="applyFilters(); activeFilter = null"
+                          class="text-xs bg-indigo-600 text-white px-2 py-1 rounded hover:bg-indigo-700"
+                        >
+                          Aplicar
+                        </button>
+                        <button 
+                          @click="activeFilter = null"
+                          class="text-xs bg-gray-200 text-gray-700 px-2 py-1 rounded hover:bg-gray-300"
+                        >
+                          Cerrar
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </th>
+                
+                <!-- Encabezado con filtro de fecha de inicio -->
+                <th scope="col" class="px-2 py-1 text-left text-xs font-medium text-indigo-700 uppercase tracking-wider border-r border-indigo-100">
+                  <div class="flex items-center justify-between">
+                    <span>F. Inicio</span>
+                    <button 
+                      @click="toggleFilter('fechaInicio')" 
+                      class="ml-1 text-indigo-500 hover:text-indigo-700"
+                      title="Filtrar por fecha de inicio"
+                    >
+                      <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+                      </svg>
+                    </button>
+                  </div>
+                  <div v-if="activeFilter === 'fechaInicio'" class="mt-2 bg-white p-2 rounded shadow-md border border-gray-200 absolute z-10">
+                    <div class="flex flex-col gap-2">
+                      <div class="flex items-center gap-1">
+                        <label class="text-xs text-gray-600">Desde:</label>
+                        <input 
+                          type="date" 
+                          v-model="inicioFilters.startDate" 
+                          class="border border-gray-300 rounded-md text-xs p-1 w-full"
+                        />
+                      </div>
+                      <div class="flex items-center gap-1">
+                        <label class="text-xs text-gray-600">Hasta:</label>
+                        <input 
+                          type="date" 
+                          v-model="inicioFilters.endDate" 
+                          class="border border-gray-300 rounded-md text-xs p-1 w-full"
+                        />
+                      </div>
+                      <div class="flex justify-between mt-1">
+                        <button 
+                          @click="applyFilters(); activeFilter = null"
+                          class="text-xs bg-indigo-600 text-white px-2 py-1 rounded hover:bg-indigo-700"
+                        >
+                          Aplicar
+                        </button>
+                        <button 
+                          @click="activeFilter = null"
+                          class="text-xs bg-gray-200 text-gray-700 px-2 py-1 rounded hover:bg-gray-300"
+                        >
+                          Cerrar
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </th>
+                
+                <!-- Encabezado con filtro de fecha de fin -->
+                <th scope="col" class="px-2 py-1 text-left text-xs font-medium text-indigo-700 uppercase tracking-wider border-r border-indigo-100">
+                  <div class="flex items-center justify-between">
+                    <span>F. Fin</span>
+                    <button 
+                      @click="toggleFilter('fechaFin')" 
+                      class="ml-1 text-indigo-500 hover:text-indigo-700"
+                      title="Filtrar por fecha de fin"
+                    >
+                      <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+                      </svg>
+                    </button>
+                  </div>
+                  <div v-if="activeFilter === 'fechaFin'" class="mt-2 bg-white p-2 rounded shadow-md border border-gray-200 absolute z-10">
+                    <div class="flex flex-col gap-2">
+                      <div class="flex items-center gap-1">
+                        <label class="text-xs text-gray-600">Desde:</label>
+                        <input 
+                          type="date" 
+                          v-model="finFilters.startDate" 
+                          class="border border-gray-300 rounded-md text-xs p-1 w-full"
+                        />
+                      </div>
+                      <div class="flex items-center gap-1">
+                        <label class="text-xs text-gray-600">Hasta:</label>
+                        <input 
+                          type="date" 
+                          v-model="finFilters.endDate" 
+                          class="border border-gray-300 rounded-md text-xs p-1 w-full"
+                        />
+                      </div>
+                      <div class="flex justify-between mt-1">
+                        <button 
+                          @click="applyFilters(); activeFilter = null"
+                          class="text-xs bg-indigo-600 text-white px-2 py-1 rounded hover:bg-indigo-700"
+                        >
+                          Aplicar
+                        </button>
+                        <button 
+                          @click="activeFilter = null"
+                          class="text-xs bg-gray-200 text-gray-700 px-2 py-1 rounded hover:bg-gray-300"
+                        >
+                          Cerrar
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </th>
+                
+                <!-- Encabezado con filtro de duración -->
                 <th scope="col" class="px-2 py-1 text-left text-xs font-medium text-indigo-700 uppercase tracking-wider border-r border-indigo-100">Duración</th>
-                <th scope="col" class="px-2 py-1 text-left text-xs font-medium text-indigo-700 uppercase tracking-wider border-r border-indigo-100">Estado</th>
-                <th scope="col" class="px-2 py-1 text-left text-xs font-medium text-indigo-700 uppercase tracking-wider border-r border-indigo-100">Usuario</th>
-                <th scope="col" class="px-2 py-1 text-left text-xs font-medium text-indigo-700 uppercase tracking-wider">Acciones</th>
+                
+                <!-- Encabezado con filtro de estado -->
+                <th scope="col" class="px-2 py-1 text-left text-xs font-medium text-indigo-700 uppercase tracking-wider border-r border-indigo-100">
+                  <div class="flex items-center justify-between">
+                    <span>Estado</span>
+                    <button 
+                      @click="toggleFilter('estado')" 
+                      class="ml-1 text-indigo-500 hover:text-indigo-700"
+                      title="Filtrar por estado"
+                    >
+                      <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+                      </svg>
+                    </button>
+                  </div>
+                  <div v-if="activeFilter === 'estado'" class="mt-2 bg-white p-2 rounded shadow-md border border-gray-200 absolute z-10">
+                    <div class="flex flex-col gap-2">
+                      <select 
+                        v-model="statusFilter" 
+                        class="border border-gray-300 rounded-md text-xs p-1 w-full"
+                      >
+                        <option value="">Todos</option>
+                        <option v-for="estado in estadosSolicitud" :key="estado.id" :value="estado.id">
+                          {{ estado.nombre }}
+                        </option>
+                      </select>
+                      <div class="flex justify-between mt-1">
+                        <button 
+                          @click="applyFilters(); activeFilter = null"
+                          class="text-xs bg-indigo-600 text-white px-2 py-1 rounded hover:bg-indigo-700"
+                        >
+                          Aplicar
+                        </button>
+                        <button 
+                          @click="activeFilter = null"
+                          class="text-xs bg-gray-200 text-gray-700 px-2 py-1 rounded hover:bg-gray-300"
+                        >
+                          Cerrar
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </th>
+                
+                <!-- Encabezado con filtro de usuario -->
+                <th scope="col" class="px-2 py-1 text-left text-xs font-medium text-indigo-700 uppercase tracking-wider border-r border-indigo-100">
+                  <div class="flex items-center justify-between">
+                    <span>Usuario</span>
+                    <button 
+                      @click="toggleFilter('usuario')" 
+                      class="ml-1 text-indigo-500 hover:text-indigo-700"
+                      title="Filtrar por usuario"
+                    >
+                      <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+                      </svg>
+                    </button>
+                  </div>
+                  <div v-if="activeFilter === 'usuario'" class="mt-2 bg-white p-2 rounded shadow-md border border-gray-200 absolute z-10">
+                    <div class="flex flex-col gap-2">
+                      <select 
+                        v-model="userFilter" 
+                        class="border border-gray-300 rounded-md text-xs p-1 w-full"
+                      >
+                        <option value="">Todos</option>
+                        <option v-for="usuario in usuarios" :key="usuario.id" :value="usuario.id">
+                          {{ usuario.nombre }} {{ usuario.apellido }}
+                        </option>
+                      </select>
+                      <div class="flex justify-between mt-1">
+                        <button 
+                          @click="applyFilters(); activeFilter = null"
+                          class="text-xs bg-indigo-600 text-white px-2 py-1 rounded hover:bg-indigo-700"
+                        >
+                          Aplicar
+                        </button>
+                        <button 
+                          @click="activeFilter = null"
+                          class="text-xs bg-gray-200 text-gray-700 px-2 py-1 rounded hover:bg-gray-300"
+                        >
+                          Cerrar
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </th>
+                
+                <th scope="col" class="px-2 py-1 text-left text-xs font-medium text-indigo-700 uppercase tracking-wider">
+                  <div class="flex justify-between items-center">
+                    <span>Acciones</span>
+                    <button 
+                      @click="clearFilters" 
+                      class="text-xs bg-gray-200 hover:bg-gray-300 text-gray-700 py-1 px-2 rounded"
+                      title="Limpiar filtros"
+                    >
+                      Limpiar
+                    </button>
+                  </div>
+                </th>
               </tr>
             </thead>
             <tbody class="bg-white divide-y divide-indigo-100">
@@ -69,16 +363,14 @@
                 <td class="px-2 py-1 whitespace-nowrap text-xs border-r border-indigo-50">
                   <span :class="[
                     'px-1.5 py-0.5 inline-flex text-xs leading-4 font-medium rounded-full',
-                    tarea.estado === 1 ? 'bg-yellow-100 text-yellow-800' : 
-                    tarea.estado === 2 ? 'bg-blue-100 text-blue-800' : 
-                    tarea.estado === 3 ? 'bg-green-100 text-green-800' : 
-                    tarea.estado === 4 ? 'bg-red-100 text-red-800' : 
-                    'bg-gray-100 text-gray-800'
+                    getEstadoClass(tarea.estado)
                   ]">
                     {{ getEstadoLabel(tarea.estado) }}
                   </span>
                 </td>
-                <td class="px-2 py-1 whitespace-nowrap text-xs text-black border-r border-indigo-50">{{ tarea.usuario_asignado || '-' }}</td>
+                <td class="px-2 py-1 whitespace-nowrap text-xs text-black border-r border-indigo-50">
+                  {{ getUserName(tarea.usuario_asignado) || '-' }}
+                </td>
                 <td class="px-2 py-1 whitespace-nowrap text-xs font-medium">
                   <div class="flex space-x-1">
                     <button 
@@ -346,8 +638,16 @@
 </template>
 
 <script>
-import { ref, onMounted} from 'vue';
+import { ref, onMounted, watch } from 'vue';
 import apiClient from '@/apiClient'
+
+// Definir estados directamente en el componente
+const estadosSolicitud = [
+  { id: 5, nombre: 'Sin asignar' },
+  { id: 6, nombre: 'Asignado' },
+  { id: 7, nombre: 'Terminado' },
+  { id: 8, nombre: 'Cancelado' }
+];
 
 export default {
   name: 'FormTareas',
@@ -361,6 +661,20 @@ export default {
     const errorMessage = ref('');
     const showModalCreate = ref(false);
     const showModalEdit = ref(false);
+    
+    // Filtros
+    const dateFilters = ref({
+      startDate: '',
+      endDate: ''
+    });
+    const programadaFilters = ref({
+      startDate: '',
+      endDate: ''
+    });
+    const statusFilter = ref('');
+    const userFilter = ref('');
+    const activeFilter = ref(null);
+    
     const currentTarea = ref({
       descripcion: '',
       solicitud: '',
@@ -373,6 +687,16 @@ export default {
       tiempoFacturable: '',
       usuario_asignado: '',
       usuario_reasignado: ''
+    });
+
+    // Filtros adicionales
+    const inicioFilters = ref({
+      startDate: '',
+      endDate: ''
+    });
+    const finFilters = ref({
+      startDate: '',
+      endDate: ''
     });
 
     const fetchTareas = async () => {
@@ -494,15 +818,145 @@ export default {
       });
     };
 
-    const getEstadoLabel = (estadoId) => {
-      const estados = {
-        1: 'Pendiente',
-        2: 'En progreso',
-        3: 'Completada',
-        4: 'Cancelada'
-      };
-      return estados[estadoId] || 'No definido';
+    const getEstadoLabel = (estado) => {
+      // Convertir a número si viene como string
+      const estadoNum = Number(estado);
+      return estadosSolicitud.find(e => e.id === estadoNum)?.nombre || 'Desconocido';
     };
+
+    const getEstadoClass = (estado) => {
+      // Convertir a número si viene como string
+      const estadoNum = Number(estado);
+      
+      switch (estadoNum) {
+        case 5: return 'bg-yellow-100 text-yellow-800'; // Sin asignar
+        case 6: return 'bg-blue-100 text-blue-800';    // Asignado
+        case 7: return 'bg-green-100 text-green-800';  // Terminado
+        case 8: return 'bg-red-100 text-red-800';      // Cancelado
+        default: return 'bg-gray-100 text-gray-800';
+      }
+    };
+
+    const getUserName = (userId) => {
+      if (!userId) return '-';
+      
+      // Buscar el usuario por ID
+      const usuario = usuarios.value.find(u => u.id === userId);
+      
+      if (!usuario) return userId; // Si no se encuentra, mostrar el ID
+      
+      // Formatear el nombre completo
+      const firstName = usuario.nombre || '';
+      const lastName = usuario.apellido || '';
+      return `${firstName} ${lastName}`.trim() || usuario.username || userId;
+    };
+
+    // Método para alternar la visibilidad de los filtros
+    const toggleFilter = (filterName) => {
+      activeFilter.value = activeFilter.value === filterName ? null : filterName;
+    };
+
+    // Método para aplicar filtros (actualizado)
+    const applyFilters = () => {
+      let filtered = [...tareas.value];
+      
+      // Filtrar por texto de búsqueda
+      if (searchQuery.value) {
+        const query = searchQuery.value.toLowerCase();
+        filtered = filtered.filter(tarea => 
+          tarea.descripcion.toLowerCase().includes(query) || 
+          String(tarea.id).includes(query) ||
+          String(tarea.solicitud).toLowerCase().includes(query)
+        );
+      }
+      
+      // Filtrar por rango de fechas de creación
+      if (dateFilters.value.startDate && dateFilters.value.endDate) {
+        const startDate = new Date(dateFilters.value.startDate);
+        const endDate = new Date(dateFilters.value.endDate);
+        endDate.setHours(23, 59, 59); // Incluir todo el día final
+        
+        filtered = filtered.filter(tarea => {
+          if (!tarea.fecha_creacion) return false;
+          const fechaCreacion = new Date(tarea.fecha_creacion);
+          return fechaCreacion >= startDate && fechaCreacion <= endDate;
+        });
+      }
+      
+      // Filtrar por rango de fechas programadas
+      if (programadaFilters.value.startDate && programadaFilters.value.endDate) {
+        const startDate = new Date(programadaFilters.value.startDate);
+        const endDate = new Date(programadaFilters.value.endDate);
+        endDate.setHours(23, 59, 59); // Incluir todo el día final
+        
+        filtered = filtered.filter(tarea => {
+          if (!tarea.fecha_programada) return false;
+          const fechaProgramada = new Date(tarea.fecha_programada);
+          return fechaProgramada >= startDate && fechaProgramada <= endDate;
+        });
+      }
+      
+      // Filtrar por estado
+      if (statusFilter.value) {
+        filtered = filtered.filter(tarea => Number(tarea.estado) === Number(statusFilter.value));
+      }
+      
+      // Filtrar por usuario
+      if (userFilter.value) {
+        filtered = filtered.filter(tarea => String(tarea.usuario_asignado) === String(userFilter.value));
+      }
+      
+      // Filtrar por rango de fechas de inicio
+      if (inicioFilters.value.startDate && inicioFilters.value.endDate) {
+        const startDate = new Date(inicioFilters.value.startDate);
+        const endDate = new Date(inicioFilters.value.endDate);
+        endDate.setHours(23, 59, 59); // Incluir todo el día final
+        
+        filtered = filtered.filter(tarea => {
+          if (!tarea.fecha_inicio) return false;
+          const fechaInicio = new Date(tarea.fecha_inicio);
+          return fechaInicio >= startDate && fechaInicio <= endDate;
+        });
+      }
+      
+      // Filtrar por rango de fechas de fin
+      if (finFilters.value.startDate && finFilters.value.endDate) {
+        const startDate = new Date(finFilters.value.startDate);
+        const endDate = new Date(finFilters.value.endDate);
+        endDate.setHours(23, 59, 59); // Incluir todo el día final
+        
+        filtered = filtered.filter(tarea => {
+          if (!tarea.fecha_fin) return false;
+          const fechaFin = new Date(tarea.fecha_fin);
+          return fechaFin >= startDate && fechaFin <= endDate;
+        });
+      }
+      
+      filteredTareas.value = filtered;
+    };
+    
+    const clearFilters = () => {
+      searchQuery.value = '';
+      dateFilters.value.startDate = '';
+      dateFilters.value.endDate = '';
+      programadaFilters.value.startDate = '';
+      programadaFilters.value.endDate = '';
+      statusFilter.value = '';
+      userFilter.value = '';
+      activeFilter.value = null;
+      inicioFilters.value.startDate = '';
+      inicioFilters.value.endDate = '';
+      finFilters.value.startDate = '';
+      finFilters.value.endDate = '';
+      filteredTareas.value = [...tareas.value];
+    };
+    
+    // Observar cambios en los filtros de fecha
+    watch([() => dateFilters.value.startDate, () => dateFilters.value.endDate], () => {
+      if (dateFilters.value.startDate && dateFilters.value.endDate) {
+        applyFilters();
+      }
+    });
 
     onMounted(() => {
       fetchTareas();
@@ -520,15 +974,31 @@ export default {
       showModalCreate,
       showModalEdit,
       currentTarea,
+      // Filtros
+      dateFilters,
+      programadaFilters,
+      statusFilter,
+      userFilter,
+      activeFilter,
+      toggleFilter,
+      estadosSolicitud,
+      // Métodos
       fetchTareas,
       filterTareas,
+      applyFilters,
+      clearFilters,
       createTarea,
       editTarea,
       updateTarea,
       deleteTarea,
       closeModal,
       formatDate,
-      getEstadoLabel
+      getEstadoLabel,
+      getEstadoClass,
+      getUserName,
+      // Filtros adicionales
+      inicioFilters,
+      finFilters
     };
   }
 }

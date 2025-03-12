@@ -175,27 +175,48 @@ export default {
       required: true
     }
   },
-  emits: ['close'],
 
   setup(props) {
     const notas = ref([])
     const showForm = ref(false)
     const loading = ref(true)
     const error = ref(null)
+    const licencia = ref(null)
     const formData = ref({
       titulo: '',
       contenido: '',
-      empresa: props.empresa.id
+      licencia: null
     })
+
+    // Primero obtener la licencia de la empresa
+    const fetchLicencia = async () => {
+      try {
+        const response = await apiClient.get('/licencias/')
+        const licenciaEmpresa = response.data.find(l => l.tercero === props.empresa.id)
+        if (licenciaEmpresa) {
+          licencia.value = licenciaEmpresa
+          return licenciaEmpresa.id
+        }
+        return null
+      } catch (error) {
+        console.error('Error fetching licencia:', error)
+        return null
+      }
+    }
 
     const fetchNotas = async () => {
       loading.value = true
       error.value = null
       try {
-        const response = await apiClient.get(`/notas/`, {
-          params: { empresa: props.empresa.id }
-        })
-        notas.value = response.data.filter(nota => nota.empresa === props.empresa.id)
+        const licenciaId = await fetchLicencia()
+        if (!licenciaId) {
+          notas.value = []
+          error.value = 'Esta empresa no tiene una licencia asignada'
+          return
+        }
+
+        const response = await apiClient.get(`/notas/`)
+        notas.value = response.data.filter(nota => nota.licencia === licenciaId)
       } catch (error) {
         console.error('Error fetching notas:', error)
         error.value = 'Error al cargar las notas'
@@ -204,18 +225,17 @@ export default {
       }
     }
 
-    watch(() => props.empresa.id, (newVal, oldVal) => {
-      if (newVal !== oldVal) {
-        formData.value.empresa = newVal
-        fetchNotas()
+    const showNewForm = async () => {
+      const licenciaId = await fetchLicencia()
+      if (!licenciaId) {
+        error.value = 'No se pueden crear notas sin una licencia asignada'
+        return
       }
-    })
-
-    const showNewForm = () => {
+      
       formData.value = {
         titulo: '',
         contenido: '',
-        empresa: props.empresa.id
+        licencia: licenciaId
       }
       showForm.value = true
     }
@@ -232,7 +252,7 @@ export default {
         formData.value = {
           titulo: '',
           contenido: '',
-          empresa: props.empresa.id
+          licencia: licencia.value?.id
         }
       } catch (error) {
         console.error('Error saving nota:', error)
@@ -255,11 +275,9 @@ export default {
       }
     }
 
-    const formatDate = (dateString) => {
-      if (!dateString) return '-'
-      const date = new Date(dateString)
-      return date.toLocaleDateString()
-    }
+    watch(() => props.empresa.id, () => {
+      fetchNotas()
+    })
 
     onMounted(() => {
       fetchNotas()
@@ -275,7 +293,11 @@ export default {
       editNota,
       deleteNota,
       showNewForm,
-      formatDate
+      formatDate: (dateString) => {
+        if (!dateString) return '-'
+        const date = new Date(dateString)
+        return date.toLocaleDateString()
+      }
     }
   }
 }

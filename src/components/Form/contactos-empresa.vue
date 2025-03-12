@@ -218,7 +218,7 @@ export default {
       cargo: null,
       telefono: '',
       email: '',
-      empresa: props.empresa.id
+      tercero: props.empresa.id
     })
 
     const fetchContactos = async () => {
@@ -226,9 +226,9 @@ export default {
       error.value = null
       try {
         const response = await apiClient.get(`/contactos/`, {
-          params: { empresa: props.empresa.id }
+          params: { tercero: props.empresa.id }
         })
-        contactos.value = response.data.filter(contacto => contacto.empresa === props.empresa.id)
+        contactos.value = response.data.filter(contacto => contacto.tercero === props.empresa.id)
       } catch (error) {
         console.error('Error fetching contactos:', error)
         error.value = 'Error al cargar los contactos'
@@ -239,7 +239,7 @@ export default {
 
     watch(() => props.empresa.id, (newVal, oldVal) => {
       if (newVal !== oldVal) {
-        formData.value.empresa = newVal
+        formData.value.tercero = newVal
         fetchContactos()
       }
     })
@@ -250,7 +250,7 @@ export default {
         cargo: null,
         telefono: '',
         email: '',
-        empresa: props.empresa.id
+        tercero: props.empresa.id
       }
       showForm.value = true
     }
@@ -258,9 +258,15 @@ export default {
     const handleSubmit = async () => {
       try {
         if (formData.value.id) {
-          await apiClient.put(`/contactos/${formData.value.id}/`, formData.value)
+          await apiClient.put(`/contactos/${formData.value.id}/`, {
+            ...formData.value,
+            tercero: props.empresa.id
+          })
         } else {
-          await apiClient.post(`/contactos/`, formData.value)
+          await apiClient.post(`/contactos/`, {
+            ...formData.value,
+            tercero: props.empresa.id
+          })
         }
         await fetchContactos()
         showForm.value = false
@@ -269,7 +275,7 @@ export default {
           cargo: null,
           telefono: '',
           email: '',
-          empresa: props.empresa.id
+          tercero: props.empresa.id
         }
       } catch (error) {
         console.error('Error saving contacto:', error)

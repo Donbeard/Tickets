@@ -12,7 +12,7 @@
             <svg class="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
             </svg>
-            Nueva Empresa
+            Nueva Licencia
           </h3>
         </div>
 
@@ -20,97 +20,80 @@
         <div class="bg-white px-6 pt-6 pb-4 sm:p-8 sm:pb-6">
           <form @submit.prevent="handleSubmit" class="space-y-6">
             <div class="grid grid-cols-2 gap-x-6 gap-y-4">
-              <!-- Campos del formulario sin los relacionados a licencia -->
+              <!-- Campo Licencia -->
               <div class="flex items-center">
-                <label class="w-1/4 text-sm font-medium text-gray-700">NIT:</label>
+                <label class="w-1/4 text-sm font-medium text-gray-700">Licencia:</label>
                 <div class="w-3/4">
                   <input 
                     type="text" 
-                    v-model="formData.nit"
+                    v-model="formData.licencia"
                     required
-                    class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-200"
-                    placeholder="Ej. 123456789"
+                    class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-200 bg-gray-50"
+                    readonly
                   />
                 </div>
               </div>
 
-              <div class="flex items-center">
-                <label class="w-1/4 text-sm font-medium text-gray-700">Nombre:</label>
+              <!-- Campo Tercero (condicional) -->
+              <div v-if="showTerceroSelect" class="flex items-center">
+                <label class="w-1/4 text-sm font-medium text-gray-700">Tercero:</label>
                 <div class="w-3/4">
-                  <input 
-                    type="text" 
-                    v-model="formData.nombre"
+                  <select
+                    v-model="formData.tercero"
                     required
-                    maxlength="100"
-                    class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-200"
-                    placeholder="Nombre de la empresa"
-                  />
-                </div>
-              </div>
-
-              <div class="flex items-center">
-                <label class="w-1/4 text-sm font-medium text-gray-700">Dirección:</label>
-                <div class="w-3/4">
-                  <input 
-                    type="text" 
-                    v-model="formData.direccion"
-                    required
-                    maxlength="100"
-                    class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-200"
-                    placeholder="Dirección completa"
-                  />
-                </div>
-              </div>
-
-              <div class="flex items-center">
-                <label class="w-1/4 text-sm font-medium text-gray-700">Teléfono:</label>
-                <div class="w-3/4">
-                  <input 
-                    type="text" 
-                    v-model="formData.telefono"
-                    required
-                    class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-200"
-                    placeholder="Teléfono principal"
-                  />
-                </div>
-              </div>
-
-              <div class="flex items-center">
-                <label class="w-1/4 text-sm font-medium text-gray-700">Email:</label>
-                <div class="w-3/4">
-                  <input 
-                    type="email" 
-                    v-model="formData.email"
-                    required
-                    maxlength="255"
-                    class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-200"
-                    placeholder="correo@empresa.com"
-                  />
-                </div>
-              </div>
-
-              <div class="flex items-center">
-                <label class="w-1/4 text-sm font-medium text-gray-700">WhatsApp:</label>
-                <div class="w-3/4">
-                  <input 
-                    type="text" 
-                    v-model="formData.whatsapp"
-                    class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-200"
-                    placeholder="WhatsApp (opcional)"
-                  />
-                </div>
-              </div>
-
-              <div class="flex items-center">
-                <label class="w-1/4 text-sm font-medium text-gray-700">Estado:</label>
-                <div class="w-3/4">
-                  <select 
-                    v-model="formData.activo"
                     class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-200"
                   >
-                    <option value="S">Activo</option>
-                    <option value="N">Inactivo</option>
+                    <option value="" disabled>Seleccione un tercero</option>
+                    <option 
+                      v-for="tercero in tercerosDisponibles" 
+                      :key="tercero.id" 
+                      :value="tercero.id"
+                    >
+                      {{ tercero.nombre }} - {{ tercero.nit }}
+                    </option>
                   </select>
+                </div>
+              </div>
+
+              <!-- Campo Fecha Inicio -->
+              <div class="flex items-center">
+                <label class="w-1/4 text-sm font-medium text-gray-700">F. Inicio:</label>
+                <div class="w-3/4">
+                  <input 
+                    type="date" 
+                    v-model="formData.fecha_inicio"
+                    required
+                    class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-200"
+                  />
+                </div>
+              </div>
+
+              <!-- Campo Fecha Fin -->
+              <div class="flex items-center">
+                <label class="w-1/4 text-sm font-medium text-gray-700">F. Fin:</label>
+                <div class="w-3/4">
+                  <input 
+                    type="date" 
+                    v-model="formData.fecha_fin"
+                    required
+                    class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-200"
+                  />
+                </div>
+              </div>
+
+              <!-- Campo Cantidad Usuarios -->
+              <div class="flex items-center">
+                <label class="w-1/4 text-sm font-medium text-gray-700">Usuarios:</label>
+                <div class="w-3/4">
+                  <input 
+                    type="number" 
+                    v-model="formData.cantidad_usuarios"
+                    required
+                    min="-32768"
+                    max="32767"
+                    class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-200"
+                    placeholder="Cantidad de usuarios"
+                  />
                 </div>
               </div>
             </div>
@@ -127,7 +110,7 @@
             <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
             </svg>
-            Crear Empresa
+            Crear Licencia
           </button>
           <button 
             @click="$emit('close')" 
@@ -207,23 +190,64 @@
 </template>
 
 <script>
-import { ref } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import apiClient from '@/apiClient'
+import { v4 as uuidv4 } from 'uuid'
 
 export default {
-  name: 'CreateEmpresa',
+  name: 'CreateLicencia',
   emits: ['close', 'created'],
+  props: {
+    terceroId: {
+      type: [Number, String],
+      default: null
+    },
+    fromTab: {
+      type: Boolean,
+      default: false
+    }
+  },
   
   setup(props, { emit }) {
     const formData = ref({
-      nit: '',
-      nombre: '',
-      direccion: '',
-      telefono: '',
-      email: '',
-      whatsapp: '',
-      activo: 'S'
+      licencia: uuidv4(),
+      fecha_inicio: new Date().toISOString().split('T')[0], // Fecha actual por defecto
+      fecha_fin: new Date(new Date().setFullYear(new Date().getFullYear() + 1)).toISOString().split('T')[0], // Un año después por defecto
+      cantidad_usuarios: 1,
+      tercero: props.terceroId || ''
     })
+
+    const tercerosDisponibles = ref([])
+    const loading = ref(false)
+
+    // Si viene de la pestaña, ocultar el selector de tercero
+    const showTerceroSelect = computed(() => !props.fromTab)
+
+    // Obtener terceros sin licencia
+    const fetchTercerosDisponibles = async () => {
+      try {
+        loading.value = true
+        // Obtener todos los terceros
+        const tercerosResponse = await apiClient.get('/terceros/')
+        const todosLosTerceros = tercerosResponse.data
+
+        // Obtener todas las licencias
+        const licenciasResponse = await apiClient.get('/licencias/')
+        const licencias = licenciasResponse.data
+
+        // Filtrar terceros que no tienen licencia y están activos
+        tercerosDisponibles.value = todosLosTerceros.filter(tercero => {
+          const tieneLicencia = licencias.some(licencia => licencia.tercero === tercero.id)
+          return !tieneLicencia && tercero.activo === 'S'
+        })
+
+      } catch (error) {
+        console.error('Error al cargar terceros:', error)
+        showToastMessage('Error al cargar la lista de terceros', false)
+      } finally {
+        loading.value = false
+      }
+    }
 
     // Sistema de notificaciones toast
     const showToast = ref(false)
@@ -243,105 +267,36 @@ export default {
 
     const handleSubmit = async () => {
       try {
-        // Verificar que los campos requeridos estén completos
-        if (!formData.value.nit || !formData.value.nombre || !formData.value.direccion || 
-            !formData.value.telefono || !formData.value.email) {
-          showToastMessage('Por favor complete todos los campos requeridos', false);
-          return;
+        if (!formData.value.tercero) {
+          showToastMessage('Por favor seleccione un tercero', false)
+          return
         }
-        
-        // Validar formato de email
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        if (!emailRegex.test(formData.value.email)) {
-          showToastMessage('Por favor ingrese un email válido', false);
-          return;
-        }
-        
-        // Validar que NIT, teléfono y whatsapp sean números
-        if (isNaN(Number(formData.value.nit))) {
-          showToastMessage('El NIT debe ser un número', false);
-          return;
-        }
-        
-        if (isNaN(Number(formData.value.telefono))) {
-          showToastMessage('El teléfono debe ser un número', false);
-          return;
-        }
-        
-        if (formData.value.whatsapp && isNaN(Number(formData.value.whatsapp))) {
-          showToastMessage('El WhatsApp debe ser un número', false);
-          return;
-        }
-        
-        // Formatear los datos según lo que espera la API
-        const empresaData = {
-          nit: parseInt(formData.value.nit.trim()),
-          nombre: formData.value.nombre.trim(),
-          direccion: formData.value.direccion.trim(),
-          telefono: parseInt(formData.value.telefono.trim()),
-          email: formData.value.email.trim().toLowerCase(),
-          activo: formData.value.activo === 'A' ? 'S' : (formData.value.activo === 'I' ? 'N' : 'S')
-        };
-        
-        // Solo agregar whatsapp si tiene valor
-        if (formData.value.whatsapp && formData.value.whatsapp.trim() !== '') {
-          empresaData.whatsapp = parseInt(formData.value.whatsapp.trim());
-        }
-        
-        console.log('Enviando datos:', JSON.stringify(empresaData));
-        
-        const response = await apiClient.post('/terceros/', empresaData);
-        showToastMessage('Empresa creada correctamente', true);
-        emit('created', response.data);
-        emit('close');
+
+        const response = await apiClient.post('/licencias/', formData.value)
+        showToastMessage('Licencia creada correctamente', true)
+        emit('created', response.data)
+        emit('close')
       } catch (error) {
-        console.error('Error creating empresa:', error);
-        
-        // Mostrar detalles completos del error
-        if (error.response) {
-          console.error('Error response data:', error.response.data);
-          console.error('Error response status:', error.response.status);
-          console.error('Error response headers:', error.response.headers);
-          
-          // Mostrar mensaje de error más específico
-          const errorData = error.response.data;
-          let errorMessage = 'Error al crear la empresa: ';
-          
-          if (typeof errorData === 'object' && !Array.isArray(errorData)) {
-            // Mostrar cada campo de error
-            Object.entries(errorData).forEach(([field, messages]) => {
-              if (Array.isArray(messages)) {
-                errorMessage += `${field}: ${messages.join(', ')} `;
-              } else if (typeof messages === 'object') {
-                errorMessage += `${field}: ${JSON.stringify(messages)} `;
-              } else {
-                errorMessage += `${field}: ${messages} `;
-              }
-            });
-          } else if (typeof errorData === 'string') {
-            errorMessage += errorData;
-          } else {
-            errorMessage += 'Verifique los datos ingresados.';
-          }
-          
-          showToastMessage(errorMessage, false);
-        } else if (error.request) {
-          console.error('Error request:', error.request);
-          showToastMessage('No se recibió respuesta del servidor. Verifique su conexión.', false);
-        } else {
-          console.error('Error message:', error.message);
-          showToastMessage(`Error: ${error.message}`, false);
-        }
+        console.error('Error creating licencia:', error)
+        showToastMessage('Error al crear la licencia. Por favor, intente de nuevo.', false)
       }
     }
 
+    // Cargar terceros al montar el componente
+    onMounted(() => {
+      fetchTercerosDisponibles()
+    })
+
     return {
       formData,
+      tercerosDisponibles,
+      loading,
       handleSubmit,
       showToast,
       isSuccess,
       statusMessage,
-      showToastMessage
+      showToastMessage,
+      showTerceroSelect
     }
   }
 }
@@ -371,6 +326,20 @@ input:focus, select:focus {
 
 /* Efecto para campos readonly */
 input[readonly] {
+  background-color: #f3f4f6;
+  cursor: not-allowed;
+}
+
+/* Estilos adicionales para el select */
+select {
+  background-color: rgb(249, 250, 251);
+}
+
+select:focus {
+  background-color: white;
+}
+
+select:disabled {
   background-color: #f3f4f6;
   cursor: not-allowed;
 }

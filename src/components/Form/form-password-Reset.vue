@@ -56,13 +56,22 @@ export default {
     };
   },
   methods: {
-    
     async sendResetEmail() {
       try {
-        await apiClient.post("/password-reset/", { email: this.email });
+        const baseUrl = 'http://144.76.41.52:8070'; // URL del servidor
+        
+        const response = await apiClient.post("/password-reset/", { 
+          email: this.email,
+          reset_url: `${baseUrl}/reset-password`
+        });
+        
+        console.log('Respuesta del servidor:', response.data); // Para debug
+        
         this.message = "Si el correo es válido, recibirás un enlace de recuperación.";
         this.isSuccess = true;
       } catch (error) {
+        console.error('Error completo:', error);
+        console.error('Datos del error:', error.response?.data);
         this.message = "Ocurrió un error, intenta de nuevo.";
         this.isSuccess = false;
       }

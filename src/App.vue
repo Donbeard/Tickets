@@ -129,7 +129,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
-import { Bars3Icon, XMarkIcon, HomeIcon, ChevronLeftIcon, ChevronRightIcon, DocumentTextIcon, BookmarkIcon, BuildingOfficeIcon } from '@heroicons/vue/24/outline'
+import { Bars3Icon, XMarkIcon, HomeIcon, ChevronLeftIcon, ChevronRightIcon, DocumentTextIcon, BookmarkIcon, BuildingOfficeIcon, UserGroupIcon } from '@heroicons/vue/24/outline'
 import LogoutIcon from '@heroicons/vue/24/outline/ArrowRightOnRectangleIcon'
 
 const router = useRouter()
@@ -173,6 +173,7 @@ const navigation = computed(() => {
     { name: 'Tareas', href: '/tareas', icon: BookmarkIcon, allowedTypes: ['A', 'S'] },
     { name: 'Modulos', href: '/modulos', icon: DocumentTextIcon, allowedTypes: ['A', 'S'] },
     { name: 'Empresas', href: '/empresas', icon: BuildingOfficeIcon, allowedTypes: ['A', 'C', 'S'] },
+    { name: 'Licencias', href: '/licencias', icon: UserGroupIcon, allowedTypes: ['A', 'S'] },
   ]
 
   // Si no hay tipo de usuario, intentar obtenerlo de nuevo

@@ -8,6 +8,7 @@ import PaswordResetConfirm from '@/components/Form/form-passwordResetConfirm.vue
 import Modulos from '@/components/Form/form-modulos.vue';
 import Submodulos from '@/components/Form/form-submodulos.vue';
 import GridEmpresa from '@/components/Grid/grid-empresa.vue';
+import GridLicencias from '@/components/Grid/grid-licencias.vue';
 
 const router = createRouter({
   history: createWebHistory(),
@@ -21,6 +22,7 @@ const router = createRouter({
     { path: '/modulos', component: Modulos, meta: { requiresAuth: true } },
     { path: '/submodulos', component: Submodulos, meta: { requiresAuth: true } },
     { path: '/empresas', component: GridEmpresa, meta: { requiresAuth: true } },
+    { path: '/licencias', component: GridLicencias, meta: { requiresAuth: true } },
     { path: '/:pathMatch(.*)*', redirect: '/' }
   ],
 });

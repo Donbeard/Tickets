@@ -184,7 +184,10 @@
     <div v-else class="space-y-6">
       <!-- Botón de regreso con mejor diseño -->
       <div class="flex items-center mb-2">
-        <button @click="selectedEmpresa = null" class="text-gray-600 hover:text-gray-800 flex items-center transition-colors duration-200">
+        <button 
+          @click="volverALista" 
+          class="text-gray-600 hover:text-gray-800 flex items-center transition-colors duration-200"
+        >
           <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
           </svg>
@@ -268,32 +271,8 @@
                 </select>
               </div>
 
-              <!-- Segunda fila: Fechas, Dirección, Correo, Licencia + Botones integrados -->
-              
-              <!-- Fecha Inicio -->
-              <div class="flex items-center">
-                <label for="fecha_inicio" class="block text-xs font-medium text-gray-700 w-12">F.Inicio:</label>
-                <input 
-                  type="date" 
-                  id="fecha_inicio" 
-                  v-model="selectedEmpresa.fecha_inicio" 
-                  class="block w-full py-0.5 px-1.5 text-xs border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                />
-              </div>
-
-              <!-- Fecha Fin -->
-              <div class="flex items-center">
-                <label for="fecha_fin" class="block text-xs font-medium text-gray-700 w-12">F.Fin:</label>
-                <input 
-                  type="date" 
-                  id="fecha_fin" 
-                  v-model="selectedEmpresa.fecha_fin" 
-                  class="block w-full py-0.5 px-1.5 text-xs border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                />
-              </div>
-
-              <!-- Dirección y Email combinados para hacer espacio -->
-              <div class="flex items-center col-span-2">
+              <!-- Segunda fila: Fechas, Dirección, Correo -->
+              <div class="flex items-center col-span-3">
                 <label for="direccion" class="block text-xs font-medium text-gray-700 w-12">Dir:</label>
                 <input 
                   type="text" 
@@ -303,8 +282,7 @@
                 />
               </div>
 
-              <!-- Email -->
-              <div class="flex items-center col-span-1">
+              <div class="flex items-center col-span-3">
                 <label for="email" class="block text-xs font-medium text-gray-700 w-12">Email:</label>
                 <div class="w-full flex space-x-1 items-center">
                   <input 
@@ -313,21 +291,8 @@
                     v-model="selectedEmpresa.email" 
                     class="block w-full py-0.5 px-1.5 text-xs border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
                   />
-                </div>
-              </div>
-
-              <!-- Licencia con botones integrados -->
-              <div class="flex items-center">
-                <label for="licencia" class="block text-xs font-medium text-gray-700 w-12">Licencia:</label>
-                <div class="w-full flex space-x-1 items-center">
-                  <input 
-                    type="text" 
-                    id="licencia" 
-                    v-model="selectedEmpresa.licencia" 
-                    class="block w-full py-0.5 px-1.5 text-xs border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                  />
                   
-                  <!-- Botones integrados directamente en la misma fila -->
+                  <!-- Botones de acción -->
                   <button 
                     @click="updateEmpresa" 
                     class="py-0.5 px-2 text-xs font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none"
@@ -357,25 +322,21 @@
             <nav class="flex space-x-4 text-xs">
               <button 
                 @click="activeTab = 'contactos'" 
-                :class="[
-                  activeTab === 'contactos' 
-                    ? 'border-indigo-500 text-indigo-600' 
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300',
-                  'py-0.5 border-b-2 font-medium text-xs'
-                ]"
+                :class="[activeTab === 'contactos' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300', 'py-0.5 border-b-2 font-medium text-xs']"
               >
                 Contactos
               </button>
               <button 
                 @click="activeTab = 'notas'" 
-                :class="[
-                  activeTab === 'notas' 
-                    ? 'border-indigo-500 text-indigo-600' 
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300',
-                  'py-0.5 border-b-2 font-medium text-xs'
-                ]"
+                :class="[activeTab === 'notas' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300', 'py-0.5 border-b-2 font-medium text-xs']"
               >
                 Notas
+              </button>
+              <button 
+                @click="activeTab = 'licencia'" 
+                :class="[activeTab === 'licencia' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300', 'py-0.5 border-b-2 font-medium text-xs']"
+              >
+                Licencia
               </button>
             </nav>
           </div>
@@ -387,6 +348,9 @@
             </div>
             <div v-if="activeTab === 'notas'">
               <NotasEmpresa :empresa="selectedEmpresa" />
+            </div>
+            <div v-if="activeTab === 'licencia'">
+              <LicenciaTab :empresaId="selectedEmpresa.id" />
             </div>
           </div>
         </div>
@@ -466,6 +430,7 @@ import { ref, onMounted, computed} from 'vue'
 import CreateEmpresa from '@/components/Form/create-empresa.vue'
 import ContactosEmpresa from '@/components/Form/contactos-empresa.vue'
 import NotasEmpresa from '@/components/Form/notas-empresa.vue'
+import LicenciaTab from '@/components/Grid/LicenciaTab.vue'
 import apiClient from '@/apiClient'
 
 export default {
@@ -473,7 +438,8 @@ export default {
   components: {
     CreateEmpresa,
     ContactosEmpresa,
-    NotasEmpresa
+    NotasEmpresa,
+    LicenciaTab
   },
 
   setup() {
@@ -511,11 +477,26 @@ export default {
       loading.value = true
       error.value = null
       try {
-        const response = await apiClient.get('/terceros/')
-        empresas.value = response.data
+        // Obtener empresas y licencias
+        const [empresasResponse, licenciasResponse] = await Promise.all([
+          apiClient.get('/terceros/'),
+          apiClient.get('/licencias/')
+        ])
+        
+        // Mapear empresas con sus licencias
+        empresas.value = empresasResponse.data.map(empresa => {
+          const licencia = licenciasResponse.data.find(l => l.tercero === empresa.id)
+          return {
+            ...empresa,
+            cantidad_usuarios: licencia?.cantidad_usuarios || '-',
+            licencia: licencia?.licencia || '-',
+            fecha_inicio: licencia?.fecha_inicio || '-',
+            fecha_fin: licencia?.fecha_fin || '-'
+          }
+        })
       } catch (e) {
-        console.error('Error fetching empresas:', e)
-        error.value = 'Error al cargar las empresas. Por favor, intente nuevamente.'
+        console.error('Error fetching data:', e)
+        error.value = 'Error al cargar los datos'
       } finally {
         loading.value = false
       }
@@ -626,18 +607,76 @@ export default {
 
     const updateEmpresa = async () => {
       try {
-        await apiClient.put(`/empresas/${selectedEmpresa.value.id}/`, selectedEmpresa.value)
+        // Verificar que los campos requeridos estén completos
+        if (!selectedEmpresa.value.nit || !selectedEmpresa.value.nombre || 
+            !selectedEmpresa.value.direccion || !selectedEmpresa.value.telefono || 
+            !selectedEmpresa.value.email) {
+          showToastMessage('Por favor complete todos los campos requeridos', false);
+          return;
+        }
+        
+        // Validar formato de email
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(selectedEmpresa.value.email)) {
+          showToastMessage('Por favor ingrese un email válido', false);
+          return;
+        }
+        
+        // Formatear los datos según lo que espera la API
+        const empresaData = {
+          nit: parseInt(selectedEmpresa.value.nit),
+          nombre: selectedEmpresa.value.nombre.trim(),
+          direccion: selectedEmpresa.value.direccion.trim(),
+          telefono: parseInt(selectedEmpresa.value.telefono),
+          email: selectedEmpresa.value.email.trim().toLowerCase(),
+          activo: selectedEmpresa.value.activo
+        };
+        
+        // Solo agregar whatsapp si tiene valor
+        if (selectedEmpresa.value.whatsapp && String(selectedEmpresa.value.whatsapp).trim() !== '') {
+          empresaData.whatsapp = parseInt(selectedEmpresa.value.whatsapp);
+        }
+        
+        console.log('Actualizando empresa:', JSON.stringify(empresaData));
+        
+        // Cambiar la URL de /empresas/ a /terceros/
+        await apiClient.put(`/terceros/${selectedEmpresa.value.id}/`, empresaData);
         
         // Actualizamos la lista de empresas en segundo plano
-        fetchEmpresas()
+        fetchEmpresas();
         
         // Mostramos mensaje de éxito
-        showToastMessage('Empresa actualizada correctamente', true)
+        showToastMessage('Empresa actualizada correctamente', true);
         
         // No regresamos a la lista - mantenemos el formulario abierto
       } catch (error) {
-        console.error('Error al actualizar empresa:', error)
-        showToastMessage('Error al actualizar la empresa. Por favor, intente de nuevo.', false)
+        console.error('Error al actualizar empresa:', error);
+        
+        // Mostrar mensaje de error más específico si está disponible
+        if (error.response && error.response.data) {
+          const errorData = error.response.data;
+          let errorMessage = 'Error al actualizar la empresa: ';
+          
+          if (typeof errorData === 'object' && !Array.isArray(errorData)) {
+            Object.entries(errorData).forEach(([field, messages]) => {
+              if (Array.isArray(messages)) {
+                errorMessage += `${field}: ${messages.join(', ')} `;
+              } else if (typeof messages === 'object') {
+                errorMessage += `${field}: ${JSON.stringify(messages)} `;
+              } else {
+                errorMessage += `${field}: ${messages} `;
+              }
+            });
+          } else if (typeof errorData === 'string') {
+            errorMessage += errorData;
+          } else {
+            errorMessage += 'Verifique los datos ingresados.';
+          }
+          
+          showToastMessage(errorMessage, false);
+        } else {
+          showToastMessage('Error al actualizar la empresa. Por favor, intente de nuevo.', false);
+        }
       }
     }
 
@@ -650,6 +689,11 @@ export default {
     const abrirModalCrear = () => {
       console.log('Abriendo modal...')
       showCreateModal.value = true
+    }
+
+    const volverALista = async () => {
+      selectedEmpresa.value = null
+      await fetchEmpresas() // Recargar datos
     }
 
     // Obtener el ID del tercero seleccionado al inicio
@@ -691,7 +735,8 @@ export default {
       clearSearch,
       activeTab,
       userType,
-      userTerceroId
+      userTerceroId,
+      volverALista
     }
   }
 }

@@ -1322,8 +1322,8 @@ data() {
       modulo: null,
       submodulo: null,
       accion: null,
-      estado: 5, // Corrección: estado debe ser 1 (numérico)
-      prioridad: 1 // Corrección: prioridad debe ser 1 (numérico)
+      estado: 5, 
+      prioridad: 1
     },
     anexos: [],
     selectedFile: null,

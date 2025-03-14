@@ -33,7 +33,16 @@
           ]"
           :aria-current="item.current ? 'page' : undefined"
         >
-          <component :is="item.icon" class="h-6 w-6" :class="{ 'mr-3': !isCollapsed }" aria-hidden="true" />
+          <div class="relative">
+            <component :is="item.icon" class="h-6 w-6" :class="{ 'mr-3': !isCollapsed }" aria-hidden="true" />
+            <!-- Tooltip que aparece solo cuando el menú está contraído -->
+            <div 
+              v-if="isCollapsed" 
+              class="absolute left-full ml-2 w-auto px-2 py-1 bg-gray-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap z-50"
+            >
+              {{ item.name }}
+            </div>
+          </div>
           <span v-if="!isCollapsed">{{ item.name }}</span>
         </router-link>
         <button 
@@ -43,7 +52,16 @@
             isCollapsed ? 'justify-center' : ''
           ]"
         >
-          <LogoutIcon class="h-6 w-6" :class="{ 'mr-3': !isCollapsed }" aria-hidden="true" />
+          <div class="relative">
+            <LogoutIcon class="h-6 w-6" :class="{ 'mr-3': !isCollapsed }" aria-hidden="true" />
+            <!-- Tooltip para el botón de cerrar sesión -->
+            <div 
+              v-if="isCollapsed" 
+              class="absolute left-full ml-2 w-auto px-2 py-1 bg-gray-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap z-50"
+            >
+              Cerrar sesión
+            </div>
+          </div>
           <span v-if="!isCollapsed">Cerrar sesión</span>
         </button>
       </nav>

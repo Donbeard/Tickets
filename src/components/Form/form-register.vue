@@ -240,6 +240,9 @@ export default {
           this.form.nits[index] = nitData;
           
           console.log(`Array completo después de actualización:`, JSON.stringify(this.form.nits));
+          
+          // Determinar el tipo de usuario según el NIT
+          this.determinarTipoUsuario(nit);
         } else {
           this.form.nits[index].isValid = false;
           this.form.nits[index].empresaNombre = '';
@@ -254,6 +257,20 @@ export default {
         this.form.nits[index].terceroId = null;
       } finally {
         this.isValidatingNit = false;
+      }
+    },
+    
+    // Nuevo método para determinar el tipo de usuario según el NIT
+    determinarTipoUsuario(nit) {
+      // Lista de NITs que corresponden a usuarios tipo S (Supervisor)
+      const nitsSupervisores = ['901430071']; // Añade aquí todos los NITs que deban ser tipo S
+      
+      if (nitsSupervisores.includes(nit.toString())) {
+        console.log(`NIT ${nit} corresponde a un usuario tipo S (Supervisor)`);
+        this.form.tipo = 'S';
+      } else {
+        console.log(`NIT ${nit} corresponde a un usuario tipo C (Cliente)`);
+        this.form.tipo = 'C';
       }
     },
     
@@ -322,6 +339,19 @@ export default {
           return;
         }
         
+        // Verificar si alguno de los NITs requiere tipo S
+        const nitsIngresados = this.form.nits
+          .filter(nit => nit.isValid && nit.value)
+          .map(nit => nit.value.toString());
+          
+        const nitsSupervisores = ['901430071']; // Misma lista que en determinarTipoUsuario
+        const debeSerSupervisor = nitsIngresados.some(nit => nitsSupervisores.includes(nit));
+        
+        if (debeSerSupervisor) {
+          this.form.tipo = 'S';
+          console.log('Usuario será creado como Supervisor (S) debido al NIT');
+        }
+        
         const formData = {
           first_name: this.form.first_name,
           last_name: this.form.last_name,
@@ -333,7 +363,7 @@ export default {
           is_superuser: false,
           username: this.form.email,
           nombre: `${this.form.first_name} ${this.form.last_name}`,
-          tipo: 'C',
+          tipo: this.form.tipo, // Ahora puede ser 'C' o 'S' según el NIT
         };
         
         console.log('Datos de usuario a enviar:', formData);

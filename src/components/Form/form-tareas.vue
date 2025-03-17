@@ -505,17 +505,30 @@
                   </div>
                 </th>
                 
-                
+                <!-- En la sección de encabezados de la tabla -->
+                <th scope="col" class="px-4 py-1 text-left text-xs font-medium text-Black uppercase tracking-wider">
+                  <div class="flex items-center justify-between">
+                    <div class="flex items-center cursor-pointer" @click="sortTareas('tipo')">
+                      Tipo
+                      <span class="ml-1">
+                        <svg v-if="getSortIcon('tipo') === 'asc'" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"></path>
+                        </svg>
+                        <svg v-else-if="getSortIcon('tipo') === 'desc'" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                        </svg>
+                      </span>
+                    </div>
+                  </div>
+                </th>
               </tr>
             </thead>
             <tbody class="bg-white divide-y divide-gray-200">
               <tr 
-                v-for="(tarea, index) in paginatedTareas" 
-                :key="tarea.id" 
-                :class="[
-                  'hover:bg-gray-50', 
-                  index % 2 === 0 ? 'bg-white' : 'bg-gray-50'
-                ]"
+                v-for="(tarea) in paginatedTareas" 
+                :key="tarea.id"
+                :class="getRowClass(tarea)"
+                class="hover:bg-gray-50 transition-colors duration-150"
               >
                 <!-- Acciones -->
                 <td class="px-3 py-2 whitespace-nowrap text-right text-xs font-medium">
@@ -554,7 +567,7 @@
                   {{ tarea.id }}
                 </td>
                 <!-- F. Programada -->
-                <td class="px-3 py-2 whitespace-nowrap text-xs text-text-black">
+                <td :class="['px-3 py-2 whitespace-nowrap text-xs', getFechaProgramadaClass(tarea.fecha_programada)]">
                   {{ formatDate(tarea.fecha_programada) }}
                 </td>
                 <!-- Celda de Descripción -->
@@ -606,7 +619,12 @@
                   {{ getEmpresaNombre(tarea.solicitud) }}
                 </td>
                 
-                
+                <!-- En la sección de filas de la tabla -->
+                <td class="px-3 py-2 whitespace-nowrap text-xs">
+                  <span :class="['px-2 py-0.5 rounded-full text-xs font-medium', getTipoClass(tarea.tipo)]">
+                    {{ getTipoLabel(tarea.tipo) }}
+                  </span>
+                </td>
               </tr>
               
               <!-- Mensaje cuando no hay tareas -->
@@ -962,6 +980,40 @@
                     </select>
                   </div>
                 </div>
+
+                <!-- Dentro del formulario, añadir el campo cita -->
+                <div class="grid grid-cols-2 gap-4">
+                  <!-- Columna 1: Tipo -->
+                  <div class="flex items-center">
+                    <label for="tipo" class="block text-sm font-medium text-gray-700 w-1/3">
+                      Tipo:
+                    </label>
+                    <select
+                      id="tipo"
+                      v-model="currentTarea.tipo"
+                      class="block w-2/3 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 text-sm"
+                    >
+                      <option v-for="option in tipoOptions" :key="option.value" :value="option.value">
+                        {{ option.label }}
+                      </option>
+                    </select>
+                  </div>
+                  
+                  <!-- Columna 2: Cita -->
+                  <div class="flex items-center">
+                    <label for="cita" class="block text-sm font-medium text-gray-700 w-1/3">
+                      ¿Cita?: 
+                    </label>
+                    <select
+                      id="cita"
+                      v-model="currentTarea.cita"
+                      class="block w-2/3 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 text-sm"
+                    >
+                      <option value="N">No</option>
+                      <option value="S">Sí</option>
+                    </select>
+                  </div>
+                </div>
               </div>
 
               <div v-if="errorMessage" class="mt-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
@@ -1036,7 +1088,9 @@ export default {
       duracion: '',
       tiempoFacturable: '',
       usuario_asignado: '',
-      usuario_reasignado: ''
+      usuario_reasignado: '',
+      tipo: 'I',
+      cita: 'N' // Valor por defecto: No tiene cita
     });
 
     // Filtros adicionales
@@ -1055,17 +1109,20 @@ export default {
     
     const fetchTareas = async () => {
       try {
-        const response = await apiClient.get('/tareas/');
+        console.log('Obteniendo tareas...');
+        const token = localStorage.getItem('accessToken');
+        const response = await apiClient.get('/tareas/', {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        console.log('Tareas obtenidas:', response.data);
         tareas.value = response.data;
-        filteredTareas.value = [...tareas.value];
         
-        // Aplicar ordenamiento por defecto (fecha programada descendente)
-        sortColumn.value = 'fecha_programada';
-        sortDirection.value = 'desc';
-        sortFilteredTareas();
+        // No aplicar filtros aquí, se hará en initializeDefaultFilters
       } catch (error) {
         console.error('Error al obtener tareas:', error);
-        errorMessage.value = 'Error al cargar las tareas. Por favor, actualice la página e intente de nuevo.';
+        errorMessage.value = 'Error al cargar las tareas. Por favor, intente de nuevo.';
       }
     };
 
@@ -1089,40 +1146,105 @@ export default {
     
     const fetchEstados = async () => {
       try {
-        const response = await apiClient.get('/estados/');
+        console.log('Obteniendo estados...');
+        const token = localStorage.getItem('accessToken');
+        const response = await apiClient.get('/estados/', {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        console.log('Estados obtenidos:', response.data);
         estados.value = response.data;
+        
+        // No llamar a initializeDefaultFilters aquí
       } catch (error) {
         console.error('Error al obtener estados:', error);
+        errorMessage.value = 'Error al cargar los estados. Por favor, intente de nuevo.';
       }
+    };
+
+    // Función para inicializar los filtros por defecto
+    const initializeDefaultFilters = () => {
+      console.log('Inicializando filtros por defecto...');
+      
+      // Verificar que los estados se han cargado
+      if (!estados.value || estados.value.length === 0) {
+        console.warn('No se pueden inicializar filtros: estados no cargados');
+        return;
+      }
+      
+      // Encontrar los IDs de los estados "TERMINADO" y "CANCELADO"
+      const terminadoEstado = estados.value.find(e => 
+        e.nombre.toLowerCase() === 'terminado' || 
+        e.nombre.toLowerCase() === 'terminada' ||
+        e.nombre.toLowerCase() === 'finalizado' ||
+        e.nombre.toLowerCase() === 'finalizada'
+      );
+      
+      const canceladoEstado = estados.value.find(e => 
+        e.nombre.toLowerCase() === 'cancelado' || 
+        e.nombre.toLowerCase() === 'cancelada'
+      );
+      
+      console.log('Estado TERMINADO encontrado:', terminadoEstado);
+      console.log('Estado CANCELADO encontrado:', canceladoEstado);
+      
+      // Crear un array con los IDs a excluir
+      const estadosAExcluir = [];
+      if (terminadoEstado) estadosAExcluir.push(terminadoEstado.id);
+      if (canceladoEstado) estadosAExcluir.push(canceladoEstado.id);
+      
+      // Seleccionar todos los estados excepto los que están en estadosAExcluir
+      if (estadosAExcluir.length > 0) {
+        estadoFilters.value = estados.value
+          .filter(estado => !estadosAExcluir.includes(estado.id))
+          .map(estado => estado.id);
+        
+        console.log('Filtros de estado iniciales:', estadoFilters.value);
+        console.log('Estados excluidos:', estadosAExcluir);
+      } else {
+        // Si no encontramos los estados a excluir, seleccionar todos
+        estadoFilters.value = estados.value.map(estado => estado.id);
+        console.log('No se encontraron estados a excluir, seleccionando todos los estados');
+      }
+      
+      // Aplicar los filtros
+      applyFilters();
+      console.log('Filtros aplicados');
     };
 
     const filterTareas = () => {
       applyFilters();
     };
 
-    const createTarea = async () => {
+    const createTarea = async (formData) => {
       try {
+        // Asegurarse de que el tipo esté incluido en los datos del formulario
+        if (!formData.tipo) {
+          formData.tipo = 'I'; // Valor por defecto: Interno
+        }
+        
         // Verificar que los campos requeridos estén completos
-        if (!currentTarea.value.descripcion || !currentTarea.value.solicitud) {
+        if (!formData.descripcion || !formData.solicitud) {
           errorMessage.value = 'Por favor complete los campos requeridos';
           return;
         }
 
         // Asegurarse de que el estado tenga un valor válido
-        if (!currentTarea.value.estado) {
-          currentTarea.value.estado = 1; // Asignar estado por defecto (pendiente)
+        if (!formData.estado) {
+          formData.estado = 1; // Asignar estado por defecto (pendiente)
         }
 
         // Preparar los datos para enviar al servidor
         const tareaData = {
-          descripcion: currentTarea.value.descripcion,
-          solicitud: currentTarea.value.solicitud,
-          estado: currentTarea.value.estado,
-          usuario_asignado: currentTarea.value.usuario_asignado || null,
-          fecha_programada: currentTarea.value.fecha_programada || null,
-          fecha_inicio: currentTarea.value.fecha_inicio || null,
-          fecha_fin: currentTarea.value.fecha_fin || null,
-          motivo_cancelacion: currentTarea.value.motivo_cancelacion || null
+          descripcion: formData.descripcion,
+          solicitud: formData.solicitud,
+          estado: formData.estado,
+          usuario_asignado: formData.usuario_asignado || null,
+          fecha_programada: formData.fecha_programada || null,
+          fecha_inicio: formData.fecha_inicio || null,
+          fecha_fin: formData.fecha_fin || null,
+          motivo_cancelacion: formData.motivo_cancelacion || null
         };
 
         // Verificar token de autenticación
@@ -1171,78 +1293,121 @@ export default {
       }
     };
 
-    const editTarea = async (id) => {
+    // Función para formatear fechas para inputs datetime-local
+    const formatDateForInput = (dateString) => {
+      if (!dateString) return '';
+      
       try {
-        const response = await apiClient.get(`/tareas/${id}/`);
-        currentTarea.value = response.data;
-        showModalEdit.value = true;
+        // Crear un objeto Date a partir de la cadena
+        const date = new Date(dateString);
+        
+        // Verificar que la fecha sea válida
+        if (isNaN(date.getTime())) return '';
+        
+        // Formatear la fecha como YYYY-MM-DDThh:mm (formato requerido para datetime-local)
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        const hours = String(date.getHours()).padStart(2, '0');
+        const minutes = String(date.getMinutes()).padStart(2, '0');
+        
+        return `${year}-${month}-${day}T${hours}:${minutes}`;
       } catch (error) {
-        console.error('Error al obtener detalles de tarea:', error);
-        errorMessage.value = 'Error al cargar los detalles de la tarea. Por favor, intente de nuevo.';
+        console.error('Error al formatear fecha:', error);
+        return '';
       }
     };
 
+    // Modificar la función editTarea para aplicar el formato correcto a las fechas
+    const editTarea = (tarea) => {
+      // Crear una copia profunda de la tarea para evitar modificar la original
+      currentTarea.value = JSON.parse(JSON.stringify(tarea));
+      
+      // Formatear las fechas para los inputs datetime-local
+      if (currentTarea.value.fecha_programada) {
+        currentTarea.value.fecha_programada = formatDateForInput(currentTarea.value.fecha_programada);
+      }
+      if (currentTarea.value.fecha_inicio) {
+        currentTarea.value.fecha_inicio = formatDateForInput(currentTarea.value.fecha_inicio);
+      }
+      if (currentTarea.value.fecha_fin) {
+        currentTarea.value.fecha_fin = formatDateForInput(currentTarea.value.fecha_fin);
+      }
+      
+      // Asegurarse de que el tipo esté definido
+      if (!currentTarea.value.tipo) {
+        currentTarea.value.tipo = 'I'; // Valor por defecto
+      }
+      
+      showModalEdit.value = true;
+    };
+
+    // Modificar la función updateTarea para formatear las fechas antes de enviarlas al servidor
     const updateTarea = async () => {
       try {
-        // Verificar que los campos requeridos estén completos
-        if (!currentTarea.value.descripcion) {
-          errorMessage.value = 'Por favor complete la descripción';
+        // Verificar que currentTarea existe
+        if (!currentTarea.value) {
+          console.error('Error: currentTarea es undefined');
+          errorMessage.value = 'Error: No hay datos para actualizar';
           return;
         }
-
-        // Verificar token de autenticación
-        const token = localStorage.getItem('token');
+        
+        // Validar campos requeridos
+        if (!currentTarea.value.descripcion || !currentTarea.value.solicitud) {
+          errorMessage.value = 'Por favor complete los campos requeridos';
+          return;
+        }
+        
+        // Crear una copia de los datos para enviar
+        const tareaData = { ...currentTarea.value };
+        
+        // Asegurarse de que el tipo esté definido
+        tareaData.tipo = tareaData.tipo || 'I';
+        
+        console.log('Enviando datos para actualizar tarea:', tareaData);
+        
+        // Obtener el token con el nombre correcto (accessToken)
+        const token = localStorage.getItem('accessToken');
+        console.log('Token encontrado (accessToken):', token ? 'Sí' : 'No');
+        
         if (!token) {
           errorMessage.value = 'No hay sesión activa. Por favor inicie sesión nuevamente.';
           return;
         }
-
-        // Preparar los datos para enviar al servidor
-        const tareaData = {
-          descripcion: currentTarea.value.descripcion,
-          estado: currentTarea.value.estado,
-          usuario_asignado: currentTarea.value.usuario_asignado || null,
-          fecha_programada: currentTarea.value.fecha_programada || null,
-          fecha_inicio: currentTarea.value.fecha_inicio || null,
-          fecha_fin: currentTarea.value.fecha_fin || null,
-          duracion: currentTarea.value.duracion || null,
-          tiempoFacturable: currentTarea.value.tiempoFacturable || null,
-          usuario_reasignado: currentTarea.value.usuario_reasignado || null,
-          motivo_cancelacion: currentTarea.value.motivo_cancelacion || null
-        };
-
-        console.log('Actualizando tarea:', tareaData);
-
-        // Enviar solicitud al servidor con el token de autenticación
-        const response = await apiClient.put(`/tareas/${currentTarea.value.id}/`, tareaData, {
+        
+        // Enviar solicitud al servidor con el token en los headers
+        const response = await apiClient.put(`/tareas/${tareaData.id}/`, tareaData, {
           headers: {
-            'Authorization': `Bearer ${token}`
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
           }
         });
-
+        
         console.log('Respuesta del servidor:', response.data);
-
-        // Actualizar la tarea en la lista
-        const index = tareas.value.findIndex(t => t.id === currentTarea.value.id);
+        
+        // Actualizar la tarea en la lista local
+        const index = tareas.value.findIndex(t => t.id === tareaData.id);
         if (index !== -1) {
           tareas.value[index] = response.data;
         }
         
         // Cerrar el modal y limpiar el formulario
         showModalEdit.value = false;
-        currentTarea.value = { solicitud: '' };
         errorMessage.value = '';
         
         // Mostrar mensaje de éxito
-        emit('showMessage', {
-          type: 'success',
-          text: 'Tarea actualizada exitosamente'
-        });
+        alert('Tarea actualizada exitosamente');
         
         // Recargar las tareas para actualizar la lista
         fetchTareas();
       } catch (error) {
-        console.error('Error al actualizar tarea:', error);
+        console.error('Error completo al actualizar tarea:', error);
+        
+        // Verificar si es un error de autenticación
+        if (error.response && error.response.status === 401) {
+          errorMessage.value = 'Sesión expirada. Por favor inicie sesión nuevamente.';
+          return;
+        }
         
         // Mostrar mensaje de error específico si está disponible
         if (error.response && error.response.data) {
@@ -1288,15 +1453,25 @@ export default {
     const formatDate = (dateString) => {
       if (!dateString) return '-';
       
-      // Crear un objeto Date a partir de la cadena de fecha
-      const date = new Date(dateString);
-      
-      // Formatear la fecha como DD/MM/YYYY
-      const day = date.getDate().toString().padStart(2, '0');
-      const month = (date.getMonth() + 1).toString().padStart(2, '0'); // getMonth() devuelve 0-11
-      const year = date.getFullYear();
-      
-      return `${day}/${month}/${year}`;
+      try {
+        // Crear un objeto Date a partir de la cadena de fecha
+        const date = new Date(dateString);
+        
+        // Verificar que la fecha sea válida
+        if (isNaN(date.getTime())) return '-';
+        
+        // Formatear la fecha como DD/MM/YYYY HH:MM
+        const day = date.getDate().toString().padStart(2, '0');
+        const month = (date.getMonth() + 1).toString().padStart(2, '0'); // getMonth() devuelve 0-11
+        const year = date.getFullYear();
+        const hours = date.getHours().toString().padStart(2, '0');
+        const minutes = date.getMinutes().toString().padStart(2, '0');
+        
+        return `${day}/${month}/${year} ${hours}:${minutes}`;
+      } catch (error) {
+        console.error('Error al formatear fecha:', error);
+        return '-';
+      }
     };
 
     const getEstadoLabel = (estadoId) => {
@@ -1747,7 +1922,34 @@ export default {
     };
     
     const clearEstadoFilters = () => {
-      estadoFilters.value = [];
+      // Encontrar los IDs de los estados "TERMINADO" y "CANCELADO"
+      const terminadoEstado = estados.value.find(e => 
+        e.nombre.toLowerCase() === 'terminado' || 
+        e.nombre.toLowerCase() === 'terminada' ||
+        e.nombre.toLowerCase() === 'finalizado' ||
+        e.nombre.toLowerCase() === 'finalizada'
+      );
+      
+      const canceladoEstado = estados.value.find(e => 
+        e.nombre.toLowerCase() === 'cancelado' || 
+        e.nombre.toLowerCase() === 'cancelada'
+      );
+      
+      // Crear un array con los IDs a excluir
+      const estadosAExcluir = [];
+      if (terminadoEstado) estadosAExcluir.push(terminadoEstado.id);
+      if (canceladoEstado) estadosAExcluir.push(canceladoEstado.id);
+      
+      // Seleccionar todos los estados excepto los que están en estadosAExcluir
+      if (estadosAExcluir.length > 0) {
+        estadoFilters.value = estados.value
+          .filter(estado => !estadosAExcluir.includes(estado.id))
+          .map(estado => estado.id);
+      } else {
+        // Si no encontramos los estados a excluir, seleccionar todos
+        estadoFilters.value = estados.value.map(estado => estado.id);
+      }
+      
       applyFilters();
     };
     
@@ -1813,46 +2015,41 @@ export default {
     // Función para limpiar todos los filtros
     const clearAllFilters = () => {
       searchQuery.value = '';
-      dateFilters.value = { startDate: '', endDate: '' };
       programadaFilters.value = { startDate: '', endDate: '' };
       inicioFilters.value = { startDate: '', endDate: '' };
       finFilters.value = { startDate: '', endDate: '' };
-      statusFilter.value = '';
-      userFilter.value = '';
       solicitudFilters.value = [];
-      estadoFilters.value = [];
       usuarioFilters.value = [];
       usuarioAsignadoFilters.value = [];
       usuarioReasignadoFilters.value = [];
       empresaFilters.value = [];
-      empresaSearchQuery.value = '';
-      programadaFilterOption.value = '';
-      inicioFilterOption.value = '';
-      finFilterOption.value = '';
-      activeFilter.value = null;
       
-      filteredTareas.value = [...tareas.value];
-      sortFilteredTareas();
+      // Mantener el filtro de estado (no mostrar terminados)
+      clearEstadoFilters();
+      
+      applyFilters();
     };
 
     onMounted(async () => {
       try {
-        console.log('Iniciando carga de datos...');
+        // Primero cargar los estados
+        await fetchEstados();
+        
+        // Luego cargar el resto de los datos
         await Promise.all([
           fetchTareas(),
           fetchSolicitudes(),
           fetchUsuarios(),
-          fetchEstados(),
           fetchTerceros(),
           fetchUsuariosTerceros()
         ]);
-        console.log('Todos los datos cargados correctamente');
         
-        // Inicializar empresas después de cargar los datos
-        allEmpresas.value = getUniqueEmpresas();
-        filteredEmpresas.value = [...allEmpresas.value];
+        // Inicializar los filtros por defecto después de cargar todos los datos
+        initializeDefaultFilters();
+        
+        console.log('Todos los datos cargados y filtros aplicados');
       } catch (error) {
-        console.error('Error durante la carga de datos:', error);
+        console.error('Error al cargar datos iniciales:', error);
       }
     });
 
@@ -2007,7 +2204,36 @@ export default {
 
     // Agregar esta función donde defines tus métodos
     const openEditModal = (tarea) => {
-      currentTarea.value = { ...tarea };
+      console.log('Abriendo modal de edición para tarea:', tarea);
+      
+      // Crear una copia profunda de la tarea para evitar modificar la original
+      currentTarea.value = JSON.parse(JSON.stringify(tarea));
+      
+      // Formatear las fechas para los inputs datetime-local
+      if (currentTarea.value.fecha_programada) {
+        console.log('Fecha programada original:', currentTarea.value.fecha_programada);
+        currentTarea.value.fecha_programada = formatDateForInput(currentTarea.value.fecha_programada);
+        console.log('Fecha programada formateada:', currentTarea.value.fecha_programada);
+      }
+      
+      if (currentTarea.value.fecha_inicio) {
+        console.log('Fecha inicio original:', currentTarea.value.fecha_inicio);
+        currentTarea.value.fecha_inicio = formatDateForInput(currentTarea.value.fecha_inicio);
+        console.log('Fecha inicio formateada:', currentTarea.value.fecha_inicio);
+      }
+      
+      if (currentTarea.value.fecha_fin) {
+        console.log('Fecha fin original:', currentTarea.value.fecha_fin);
+        currentTarea.value.fecha_fin = formatDateForInput(currentTarea.value.fecha_fin);
+        console.log('Fecha fin formateada:', currentTarea.value.fecha_fin);
+      }
+      
+      // Asegurarse de que el tipo esté definido
+      if (!currentTarea.value.tipo) {
+        currentTarea.value.tipo = 'I'; // Valor por defecto
+      }
+      
+      console.log('Tarea preparada para edición:', currentTarea.value);
       showModalEdit.value = true;
     };
 
@@ -2305,6 +2531,120 @@ export default {
       applyFilters();
     };
 
+    // Añadir en la sección de datos reactivos (dentro de setup())
+    const tipoOptions = ref([
+      { value: 'G', label: 'Garantía' },
+      { value: 'I', label: 'Interno' },
+      { value: 'F', label: 'Facturable' }
+    ]);
+
+    // Función para obtener la etiqueta del tipo con manejo de valores nulos/vacíos
+    const getTipoLabel = (tipo) => {
+      if (!tipo) {
+        return 'No definido';
+      }
+      
+      switch (tipo) {
+        case 'G':
+          return 'Garantía';
+        case 'I':
+          return 'Interno';
+        case 'F':
+          return 'Facturable';
+        default:
+          return 'No definido';
+      }
+    };
+
+    // Función para obtener la clase CSS según el tipo con manejo de valores nulos/vacíos
+    const getTipoClass = (tipo) => {
+      if (!tipo) {
+        return 'bg-gray-100 text-gray-800';
+      }
+      
+      switch (tipo) {
+        case 'G':
+          return 'bg-blue-100 text-blue-800';
+        case 'I':
+          return 'bg-gray-100 text-gray-800';
+        case 'F':
+          return 'bg-green-100 text-green-800';
+        default:
+          return 'bg-gray-100 text-gray-800';
+      }
+    };
+
+    // Función auxiliar para formatear fechas (añadir donde sea apropiado)
+    const fixDateFormat = (dateString) => {
+      if (!dateString) return '';
+      
+      try {
+        // Crear un objeto Date a partir de la cadena
+        const date = new Date(dateString);
+        
+        // Verificar que la fecha sea válida
+        if (isNaN(date.getTime())) return '';
+        
+        // Formatear la fecha como YYYY-MM-DDThh:mm (formato requerido para datetime-local)
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        const hours = String(date.getHours()).padStart(2, '0');
+        const minutes = String(date.getMinutes()).padStart(2, '0');
+        
+        return `${year}-${month}-${day}T${hours}:${minutes}`;
+      } catch (error) {
+        console.error('Error al formatear fecha:', error);
+        return '';
+      }
+    };
+
+    // Añadir una función para determinar el color de fondo de la fila según si tiene cita o no
+    const getRowClass = (tarea) => {
+      // Si la tarea tiene cita, aplicar un color pastel
+      if (tarea.cita === 'S') {
+        return 'bg-blue-50'; // Color azul pastel
+      }
+      return ''; // Sin color especial
+    };
+
+    // Función para determinar el color de la celda de fecha programada
+    const getFechaProgramadaClass = (fechaProgramada) => {
+      if (!fechaProgramada) return '';
+      
+      try {
+        const hoy = new Date();
+        hoy.setHours(0, 0, 0, 0); // Establecer a las 00:00:00 del día actual
+        
+        const fechaProg = new Date(fechaProgramada);
+        fechaProg.setHours(0, 0, 0, 0); // Establecer a las 00:00:00 de la fecha programada
+        
+        // Calcular la diferencia en días
+        const diffTime = fechaProg.getTime() - hoy.getTime();
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        
+        console.log(`Fecha programada: ${fechaProgramada}, Diferencia en días: ${diffDays}`);
+        
+        // Aplicar clases según las condiciones
+        if (diffDays > 0) {
+          // Tareas próximas (futuras) - azul claro
+          return 'bg-blue-100';
+        } else if (diffDays === 0) {
+          // Tareas para hoy - verde claro
+          return 'bg-green-100';
+        } else if (diffDays >= -3 && diffDays < 0) {
+          // Tareas de los últimos tres días - amarillo claro
+          return 'bg-yellow-100';
+        } else {
+          // Tareas de más de tres días atrás - rojo claro
+          return 'bg-red-100';
+        }
+      } catch (error) {
+        console.error('Error al calcular clase para fecha programada:', error);
+        return '';
+      }
+    };
+
     return {
       tareas,
       solicitudes,
@@ -2405,7 +2745,14 @@ export default {
       selectAllEmpresas,
       clearEmpresaFilters,
       checkDateFilter,
-      applyPredefinedDateFilter
+      applyPredefinedDateFilter,
+      tipoOptions,
+      getTipoClass,
+      getTipoLabel,
+      fixDateFormat,
+      formatDateForInput,
+      getRowClass,
+      getFechaProgramadaClass
     };
   }
 }

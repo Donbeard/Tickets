@@ -1381,7 +1381,7 @@ data() {
     currentSolicitud: null,
     allSolicitudes: [],
     currentPage: 1,     
-    pageSize: 10,       
+    pageSize: 20,       
     editingField: null, 
     editingRowId: null, 
     dropdownOpen: {},

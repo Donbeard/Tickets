@@ -36,36 +36,89 @@
                     Acciones
                   </div>
                 </th>
-                <!-- ID -->
+                <!-- Empresa -->
                 <th scope="col" class="px-4 py-1 text-left text-xs font-medium text-Black uppercase tracking-wider">
                   <div class="flex items-center justify-between">
-                    <div class="flex items-center cursor-pointer" @click="sortTareas('id')">
-                      ID
+                    <div class="flex items-center cursor-pointer" @click="sortTareas('empresa')">
+                      Empresa
                       <span class="ml-1">
-                        <svg v-if="getSortIcon('id') === 'asc'" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <svg v-if="getSortIcon('empresa') === 'asc'" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"></path>
                         </svg>
-                        <svg v-else-if="getSortIcon('id') === 'desc'" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <svg v-else-if="getSortIcon('empresa') === 'desc'" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
                         </svg>
                       </span>
                     </div>
-                    <button @click="toggleFilter('id')" class="text-gray-500 hover:text-gray-700">
-                      <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <button @click.stop="toggleFilter('empresa')" class="text-black hover:text-gray-700">
+                      <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
                       </svg>
                     </button>
                   </div>
-                  <div v-if="activeFilter === 'id'" class="mt-2 p-2 bg-white shadow rounded border absolute z-10 w-48">
-                    <input
-                      type="text"
-                      v-model="idFilter"
-                      @input="applyFilters"
-                      placeholder="Filtrar por ID..."
-                      class="block w-full px-2 py-1 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500"
-                    />
-                    <div class="mt-2 flex justify-end">
-                      <button @click="clearIdFilter" class="text-xs text-gray-600 hover:text-gray-800">Limpiar</button>
+                  <div v-if="activeFilter === 'empresa'" class="mt-2 p-2 bg-white shadow rounded border absolute z-10 w-64" @click.stop>
+                    <div class="mb-2">
+                      <input 
+                        type="text" 
+                        v-model="empresaSearchQuery" 
+                        @input="filterEmpresas"
+                        placeholder="Buscar empresa..." 
+                        class="w-full px-2 py-1 text-xs border rounded"
+                      >
+                    </div>
+                    <div class="max-h-60 overflow-y-auto">
+                      <div v-for="empresa in filteredEmpresas" :key="empresa.id" class="flex items-center mb-1">
+                        <input 
+                          type="checkbox" 
+                          :id="`empresa-${empresa.id}`" 
+                          :value="empresa.id" 
+                          v-model="empresaFilters"
+                          @change="applyFilters"
+                          class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
+                        />
+                        <label :for="`empresa-${empresa.id}`" class="ml-2 block text-sm text-gray-900">
+                          {{ empresa.nombre }}
+                        </label>
+                      </div>
+                    </div>
+                    <div class="mt-2 flex justify-between">
+                      <button @click="selectAllEmpresas" class="text-xs text-indigo-600 hover:text-indigo-800">Seleccionar todos</button>
+                      <button @click="clearEmpresaFilters" class="text-xs text-gray-600 hover:text-gray-800">Limpiar</button>
+                    </div>
+                  </div>
+                </th>
+                 <!-- Solicitud -->
+                 <th scope="col" class="px-4 py-1 text-left text-xs font-medium text-Black uppercase tracking-wider cursor-pointer" @click="sortTareas('solicitud')">
+                  <div class="flex items-center justify-between">
+                    <div class="flex items-center">
+                      Solicitud
+                      <span class="ml-1">
+                        <svg v-if="getSortIcon('solicitud') === 'asc'" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"></path>
+                        </svg>
+                        <svg v-else-if="getSortIcon('solicitud') === 'desc'" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                        </svg>
+                      </span>
+                    </div>
+                    <button @click.stop="toggleFilter('solicitud')" class="text-black hover:text-gray-700">
+                      <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+                      </svg>
+                    </button>
+                  </div>
+                  <div v-if="activeFilter === 'solicitud'" class="absolute bg-white shadow-md p-2 z-10 mt-1 rounded border" @click.stop>
+                    <div class="mb-2">
+                      <input 
+                        type="text" 
+                        v-model="solicitudSearchQuery" 
+                        @input="applyFilters"
+                        placeholder="Buscar solicitud..." 
+                        class="w-full px-2 py-1 text-xs border rounded"
+                      >
+                    </div>
+                    <div class="flex justify-end">
+                      <button @click="clearSolicitudSearch" class="text-xs text-red-600 hover:text-red-800">Limpiar</button>
                     </div>
                   </div>
                 </th>
@@ -164,41 +217,7 @@
                   </div>
                 </th>
                 
-                <!-- Solicitud -->
-                <th scope="col" class="px-4 py-1 text-left text-xs font-medium text-Black uppercase tracking-wider cursor-pointer" @click="sortTareas('solicitud')">
-                  <div class="flex items-center justify-between">
-                    <div class="flex items-center">
-                      Solicitud
-                      <span class="ml-1">
-                        <svg v-if="getSortIcon('solicitud') === 'asc'" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"></path>
-                        </svg>
-                        <svg v-else-if="getSortIcon('solicitud') === 'desc'" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
-                        </svg>
-                      </span>
-                    </div>
-                    <button @click.stop="toggleFilter('solicitud')" class="text-black hover:text-gray-700">
-                      <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
-                      </svg>
-                    </button>
-                  </div>
-                  <div v-if="activeFilter === 'solicitud'" class="absolute bg-white shadow-md p-2 z-10 mt-1 rounded border" @click.stop>
-                    <div class="mb-2">
-                      <input 
-                        type="text" 
-                        v-model="solicitudSearchQuery" 
-                        @input="applyFilters"
-                        placeholder="Buscar solicitud..." 
-                        class="w-full px-2 py-1 text-xs border rounded"
-                      >
-                    </div>
-                    <div class="flex justify-end">
-                      <button @click="clearSolicitudSearch" class="text-xs text-red-600 hover:text-red-800">Limpiar</button>
-                    </div>
-                  </div>
-                </th>
+               
                 
                 <!-- Estado -->
                 <th scope="col" class="px-4 py-1 text-left text-xs font-medium text-Black uppercase tracking-wider">
@@ -453,57 +472,7 @@
                   </div>
                 </th>
                 
-                <!-- Empresa -->
-                <th scope="col" class="px-4 py-1 text-left text-xs font-medium text-Black uppercase tracking-wider">
-                  <div class="flex items-center justify-between">
-                    <div class="flex items-center cursor-pointer" @click="sortTareas('empresa')">
-                      Empresa
-                      <span class="ml-1">
-                        <svg v-if="getSortIcon('empresa') === 'asc'" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"></path>
-                        </svg>
-                        <svg v-else-if="getSortIcon('empresa') === 'desc'" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
-                        </svg>
-                      </span>
-                    </div>
-                    <button @click.stop="toggleFilter('empresa')" class="text-black hover:text-gray-700">
-                      <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
-                      </svg>
-                    </button>
-                  </div>
-                  <div v-if="activeFilter === 'empresa'" class="mt-2 p-2 bg-white shadow rounded border absolute z-10 w-64" @click.stop>
-                    <div class="mb-2">
-                      <input 
-                        type="text" 
-                        v-model="empresaSearchQuery" 
-                        @input="filterEmpresas"
-                        placeholder="Buscar empresa..." 
-                        class="w-full px-2 py-1 text-xs border rounded"
-                      >
-                    </div>
-                    <div class="max-h-60 overflow-y-auto">
-                      <div v-for="empresa in filteredEmpresas" :key="empresa.id" class="flex items-center mb-1">
-                        <input 
-                          type="checkbox" 
-                          :id="`empresa-${empresa.id}`" 
-                          :value="empresa.id" 
-                          v-model="empresaFilters"
-                          @change="applyFilters"
-                          class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
-                        />
-                        <label :for="`empresa-${empresa.id}`" class="ml-2 block text-sm text-gray-900">
-                          {{ empresa.nombre }}
-                        </label>
-                      </div>
-                    </div>
-                    <div class="mt-2 flex justify-between">
-                      <button @click="selectAllEmpresas" class="text-xs text-indigo-600 hover:text-indigo-800">Seleccionar todos</button>
-                      <button @click="clearEmpresaFilters" class="text-xs text-gray-600 hover:text-gray-800">Limpiar</button>
-                    </div>
-                  </div>
-                </th>
+                
                 
                 <!-- En la sección de encabezados de la tabla -->
                 <th scope="col" class="px-4 py-1 text-left text-xs font-medium text-Black uppercase tracking-wider">
@@ -562,9 +531,13 @@
                     </button>
                   </div>
                 </td>
-                <!-- ID -->
+                <!-- Empresa -->
+                <td class="px-4 py-2 whitespace-nowrap text-sm text-black">
+                  {{ getEmpresaNombre(tarea.solicitud) }}
+                </td>
+                <!-- Solicitud -->
                 <td class="px-3 py-2 whitespace-nowrap text-xs text-black">
-                  {{ tarea.id }}
+                  {{ tarea.solicitud }} - {{ getSolicitudTitulo(tarea.solicitud) }}
                 </td>
                 <!-- F. Programada -->
                 <td :class="['px-3 py-2 whitespace-nowrap text-xs', getFechaProgramadaClass(tarea.fecha_programada)]">
@@ -580,10 +553,7 @@
                   </div>
                 </td>
                 
-                <!-- Solicitud -->
-                <td class="px-3 py-2 whitespace-nowrap text-xs text-black">
-                  {{ tarea.solicitud }} - {{ getSolicitudTitulo(tarea.solicitud) }}
-                </td>
+                
                 
                 <!-- Estado -->
                 <td class="px-3 py-2 whitespace-nowrap text-xs">
@@ -614,10 +584,7 @@
                   {{ formatDate(tarea.fecha_fin) }}
                 </td>
                 
-                <!-- Empresa -->
-                <td class="px-4 py-2 whitespace-nowrap text-sm text-black">
-                  {{ getEmpresaNombre(tarea.solicitud) }}
-                </td>
+                
                 
                 <!-- En la sección de filas de la tabla -->
                 <td class="px-3 py-2 whitespace-nowrap text-xs">
@@ -764,7 +731,7 @@
 
         <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
 
-        <div class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full border border-indigo-100">
+        <div class="inline-block align-bottom bg-white rounded-lg text-left overflow-visible shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full border border-indigo-100">
           <form @submit.prevent="showModalCreate ? createTarea() : updateTarea()">
             <div class="bg-gradient-to-r from-indigo-600 to-blue-500 px-4 py-3 flex justify-between items-center">
               <h3 class="text-lg leading-6 font-medium text-white">
@@ -850,7 +817,7 @@
                 </div>
                 
                 <!-- Campo Motivo Cancelación (mostrar solo si estado es cancelado) -->
-                <div v-if="currentTarea.estado == 4" class="flex items-center">
+                <div v-if="currentTarea.estado == 8" class="flex items-center">
                   <label for="motivo_cancelacion" class="block text-sm font-medium text-gray-700 w-1/4">
                     Motivo:
                   </label>
@@ -863,34 +830,80 @@
                   ></textarea>
                 </div>
                 
-                <!-- Fecha Programada (formato 24h) -->
+                <!-- Fecha Programada con selector personalizado -->
                 <div class="flex items-center">
                   <label for="fecha_programada" class="block text-sm font-medium text-gray-700 w-1/4">
                     F. Programada:
                   </label>
-                  <input
-                    type="datetime-local"
-                    id="fecha_programada"
-                    v-model="currentTarea.fecha_programada"
-                    class="block w-3/4 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 text-sm"
-                  />
+                  <div class="w-3/4">
+                    <DatePicker
+                      v-model="currentTarea.fecha_programada"
+                      :model-config="{ type: 'string', mask: 'YYYY-MM-DDTHH:mm:00', timeAdjust: 'none' }"
+                      :masks="masks"
+                      :attributes="datePickerAttributes"
+                      :is-24hr="true"
+                      :min-date="new Date()"
+                      mode="dateTime"
+                      @update:model-value="updateDateTime('programada', $event)"
+                      class="w-full"
+                      :popover="{ 
+                        visibility: 'click', 
+                        placement: 'auto', 
+                        isInteractive: true, 
+                        modifiers: [{ name: 'preventOverflow', options: { padding: 8 } }],
+                        positionFixed: true
+                      }"
+                    >
+                      <template v-slot="{ inputValue, inputEvents }">
+                        <input
+                          class="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 text-sm"
+                          :value="inputValue"
+                          v-on="inputEvents"
+                        />
+                      </template>
+                    </DatePicker>
+                  </div>
                 </div>
                 
-                <!-- Fecha Inicio con botón para hora actual -->
+                <!-- Fecha Inicio con selector personalizado -->
                 <div class="flex items-center">
                   <label for="fecha_inicio" class="block text-sm font-medium text-gray-700 w-1/4">
                     F. Inicio:
                   </label>
                   <div class="flex w-3/4 space-x-1">
-                    <input
-                      type="datetime-local"
-                      id="fecha_inicio"
-                      v-model="currentTarea.fecha_inicio"
-                      class="block flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 text-sm"
-                    />
+                    <div class="flex-1">
+                      <DatePicker
+                        v-model="currentTarea.fecha_inicio"
+                        :model-config="{ type: 'string', mask: 'YYYY-MM-DDTHH:mm:00', timeAdjust: 'none' }"
+                        :time-picker-options="timePickerOptions"
+                        :masks="masks"
+                        :attributes="datePickerAttributes"
+                        :is-24hr="true"
+                        :min-date="new Date()"
+                        mode="dateTime"
+                        @update:model-value="(val) => updateDateTime('inicio', val)"
+                        class="w-full"
+                        :popover="{ 
+                          visibility: 'click', 
+                          placement: 'auto', 
+                          isInteractive: true, 
+                          modifiers: [{ name: 'preventOverflow', options: { padding: 8 } }],
+                          positionFixed: true
+                        }"
+                      >
+                        <template v-slot="{ inputValue, inputEvents }">
+                          <input
+                            class="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 text-sm"
+                            :value="inputValue"
+                            v-on="inputEvents"
+                          />
+                        </template>
+                      </DatePicker>
+                    </div>
+                    <!-- Botón para F. Inicio -->
                     <button 
                       type="button"
-                      @click="setCurrentDateTime('inicio')"
+                      @click.stop="() => { setCurrentDateTime('inicio'); $event.preventDefault(); $event.stopPropagation(); }"
                       class="px-2 py-2 bg-indigo-100 text-indigo-700 rounded-lg hover:bg-indigo-200"
                       title="Establecer hora actual"
                     >
@@ -901,22 +914,45 @@
                   </div>
                 </div>
                 
-                <!-- Fecha Fin con botón para hora actual (solo en edición) -->
+                <!-- Fecha Fin con selector personalizado (solo en edición) -->
                 <div v-if="!showModalCreate" class="flex items-center">
                   <label for="fecha_fin" class="block text-sm font-medium text-gray-700 w-1/4">
                     F. Fin:
                   </label>
                   <div class="flex w-3/4 space-x-1">
-                    <input
-                      type="datetime-local"
-                      id="fecha_fin"
-                      v-model="currentTarea.fecha_fin"
-                      @change="calcularDuracion"
-                      class="block flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 text-sm"
-                    />
+                    <div class="flex-1">
+                      <DatePicker
+                        v-model="currentTarea.fecha_fin"
+                        :model-config="{ type: 'string', mask: 'YYYY-MM-DDTHH:mm:00', timeAdjust: 'none' }"
+                        :time-picker-options="timePickerOptions"
+                        :masks="masks"
+                        :attributes="datePickerAttributes"
+                        :is-24hr="true"
+                        :min-date="new Date()"
+                        mode="dateTime"
+                        @update:model-value="(val) => updateDateTime('fin', val)"
+                        class="w-full"
+                        :popover="{ 
+                          visibility: 'click', 
+                          placement: 'auto', 
+                          isInteractive: true, 
+                          modifiers: [{ name: 'preventOverflow', options: { padding: 8 } }],
+                          positionFixed: true
+                        }"
+                      >
+                        <template v-slot="{ inputValue, inputEvents }">
+                          <input
+                            class="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 text-sm"
+                            :value="inputValue"
+                            v-on="inputEvents"
+                          />
+                        </template>
+                      </DatePicker>
+                    </div>
+                    <!-- Botón para F. Fin -->
                     <button 
                       type="button"
-                      @click="setCurrentDateTime('fin')"
+                      @click.stop="() => { setCurrentDateTime('fin'); $event.preventDefault(); $event.stopPropagation(); }"
                       class="px-2 py-2 bg-indigo-100 text-indigo-700 rounded-lg hover:bg-indigo-200"
                       title="Establecer hora actual"
                     >
@@ -1046,9 +1082,15 @@
 <script>
 import { ref, onMounted, watch, computed } from 'vue';
 import apiClient from '@/apiClient'
+import { DatePicker } from 'v-calendar';
+import 'v-calendar/dist/style.css';
 
 export default {
   name: 'FormTareas',
+  
+  components: {
+    DatePicker
+  },
   
   emits: ['showMessage'],
   
@@ -1119,7 +1161,12 @@ export default {
         console.log('Tareas obtenidas:', response.data);
         tareas.value = response.data;
         
-        // No aplicar filtros aquí, se hará en initializeDefaultFilters
+        // Cargar terceros después de obtener las tareas
+        await fetchTerceros();
+        
+        // Aplicar filtros para actualizar la lista filtrada
+        applyFilters();
+        
       } catch (error) {
         console.error('Error al obtener tareas:', error);
         errorMessage.value = 'Error al cargar las tareas. Por favor, intente de nuevo.';
@@ -1134,7 +1181,7 @@ export default {
         console.error('Error al obtener solicitudes:', error);
       }
     };
-
+    
     const fetchUsuarios = async () => {
       try {
         const response = await apiClient.get('/usuarios/');
@@ -1217,60 +1264,77 @@ export default {
       applyFilters();
     };
 
-    const createTarea = async (formData) => {
+    // Modificar la función createTarea para manejar mejor la validación de fechas
+    const createTarea = async () => {
       try {
-        // Asegurarse de que el tipo esté incluido en los datos del formulario
-        if (!formData.tipo) {
-          formData.tipo = 'I'; // Valor por defecto: Interno
-        }
+        console.log('Creando tarea:', currentTarea.value);
         
-        // Verificar que los campos requeridos estén completos
-        if (!formData.descripcion || !formData.solicitud) {
-          errorMessage.value = 'Por favor complete los campos requeridos';
-          return;
-        }
-
-        // Asegurarse de que el estado tenga un valor válido
-        if (!formData.estado) {
-          formData.estado = 1; // Asignar estado por defecto (pendiente)
-        }
-
-        // Preparar los datos para enviar al servidor
-        const tareaData = {
-          descripcion: formData.descripcion,
-          solicitud: formData.solicitud,
-          estado: formData.estado,
-          usuario_asignado: formData.usuario_asignado || null,
-          fecha_programada: formData.fecha_programada || null,
-          fecha_inicio: formData.fecha_inicio || null,
-          fecha_fin: formData.fecha_fin || null,
-          motivo_cancelacion: formData.motivo_cancelacion || null
-        };
-
-        // Verificar token de autenticación
-        const token = localStorage.getItem('token');
+        // Verificar si hay un token de acceso
+        const token = localStorage.getItem('accessToken');
         if (!token) {
           errorMessage.value = 'No hay sesión activa. Por favor inicie sesión nuevamente.';
+          console.error('No se encontró token de acceso');
           return;
         }
-
-        console.log('Enviando datos de tarea:', tareaData);
-
-        // Enviar solicitud al servidor con el token de autenticación
-        const response = await apiClient.post('/tareas/', tareaData, {
-          headers: {
-            'Authorization': `Bearer ${token}`
+        
+        // Preparar los datos de la tarea
+        const tareaData = { ...currentTarea.value };
+        
+        // Validar y formatear las fechas
+        // Si fecha_fin está presente pero fecha_inicio no, mostrar error
+        if (tareaData.fecha_fin && !tareaData.fecha_inicio) {
+          errorMessage.value = 'No se puede establecer una fecha de fin sin una fecha de inicio.';
+          return;
+        }
+        
+        // Asegurarse de que los campos de fecha estén en el formato correcto
+        if (tareaData.fecha_programada) {
+          // Asegurarse de que la fecha esté en formato ISO
+          if (typeof tareaData.fecha_programada === 'object') {
+            tareaData.fecha_programada = tareaData.fecha_programada.toISOString();
+          }
+        }
+        
+        if (tareaData.fecha_inicio) {
+          if (typeof tareaData.fecha_inicio === 'object') {
+            tareaData.fecha_inicio = tareaData.fecha_inicio.toISOString();
+          }
+        }
+        
+        if (tareaData.fecha_fin) {
+          if (typeof tareaData.fecha_fin === 'object') {
+            tareaData.fecha_fin = tareaData.fecha_fin.toISOString();
+          }
+          
+          // Validar que fecha_fin sea posterior a fecha_inicio
+          if (tareaData.fecha_inicio && new Date(tareaData.fecha_fin) < new Date(tareaData.fecha_inicio)) {
+            errorMessage.value = 'La fecha de fin debe ser posterior a la fecha de inicio.';
+            return;
+          }
+        }
+        
+        // Eliminar campos vacíos o nulos para evitar errores de validación
+        Object.keys(tareaData).forEach(key => {
+          if (tareaData[key] === null || tareaData[key] === '') {
+            delete tareaData[key];
           }
         });
-
+        
+        console.log('Datos de tarea preparados:', tareaData);
+        
+        // Enviar solicitud al servidor
+        const response = await apiClient.post('/tareas/', tareaData, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+        
         console.log('Respuesta del servidor:', response.data);
-
-        // Agregar la nueva tarea a la lista
-        tareas.value.push(response.data);
         
         // Cerrar el modal y limpiar el formulario
         showModalCreate.value = false;
-        currentTarea.value = { solicitud: '' };
+        currentTarea.value = { solicitud: '', tipo: 'I', cita: 'N' };
         errorMessage.value = '';
         
         // Mostrar mensaje de éxito
@@ -1280,15 +1344,43 @@ export default {
         });
         
         // Recargar las tareas para actualizar la lista
-        fetchTareas();
+        await fetchTareas();
+        
       } catch (error) {
         console.error('Error al crear tarea:', error);
         
-        // Mostrar mensaje de error específico si está disponible
-        if (error.response && error.response.data) {
-          errorMessage.value = `Error: ${JSON.stringify(error.response.data)}`;
+        // Manejar diferentes tipos de errores
+        if (error.response) {
+          // El servidor respondió con un código de estado fuera del rango 2xx
+          console.error('Error de respuesta:', error.response.data);
+          
+          if (error.response.status === 401) {
+            errorMessage.value = 'No hay sesión activa. Por favor inicie sesión nuevamente.';
+          } else if (error.response.status === 400) {
+            // Manejar errores de validación
+            const errorData = error.response.data;
+            if (errorData.fecha_fin) {
+              errorMessage.value = `Error en fecha de fin: ${errorData.fecha_fin[0]}`;
+            } else if (errorData.fecha_inicio) {
+              errorMessage.value = `Error en fecha de inicio: ${errorData.fecha_inicio[0]}`;
+            } else if (errorData.fecha_programada) {
+              errorMessage.value = `Error en fecha programada: ${errorData.fecha_programada[0]}`;
+            } else if (errorData.detail) {
+              errorMessage.value = errorData.detail;
+            } else {
+              errorMessage.value = 'Error de validación en los datos. Por favor, revise los campos.';
+            }
+          } else {
+            errorMessage.value = 'Error al crear la tarea. Por favor, intente de nuevo.';
+          }
+        } else if (error.request) {
+          // La solicitud se hizo pero no se recibió respuesta
+          console.error('Error de solicitud:', error.request);
+          errorMessage.value = 'No se pudo conectar con el servidor. Por favor, verifique su conexión.';
         } else {
-          errorMessage.value = `Error al crear la tarea: ${error.message}`;
+          // Algo ocurrió al configurar la solicitud
+          console.error('Error:', error.message);
+          errorMessage.value = 'Error al procesar la solicitud. Por favor, intente de nuevo.';
         }
       }
     };
@@ -1317,7 +1409,7 @@ export default {
         return '';
       }
     };
-
+    
     // Modificar la función editTarea para aplicar el formato correcto a las fechas
     const editTarea = (tarea) => {
       // Crear una copia profunda de la tarea para evitar modificar la original
@@ -1364,9 +1456,20 @@ export default {
         // Asegurarse de que el tipo esté definido
         tareaData.tipo = tareaData.tipo || 'I';
         
+        // Calcular la duración si no está definida
+        if (!tareaData.duracion && tareaData.fecha_inicio && tareaData.fecha_fin) {
+          calcularDuracion();
+          tareaData.duracion = currentTarea.value.duracion;
+        }
+        
+        // Si la duración está vacía, establecerla como 0
+        if (!tareaData.duracion) {
+          tareaData.duracion = '00:00:00';
+        }
+        
         console.log('Enviando datos para actualizar tarea:', tareaData);
         
-        // Obtener el token con el nombre correcto (accessToken)
+        // Obtener el token
         const token = localStorage.getItem('accessToken');
         console.log('Token encontrado (accessToken):', token ? 'Sí' : 'No');
         
@@ -1375,7 +1478,7 @@ export default {
           return;
         }
         
-        // Enviar solicitud al servidor con el token en los headers
+        // Enviar solicitud al servidor
         const response = await apiClient.put(`/tareas/${tareaData.id}/`, tareaData, {
           headers: {
             'Authorization': `Bearer ${token}`,
@@ -1393,21 +1496,20 @@ export default {
         
         // Cerrar el modal y limpiar el formulario
         showModalEdit.value = false;
+        currentTarea.value = { solicitud: '', tipo: 'I', cita: 'N' };
         errorMessage.value = '';
         
         // Mostrar mensaje de éxito
-        alert('Tarea actualizada exitosamente');
+        emit('showMessage', {
+          type: 'success',
+          text: 'Tarea actualizada exitosamente'
+        });
         
         // Recargar las tareas para actualizar la lista
-        fetchTareas();
+        await fetchTareas();
+        
       } catch (error) {
         console.error('Error completo al actualizar tarea:', error);
-        
-        // Verificar si es un error de autenticación
-        if (error.response && error.response.status === 401) {
-          errorMessage.value = 'Sesión expirada. Por favor inicie sesión nuevamente.';
-          return;
-        }
         
         // Mostrar mensaje de error específico si está disponible
         if (error.response && error.response.data) {
@@ -1513,135 +1615,138 @@ export default {
     };
 
     const applyFilters = () => {
-      console.log('Aplicando todos los filtros con valores:');
-      console.log('- searchQuery:', searchQuery.value);
-      console.log('- solicitudFilters:', solicitudFilters.value);
-      console.log('- estadoFilters:', estadoFilters.value);
-      console.log('- usuarioAsignadoFilters:', usuarioAsignadoFilters.value);
-      console.log('- usuarioReasignadoFilters:', usuarioReasignadoFilters.value);
-      console.log('- empresaFilters:', empresaFilters.value);
+      console.log('Aplicando filtros...');
       
-      // Comenzar con todas las tareas
-      let result = [...tareas.value];
-      console.log(`Total de tareas iniciales: ${result.length}`);
+      // Aplicar todos los filtros activos
+      let filtered = [...tareas.value];
       
-      // Filtro de búsqueda (descripción, ID, solicitud)
+      // Filtro de búsqueda
       if (searchQuery.value) {
         const query = searchQuery.value.toLowerCase();
-        result = result.filter(tarea => 
-          (tarea.descripcion && tarea.descripcion.toLowerCase().includes(query)) || 
-          (tarea.id && String(tarea.id).includes(query)) ||
-          (tarea.solicitud && String(tarea.solicitud).toLowerCase().includes(query))
+        filtered = filtered.filter(tarea => 
+          (tarea.descripcion && tarea.descripcion.toLowerCase().includes(query)) ||
+          (tarea.solicitud && tarea.solicitud.toString().includes(query))
         );
-        console.log(`Después del filtro de búsqueda: ${result.length} tareas`);
       }
       
-      // Filtro de solicitud (múltiple) - CORREGIDO
-      if (solicitudFilters.value && solicitudFilters.value.length > 0) {
-        console.log('Aplicando filtro de solicitud con valores:', solicitudFilters.value);
-        
-        // Convertir los IDs de solicitud a números para comparación
-        const solicitudIds = solicitudFilters.value.map(id => Number(id));
-        
-        result = result.filter(tarea => {
-          // Asegurarse de que tarea.solicitud sea un número
-          const solicitudId = typeof tarea.solicitud === 'object' ? 
-            Number(tarea.solicitud.id) : Number(tarea.solicitud);
-          
-          return solicitudIds.includes(solicitudId);
+      // Filtros de solicitud
+      if (solicitudFilters.value.length > 0) {
+        filtered = filtered.filter(tarea => 
+          solicitudFilters.value.includes(tarea.solicitud)
+        );
+      }
+      
+      // Filtros de estado
+      if (estadoFilters.value.length > 0) {
+        filtered = filtered.filter(tarea => 
+          estadoFilters.value.includes(tarea.estado)
+        );
+      }
+      
+      // Filtros de usuario asignado
+      if (usuarioFilters.value.length > 0) {
+        filtered = filtered.filter(tarea => 
+          usuarioFilters.value.includes(tarea.usuario_asignado)
+        );
+      }
+      
+      // Filtros de usuario reasignado
+      if (usuarioReasignadoFilters.value.length > 0) {
+        filtered = filtered.filter(tarea => 
+          usuarioReasignadoFilters.value.includes(tarea.usuario_reasignado)
+        );
+      }
+      
+      // Filtros de empresa
+      if (empresaFilters.value.length > 0) {
+        filtered = filtered.filter(tarea => {
+          const solicitud = solicitudes.value.find(s => s.id == tarea.solicitud);
+          return solicitud && empresaFilters.value.includes(solicitud.empresa);
         });
-        
-        console.log(`Después del filtro de solicitud: ${result.length} tareas`);
       }
       
-      // Filtro de estado (múltiple)
-      if (estadoFilters.value && estadoFilters.value.length > 0) {
-        result = result.filter(tarea => 
-          tarea.estado && estadoFilters.value.includes(tarea.estado)
-        );
-        console.log(`Después del filtro de estado: ${result.length} tareas`);
+      // Filtros de fecha programada
+      if (programadaFilters.value.startDate) {
+        filtered = filtered.filter(tarea => {
+          if (!tarea.fecha_programada) return false;
+          return new Date(tarea.fecha_programada) >= new Date(programadaFilters.value.startDate);
+        });
       }
       
-      // Filtro de usuario asignado (múltiple)
-      if (usuarioAsignadoFilters.value && usuarioAsignadoFilters.value.length > 0) {
-        result = result.filter(tarea => 
-          tarea.usuario_asignado && usuarioAsignadoFilters.value.includes(tarea.usuario_asignado)
-        );
-        console.log(`Después del filtro de usuario asignado: ${result.length} tareas`);
+      if (programadaFilters.value.endDate) {
+        filtered = filtered.filter(tarea => {
+          if (!tarea.fecha_programada) return false;
+          return new Date(tarea.fecha_programada) <= new Date(programadaFilters.value.endDate);
+        });
       }
       
-      // Filtro de usuario reasignado (múltiple)
-      if (usuarioReasignadoFilters.value && usuarioReasignadoFilters.value.length > 0) {
-        result = result.filter(tarea => 
-          tarea.usuario_reasignado && usuarioReasignadoFilters.value.includes(tarea.usuario_reasignado)
-        );
-        console.log(`Después del filtro de usuario reasignado: ${result.length} tareas`);
+      // Filtros de fecha de inicio
+      if (inicioFilters.value.startDate) {
+        filtered = filtered.filter(tarea => {
+          if (!tarea.fecha_inicio) return false;
+          return new Date(tarea.fecha_inicio) >= new Date(inicioFilters.value.startDate);
+        });
       }
       
-      // Filtro de empresa (múltiple) - CORREGIDO
-      if (empresaFilters.value && empresaFilters.value.length > 0) {
-        console.log('Aplicando filtro de empresa con valores:', empresaFilters.value);
-        
-        // Primero, obtener los IDs de terceros que corresponden a los nombres seleccionados
-        const terceroIds = [];
-        for (const empresaNombre of empresaFilters.value) {
-          const tercero = terceros.value.find(t => t.nombre === empresaNombre);
-          if (tercero) {
-            terceroIds.push(tercero.id);
-            console.log(`Empresa ${empresaNombre} corresponde al tercero ID ${tercero.id}`);
-          }
-        }
-        
-        console.log('IDs de terceros a filtrar:', terceroIds);
-        
-        if (terceroIds.length > 0) {
-          result = result.filter(tarea => {
-            if (!tarea.solicitud) return false;
-            
-            // Obtener la solicitud asociada a la tarea
-            const solicitud = solicitudes.value.find(s => s.id === tarea.solicitud);
-            if (!solicitud || !solicitud.usuario_cliente) {
-              return false;
-            }
-            
-            // Obtener el ID del usuario cliente
-            const usuarioClienteId = solicitud.usuario_cliente;
-            
-            // Buscar en usuariosTerceros las relaciones para este usuario
-            for (const ut of usuariosTerceros.value) {
-              // Verificar si esta relación corresponde al usuario cliente
-              const utUsuarioId = typeof ut.usuario === 'object' ? ut.usuario.id : ut.usuario;
-              if (utUsuarioId !== usuarioClienteId) continue;
-              
-              // Obtener el ID del tercero
-              const terceroId = typeof ut.tercero === 'object' ? ut.tercero.id : ut.tercero;
-              
-              // Verificar si este tercero está en los filtros seleccionados
-              if (terceroIds.includes(terceroId)) {
-                return true;
-              }
-            }
-            
-            return false;
-          });
-        }
-        
-        console.log(`Después del filtro de empresa: ${result.length} tareas`);
+      if (inicioFilters.value.endDate) {
+        filtered = filtered.filter(tarea => {
+          if (!tarea.fecha_inicio) return false;
+          return new Date(tarea.fecha_inicio) <= new Date(inicioFilters.value.endDate);
+        });
       }
       
-      // Filtros de fecha (mantener como está porque funciona)
-      result = result.filter(tarea => {
-        return checkDateFilter(tarea, 'programada') && 
-               checkDateFilter(tarea, 'inicio') && 
-               checkDateFilter(tarea, 'fin');
-      });
-      console.log(`Después de los filtros de fecha: ${result.length} tareas`);
+      // Filtros de fecha de fin
+      if (finFilters.value.startDate) {
+        filtered = filtered.filter(tarea => {
+          if (!tarea.fecha_fin) return false;
+          return new Date(tarea.fecha_fin) >= new Date(finFilters.value.startDate);
+        });
+      }
       
-      // Actualizar filteredTareas con el resultado final
-      filteredTareas.value = result;
+      if (finFilters.value.endDate) {
+        filtered = filtered.filter(tarea => {
+          if (!tarea.fecha_fin) return false;
+          return new Date(tarea.fecha_fin) <= new Date(finFilters.value.endDate);
+        });
+      }
       
       // Aplicar ordenamiento
-      sortFilteredTareas();
+      if (sortColumn.value) {
+        filtered.sort((a, b) => {
+          const aValue = a[sortColumn.value];
+          const bValue = b[sortColumn.value];
+          
+          // Manejar valores nulos o indefinidos
+          if (!aValue && !bValue) return 0;
+          if (!aValue) return 1;
+          if (!bValue) return -1;
+          
+          // Comparar fechas
+          if (sortColumn.value.includes('fecha')) {
+            const dateA = new Date(aValue);
+            const dateB = new Date(bValue);
+            return sortDirection.value === 'asc' ? dateA - dateB : dateB - dateA;
+          }
+          
+          // Comparar strings
+          if (typeof aValue === 'string' && typeof bValue === 'string') {
+            return sortDirection.value === 'asc' 
+              ? aValue.localeCompare(bValue) 
+              : bValue.localeCompare(aValue);
+          }
+          
+          // Comparar números
+          return sortDirection.value === 'asc' ? aValue - bValue : bValue - aValue;
+        });
+      }
+      
+      console.log(`Filtrado completado: ${filtered.length} tareas después de filtrar`);
+      
+      // Actualizar la lista filtrada
+      filteredTareas.value = filtered;
+      
+      // Actualizar la paginación
+      currentPage.value = 1;
     };
 
     const clearFilters = () => {
@@ -1733,49 +1838,107 @@ export default {
       return usuarios.value.filter(usuario => usuario.tipo === 'S');
     });
 
-    // Función para establecer la fecha y hora actual en un campo (formato 24h)
-    const setCurrentDateTime = (campo) => {
+    // Reemplazar completamente la función setCurrentDateTime
+    const setCurrentDateTime = (field) => {
+      console.log(`setCurrentDateTime llamado para el campo: ${field}`);
+      
+      // Crear una nueva fecha con la hora actual
       const now = new Date();
       
-      // Formato YYYY-MM-DDThh:mm en 24 horas
+      // Obtener los componentes de la fecha en la zona horaria local
       const year = now.getFullYear();
       const month = String(now.getMonth() + 1).padStart(2, '0');
       const day = String(now.getDate()).padStart(2, '0');
-      const hours = String(now.getHours()).padStart(2, '0'); // 24 horas
+      const hours = String(now.getHours()).padStart(2, '0');
       const minutes = String(now.getMinutes()).padStart(2, '0');
       
-      const formattedDate = `${year}-${month}-${day}T${hours}:${minutes}`;
+      // Crear una cadena ISO sin ajuste de zona horaria
+      const formattedDate = `${year}-${month}-${day}T${hours}:${minutes}:00`;
       
-      if (campo === 'inicio') {
-        currentTarea.value.fecha_inicio = formattedDate;
-      } else if (campo === 'fin') {
-        currentTarea.value.fecha_fin = formattedDate;
-        // Calcular duración automáticamente cuando se establece la fecha fin
-        calcularDuracion();
+      console.log(`Fecha formateada para ${field}: ${formattedDate}`);
+      
+      // Actualizar SOLO el campo específico usando una asignación directa
+      if (field === 'inicio') {
+        // Usar setTimeout para asegurarse de que esta operación ocurra después de cualquier otro evento
+        setTimeout(() => {
+          currentTarea.value.fecha_inicio = formattedDate;
+          console.log('Fecha inicio actualizada a:', currentTarea.value.fecha_inicio);
+          
+          // Recalcular duración si es necesario
+          if (currentTarea.value.fecha_fin) {
+            calcularDuracion();
+          }
+        }, 0);
+      } 
+      else if (field === 'fin') {
+        // Usar setTimeout para asegurarse de que esta operación ocurra después de cualquier otro evento
+        setTimeout(() => {
+          currentTarea.value.fecha_fin = formattedDate;
+          console.log('Fecha fin actualizada a:', currentTarea.value.fecha_fin);
+          
+          // Recalcular duración si es necesario
+          if (currentTarea.value.fecha_inicio) {
+            calcularDuracion();
+          }
+        }, 0);
       }
     };
 
     // Función para calcular la duración entre fecha_inicio y fecha_fin
     const calcularDuracion = () => {
-      if (currentTarea.value.fecha_inicio && currentTarea.value.fecha_fin) {
+      if (!currentTarea.value.fecha_inicio || !currentTarea.value.fecha_fin) {
+        currentTarea.value.duracion = '';
+        return;
+      }
+
+      try {
         const inicio = new Date(currentTarea.value.fecha_inicio);
         const fin = new Date(currentTarea.value.fecha_fin);
         
-        // Verificar que las fechas sean válidas y que fin sea posterior a inicio
-        if (isNaN(inicio.getTime()) || isNaN(fin.getTime()) || fin <= inicio) {
+        // Verificar que las fechas son válidas
+        if (isNaN(inicio.getTime()) || isNaN(fin.getTime())) {
           currentTarea.value.duracion = '';
           return;
         }
         
-        // Calcular diferencia en milisegundos
+        // Calcular la diferencia en milisegundos
         const diff = fin.getTime() - inicio.getTime();
         
-        // Convertir a horas y minutos
-        const hours = Math.floor(diff / (1000 * 60 * 60));
-        const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+        if (diff < 0) {
+          // La fecha de fin es anterior a la de inicio
+          currentTarea.value.duracion = '';
+          return;
+        }
         
-        // Formatear resultado
-        currentTarea.value.duracion = `${hours}h ${minutes}m`;
+        // Convertir a segundos, minutos, horas y días
+        const seconds = Math.floor(diff / 1000) % 60;
+        const minutes = Math.floor(diff / (1000 * 60)) % 60;
+        const hours = Math.floor(diff / (1000 * 60 * 60)) % 24;
+        const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+        
+        // Formatear según el formato requerido: [DD] [HH:[MM:]]ss[.uuuuuu]
+        let duracion = '';
+        
+        if (days > 0) {
+          duracion += `${days} `;
+        }
+        
+        if (hours > 0 || days > 0) {
+          duracion += `${String(hours).padStart(2, '0')}:`;
+        }
+        
+        if (minutes > 0 || hours > 0 || days > 0) {
+          duracion += `${String(minutes).padStart(2, '0')}:`;
+        }
+        
+        duracion += `${String(seconds).padStart(2, '0')}`;
+        
+        currentTarea.value.duracion = duracion;
+        
+        console.log('Duración calculada:', currentTarea.value.duracion);
+      } catch (error) {
+        console.error('Error al calcular duración:', error);
+        currentTarea.value.duracion = '';
       }
     };
 
@@ -1960,44 +2123,66 @@ export default {
     
     // Función para aplicar filtros de fecha predefinidos
     const applyDateFilter = (type, option) => {
+      console.log(`Aplicando filtro de fecha para ${type}, opción: ${option}`);
+      
+      // Obtener la fecha actual en la zona horaria local
       const now = new Date();
+      
+      // Crear una fecha para "hoy" con la hora establecida a 00:00:00
       const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      
+      // Crear una fecha para "ayer" con la hora establecida a 00:00:00
       const yesterday = new Date(today);
       yesterday.setDate(yesterday.getDate() - 1);
       
+      // Declarar todas las variables necesarias fuera del switch
       let startDate = '';
       let endDate = '';
-      let firstDayOfWeek; // Declaración movida fuera del case
+      let firstDayOfWeek;
+      let dayOfWeek;
+      let daysToSubtract;
       
       switch (option) {
         case 'today':
+          // Formato YYYY-MM-DD para hoy
           startDate = today.toISOString().split('T')[0];
-          endDate = today.toISOString().split('T')[0];
+          endDate = startDate; // Mismo día para inicio y fin
           break;
         case 'yesterday':
+          // Formato YYYY-MM-DD para ayer
           startDate = yesterday.toISOString().split('T')[0];
-          endDate = yesterday.toISOString().split('T')[0];
+          endDate = startDate; // Mismo día para inicio y fin
           break;
         case 'thisWeek':
-          firstDayOfWeek = new Date(today); // Asignación sin declaración
-          firstDayOfWeek.setDate(today.getDate() - today.getDay() + (today.getDay() === 0 ? -6 : 1)); // Lunes
+          // Calcular el lunes de esta semana
+          firstDayOfWeek = new Date(today);
+          dayOfWeek = today.getDay(); // 0 = domingo, 1 = lunes, ...
+          daysToSubtract = dayOfWeek === 0 ? 6 : dayOfWeek - 1; // Si es domingo, restar 6 días, sino restar (día - 1)
+          firstDayOfWeek.setDate(today.getDate() - daysToSubtract);
+          
           startDate = firstDayOfWeek.toISOString().split('T')[0];
           endDate = today.toISOString().split('T')[0];
           break;
         case 'thisMonth':
+          // Primer día del mes actual
           startDate = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
           endDate = today.toISOString().split('T')[0];
           break;
         case 'thisYear':
+          // Primer día del año actual
           startDate = new Date(now.getFullYear(), 0, 1).toISOString().split('T')[0];
           endDate = today.toISOString().split('T')[0];
           break;
         case 'previousYears':
-          startDate = new Date(0).toISOString().split('T')[0]; // Desde el inicio
-          endDate = new Date(now.getFullYear() - 1, 11, 31).toISOString().split('T')[0]; // Hasta el final del año anterior
+          // Desde el inicio del tiempo hasta el final del año anterior
+          startDate = new Date(0).toISOString().split('T')[0];
+          endDate = new Date(now.getFullYear() - 1, 11, 31).toISOString().split('T')[0];
           break;
       }
       
+      console.log(`Fechas calculadas - Inicio: ${startDate}, Fin: ${endDate}`);
+      
+      // Aplicar las fechas al filtro correspondiente
       if (type === 'programada') {
         programadaFilters.value.startDate = startDate;
         programadaFilters.value.endDate = endDate;
@@ -2009,6 +2194,7 @@ export default {
         finFilters.value.endDate = endDate;
       }
       
+      // Aplicar los filtros
       applyFilters();
     };
     
@@ -2102,7 +2288,7 @@ export default {
     });
 
     // Variables para paginación
-    const itemsPerPage = ref(10);
+    const itemsPerPage = ref(20);
     const currentPage = ref(1);
 
     // Computed properties para paginación
@@ -2292,7 +2478,7 @@ export default {
     const fetchTerceros = async () => {
       try {
         console.log('Obteniendo terceros...');
-        const token = localStorage.getItem('token');
+        const token = localStorage.getItem('accessToken');
         const response = await apiClient.get('/terceros/', {
           headers: {
             'Authorization': `Bearer ${token}`
@@ -2339,34 +2525,54 @@ export default {
     // Función para obtener todas las empresas únicas (corregida)
     const getUniqueEmpresas = () => {
       console.log('Obteniendo empresas únicas...');
+      
+      // Crear un conjunto para almacenar empresas únicas
       const empresasSet = new Set();
       
-      tareas.value.forEach(tarea => {
-        if (tarea.solicitud) {
-          const empresaNombre = getEmpresaNombre(tarea.solicitud);
-          console.log(`Tarea ${tarea.id}, solicitud: ${tarea.solicitud}, empresa: ${empresaNombre}`);
-          
-          if (empresaNombre && empresaNombre !== '-') {
-            empresasSet.add(empresaNombre);
-          }
+      // Obtener todas las empresas de las solicitudes
+      solicitudes.value.forEach(solicitud => {
+        if (solicitud.empresa) {
+          empresasSet.add(solicitud.empresa);
         }
       });
       
-      const empresas = Array.from(empresasSet).map(nombre => ({ id: nombre, nombre }));
-      console.log('Empresas únicas encontradas:', empresas);
-      return empresas;
+      // Convertir el conjunto a un array
+      const empresasArray = Array.from(empresasSet);
+      
+      console.log(`Empresas únicas encontradas: ${empresasArray.length}`);
+      console.log('Empresas:', empresasArray);
+      
+      return empresasArray;
     };
 
     // Función para filtrar empresas basado en la búsqueda
     const filterEmpresas = () => {
+      console.log('Filtrando empresas...');
+      
+      // Obtener todas las empresas únicas
+      const todasEmpresas = getUniqueEmpresas();
+      
+      // Si no hay consulta de búsqueda, mostrar todas las empresas
       if (!empresaSearchQuery.value) {
-        filteredEmpresas.value = [...allEmpresas.value];
-      } else {
-        const query = empresaSearchQuery.value.toLowerCase();
-        filteredEmpresas.value = allEmpresas.value.filter(
-          empresa => empresa.nombre.toLowerCase().includes(query)
-        );
+        allEmpresas.value = todasEmpresas;
+        filteredEmpresas.value = todasEmpresas;
+        console.log(`Mostrando todas las empresas: ${todasEmpresas.length}`);
+        return;
       }
+      
+      // Filtrar empresas según la consulta de búsqueda
+      const query = empresaSearchQuery.value.toLowerCase();
+      const filtered = todasEmpresas.filter(empresaId => {
+        // Obtener el nombre de la empresa
+        const empresa = terceros.value.find(t => t.id === empresaId);
+        if (!empresa) return false;
+        
+        // Verificar si el nombre contiene la consulta
+        return empresa.nombre.toLowerCase().includes(query);
+      });
+      
+      filteredEmpresas.value = filtered;
+      console.log(`Empresas filtradas: ${filtered.length}`);
     };
 
     // Función para seleccionar todas las empresas (corregida)
@@ -2645,6 +2851,77 @@ export default {
       }
     };
 
+    // Añadir estas funciones dentro del setup()
+    const getMinDateTime = () => {
+      const today = new Date();
+      today.setHours(6, 0, 0, 0);
+      return formatDateTimeForInput(today);
+    };
+
+    const getMaxDateTime = () => {
+      const today = new Date();
+      today.setHours(19, 0, 0, 0);
+      return formatDateTimeForInput(today);
+    };
+
+    const formatDateTimeForInput = (date) => {
+      if (!date) return '';
+      
+      // Obtener los componentes de la fecha en la zona horaria local
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      const hours = String(date.getHours()).padStart(2, '0');
+      const minutes = String(date.getMinutes()).padStart(2, '0');
+      
+      // Crear una cadena ISO sin la parte de la zona horaria
+      return `${year}-${month}-${day}T${hours}:${minutes}:00`;
+    };
+
+    // Configurar opciones para el DatePicker
+    const setupDatePicker = () => {
+      return {
+        masks: {
+          input: 'DD/MM/YYYY HH:mm',
+          modelValue: 'YYYY-MM-DDTHH:mm:00'
+        },
+        timePickerOptions: {
+          hours: { min: 6, max: 19, interval: 1 },
+          minutes: { interval: 30 }
+        },
+        datePickerAttributes: []
+      };
+    };
+
+    // Obtener la configuración del DatePicker
+    const datePickerConfig = setupDatePicker();
+    const masks = datePickerConfig.masks;
+    const timePickerOptions = datePickerConfig.timePickerOptions;
+    const datePickerAttributes = ref(datePickerConfig.datePickerAttributes);
+
+    const updateDateTime = (field, value) => {
+      console.log(`updateDateTime llamado para el campo: ${field}`, value);
+      
+      if (!value) return;
+      
+      // Actualizar solo el campo específico
+      if (field === 'programada') {
+        currentTarea.value.fecha_programada = value;
+      } 
+      else if (field === 'inicio') {
+        currentTarea.value.fecha_inicio = value;
+        if (currentTarea.value.fecha_fin) {
+          calcularDuracion();
+        }
+      } 
+      else if (field === 'fin') {
+        currentTarea.value.fecha_fin = value;
+        if (currentTarea.value.fecha_inicio) {
+          calcularDuracion();
+        }
+      }
+    };
+
     return {
       tareas,
       solicitudes,
@@ -2752,10 +3029,19 @@ export default {
       fixDateFormat,
       formatDateForInput,
       getRowClass,
-      getFechaProgramadaClass
+      getFechaProgramadaClass,
+      getMinDateTime,
+      getMaxDateTime,
+      formatDateTimeForInput,
+      timePickerOptions,
+      masks,
+      datePickerAttributes,
+      updateDateTime
     };
   }
+  
 }
+
 </script>
 
 <style scoped>
@@ -2788,5 +3074,36 @@ tr {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+/* Añadir al final del componente */
+:deep(.vc-popover-content) {
+  z-index: 100;
+}
+
+:deep(.vc-container) {
+  max-height: 350px;
+  overflow-y: auto;
+}
+</style>
+
+<style>
+/* Estilos globales para el calendario */
+.vc-popover-content {
+  z-index: 9999 !important;
+}
+
+.vc-container {
+  width: 100%;
+  max-width: 350px;
+}
+
+.vc-popover-content-wrapper {
+  position: fixed !important;
+}
+
+/* Asegurarse de que el modal tenga overflow visible */
+.overflow-visible {
+  overflow: visible !important;
 }
 </style>

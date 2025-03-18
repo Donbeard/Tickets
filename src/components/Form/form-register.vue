@@ -263,7 +263,7 @@ export default {
     // Nuevo método para determinar el tipo de usuario según el NIT
     determinarTipoUsuario(nit) {
       // Lista de NITs que corresponden a usuarios tipo S (Supervisor)
-      const nitsSupervisores = ['901430071']; // Añade aquí todos los NITs que deban ser tipo S
+      const nitsSupervisores = ['901430071','901244174']; // Añade aquí todos los NITs que deban ser tipo S
       
       if (nitsSupervisores.includes(nit.toString())) {
         console.log(`NIT ${nit} corresponde a un usuario tipo S (Supervisor)`);

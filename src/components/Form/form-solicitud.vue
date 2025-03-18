@@ -1067,13 +1067,15 @@
   </div>
 </div>
 
-<!-- Modal para Tareas -->
+<!-- Modal para Tareas - Aumentar el ancho -->
 <div v-if="showModalTarea" class="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
-  <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-    <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity backdrop-blur-sm" aria-hidden="true"></div>
+  <div class="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+    <div class="fixed inset-0 bg-gray-500 bg-opacity-60 transition-opacity backdrop-blur-sm" aria-hidden="true" @click="closeModal"></div>
+
     <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
 
-    <div class="inline-block align-bottom bg-white rounded-xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-3xl sm:w-full border border-gray-200">
+    <!-- Aumentar el ancho máximo del modal -->
+    <div class="inline-block align-bottom bg-white rounded-lg text-left overflow-visible shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-3xl sm:w-full border border-indigo-100">
       <!-- Header con gradiente -->
       <div class="bg-gradient-to-r from-indigo-600 to-blue-500 px-6 py-4">
         <h3 class="text-2xl font-bold text-white flex items-center">
@@ -1086,12 +1088,12 @@
         </h3>
       </div>
 
-      <!-- Contenido del formulario -->
-      <div class="bg-white px-6 pt-6 pb-4 sm:p-8 sm:pb-6">
+      <!-- Contenido del formulario - Mejorar el espaciado -->
+      <div class="bg-white px-8 pt-6 pb-4 sm:p-8 sm:pb-6">
         <div class="space-y-6">
           <!-- Descripción -->
-          <div class="flex items-center">
-            <label class="w-1/4 text-sm font-medium text-gray-700">Descripción <span class="text-red-500">*</span></label>
+          <div class="flex items-start">
+            <label class="w-1/4 text-sm font-medium text-gray-700 pt-2">Descripción <span class="text-red-500">*</span></label>
             <div class="w-3/4">
               <textarea 
                 v-model="currentTarea.descripcion"
@@ -1103,129 +1105,219 @@
             </div>
           </div>
 
-          <!-- Usuario Asignado (solo en creación) -->
-          <div v-if="modalType === 'new'" class="flex items-center">
-            <label class="w-1/4 text-sm font-medium text-gray-700">Usuario Asignado <span class="text-red-500">*</span></label>
-            <div class="w-3/4">
-              <select 
-                v-model="currentTarea.usuario_asignado"
-                class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition duration-200"
-              >
-                <option value="">Seleccione un usuario</option>
-                <option v-for="(nombre, id) in usuariosSoporteMap" :key="id" :value="id">
-                  {{ nombre }}
-                </option>
-              </select>
-            </div>
-          </div>
+          <!-- Reorganizar los campos en dos columnas para aprovechar el espacio -->
+          <div class="grid grid-cols-2 gap-8">
+            <!-- Columna izquierda -->
+            <div class="space-y-6">
+              <!-- Usuario Asignado -->
+              <div class="flex items-center">
+                <label class="w-1/3 text-sm font-medium text-gray-700">Usuario Asignado <span class="text-red-500">*</span></label>
+                <div class="w-2/3">
+                  <select 
+                    v-model="currentTarea.usuario_asignado"
+                    class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition duration-200"
+                  >
+                    <option value="">Seleccione un usuario</option>
+                    <option v-for="(nombre, id) in usuariosSoporteMap" :key="id" :value="id">
+                      {{ nombre }}
+                    </option>
+                  </select>
+                </div>
+              </div>
 
-          <!-- Usuario Reasignado (solo en edición) -->
-          <div v-if="modalType === 'edit'" class="flex items-center">
-            <label class="w-1/4 text-sm font-medium text-gray-700">Usuario Reasignado</label>
-            <div class="w-3/4">
-              <select 
-                v-model="currentTarea.usuario_reasignado"
-                class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition duration-200"
-              >
-                <option value="">Seleccione un usuario</option>
-                <option v-for="(nombre, id) in usuariosSoporteMap" :key="id" :value="id">
-                  {{ nombre }}
-                </option>
-              </select>
-            </div>
-          </div>
+              <!-- Estado - Mostrar en ambos modos (nuevo y edición) -->
+              <div class="flex items-center">
+                <label class="w-1/3 text-sm font-medium text-gray-700">Estado <span class="text-red-500">*</span></label>
+                <div class="w-2/3">
+                  <select 
+                    v-model="currentTarea.estado"
+                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                  >
+                    <option v-for="estado in estados" :key="estado.id" :value="estado.id">
+                      {{ estado.nombre }}
+                    </option>
+                  </select>
+                </div>
+              </div>
 
-          <!-- Estado (solo en edición) -->
-          <div v-if="modalType === 'edit'" class="flex items-center">
-            <label class="w-1/4 text-sm font-medium text-gray-700">Estado <span class="text-red-500">*</span></label>
-            <div class="w-3/4">
-              <select 
-                v-model="currentTarea.estado"
-                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-              >
-                <option v-for="estado in estados" :key="estado.id" :value="estado.id">
-                  {{ estado.nombre }}
-                </option>
-              </select>
-            </div>
-          </div>
+              <!-- Fecha Programada - Mostrar en ambos modos (nuevo y edición) -->
+              <div class="flex items-center">
+                <label class="w-1/3 text-sm font-medium text-gray-700">F. Programada</label>
+                <div class="w-2/3">
+                  <DatePicker
+                    v-model="currentTarea.fecha_programada"
+                    :model-config="{ type: 'string', mask: 'YYYY-MM-DDTHH:mm:00', timeAdjust: 'none' }"
+                    :masks="{ input: 'DD/MM/YYYY HH:mm' }"
+                    :is-24hr="true"
+                    mode="dateTime"
+                    :disabled="modalType === 'detail'"
+                    class="w-full"
+                    :popover="{ 
+                      visibility: 'click', 
+                      placement: 'auto', 
+                      isInteractive: true, 
+                      modifiers: [{ name: 'preventOverflow', options: { padding: 8 } }],
+                      positionFixed: true
+                    }"
+                  >
+                    <template v-slot="{ inputValue, inputEvents }">
+                      <input
+                        class="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 text-sm"
+                        :value="inputValue"
+                        v-on="inputEvents"
+                        :disabled="modalType === 'detail'"
+                      />
+                    </template>
+                  </DatePicker>
+                </div>
+              </div>
 
-          <!-- Motivo de Cancelación (solo si estado es 4-Cancelado) -->
-          <div v-if="modalType === 'edit' && currentTarea.estado === 4" class="flex items-center">
-            <label class="w-1/4 text-sm font-medium text-gray-700">Motivo Cancelación <span class="text-red-500">*</span></label>
-            <div class="w-3/4">
-              <textarea 
-                v-model="currentTarea.motivo_cancelacion"
-                rows="2"
-                class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition duration-200 resize-none"
-                placeholder="Ingrese el motivo de la cancelación"
-              ></textarea>
-            </div>
-          </div>
+              <!-- Usuario Reasignado (solo en edición) -->
+              <div v-if="modalType === 'edit'" class="flex items-center">
+                <label class="w-1/3 text-sm font-medium text-gray-700">Usuario Reasignado</label>
+                <div class="w-2/3">
+                  <select 
+                    v-model="currentTarea.usuario_reasignado"
+                    class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition duration-200"
+                  >
+                    <option value="">Seleccione un usuario</option>
+                    <option v-for="(nombre, id) in usuariosSoporteMap" :key="id" :value="id">
+                      {{ nombre }}
+                    </option>
+                  </select>
+                </div>
+              </div>
 
-          <!-- Fechas -->
-          <div class="grid grid-cols-2 gap-4">
-            <!-- Fecha de Inicio -->
-            <div class="flex items-center">
-              <label class="w-1/2 text-sm font-medium text-gray-700">Fecha Inicio <span class="text-red-500">*</span></label>
-              <input 
-                type="datetime-local"
-                v-model="currentTarea.fecha_inicio"
-                :disabled="modalType === 'new'"
-                class="w-1/2 px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition duration-200"
-                :class="{'bg-gray-50': modalType === 'new'}"
-              >
+              <!-- Fecha de Inicio -->
+              <div class="flex items-center">
+                <label class="w-1/3 text-sm font-medium text-gray-700">Fecha Inicio <span class="text-red-500">*</span></label>
+                <div class="w-2/3 flex">
+                  <DatePicker
+                    v-model="currentTarea.fecha_inicio"
+                    :model-config="{ type: 'string', mask: 'YYYY-MM-DDTHH:mm:00', timeAdjust: 'none' }"
+                    :masks="{ input: 'DD/MM/YYYY HH:mm' }"
+                    :is-24hr="true"
+                    mode="dateTime"
+                    :disabled="modalType === 'detail'"
+                    class="w-full"
+                    :popover="{ 
+                      visibility: 'click', 
+                      placement: 'auto', 
+                      isInteractive: true, 
+                      modifiers: [{ name: 'preventOverflow', options: { padding: 8 } }],
+                      positionFixed: true
+                    }"
+                    @update:model-value="calcularDuracion"
+                  >
+                    <template v-slot="{ inputValue, inputEvents }">
+                      <div class="flex w-full">
+                        <input
+                          class="block w-full px-3 py-2 border border-gray-300 rounded-l-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 text-sm"
+                          :value="inputValue"
+                          v-on="inputEvents"
+                          :disabled="modalType === 'detail'"
+                        />
+                        <button 
+                          type="button"
+                          @click.stop="setCurrentDateTime('inicio')"
+                          class="px-2 py-2 bg-indigo-100 text-indigo-700 rounded-r-lg hover:bg-indigo-200"
+                          title="Establecer hora actual"
+                          :disabled="modalType === 'detail'"
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          </svg>
+                        </button>
+                      </div>
+                    </template>
+                  </DatePicker>
+                </div>
+              </div>
+
+              <!-- Duración (solo en edición y calculada automáticamente) -->
+              <div v-if="modalType === 'edit'" class="flex items-center">
+                <label class="w-1/3 text-sm font-medium text-gray-700">Duración</label>
+                <input 
+                  type="text"
+                  v-model="currentTarea.duracion"
+                  readonly
+                  class="w-2/3 px-4 py-2 bg-gray-100 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition duration-200"
+                  placeholder="Auto"
+                >
+              </div>
             </div>
 
-            <!-- Fecha Programada -->
-            <div class="flex items-center">
-              <label class="w-1/2 text-sm font-medium text-gray-700">Fecha Programada</label>
-              <input 
-                type="datetime-local"
-                v-model="currentTarea.fecha_programada"
-                :disabled="modalType === 'detail'"
-                class="w-1/2 px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition duration-200"
-                :class="{'bg-gray-50': modalType === 'detail'}"
-              >
-            </div>
-          </div>
+            <!-- Columna derecha -->
+            <div class="space-y-6">
+              <!-- Motivo de Cancelación (solo si estado es 4-Cancelado) -->
+              <div v-if="currentTarea.estado === 4" class="flex items-center">
+                <label class="w-1/3 text-sm font-medium text-gray-700">Motivo Cancelación <span class="text-red-500">*</span></label>
+                <div class="w-2/3">
+                  <textarea 
+                    v-model="currentTarea.motivo_cancelacion"
+                    rows="2"
+                    class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition duration-200 resize-none"
+                    placeholder="Ingrese el motivo de la cancelación"
+                  ></textarea>
+                </div>
+              </div>
 
-          <!-- Duración y Tiempo Facturable -->
-          <div class="grid grid-cols-2 gap-4">
-            <div class="flex items-center">
-              <label class="w-1/2 text-sm font-medium text-gray-700">Duración</label>
-              <input 
-                type="text"
-                v-model="currentTarea.duracion"
-                @input="e => formatearTiempo(e.target.value, 'duracion')"
-                @keydown="e => {
-                  // Permitir solo números y teclas de control (backspace, delete, etc.)
-                  if (!/\d|Backspace|Delete|ArrowLeft|ArrowRight/.test(e.key)) {
-                    e.preventDefault();
-                  }
-                }"
-                class="w-1/2 px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition duration-200"
-                placeholder="00:00"
-                maxlength="5"
-              >
-            </div>
-            
-            <div class="flex items-center">
-              <label class="w-1/2 text-sm font-medium text-gray-700">Tiempo Facturable</label>
-              <input 
-                type="text"
-                v-model="currentTarea.tiempoFacturable"
-                @input="e => formatearTiempo(e.target.value, 'tiempoFacturable')"
-                @keydown="e => {
-                  // Permitir solo números y teclas de control (backspace, delete, etc.)
-                  if (!/\d|Backspace|Delete|ArrowLeft|ArrowRight/.test(e.key)) {
-                    e.preventDefault();
-                  }
-                }"
-                class="w-1/2 px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition duration-200"
-                placeholder="00:00"
-                maxlength="5"
-              >
+              <!-- Fecha Fin (solo en edición) -->
+              <div v-if="modalType === 'edit'" class="flex items-center">
+                <label class="w-1/3 text-sm font-medium text-gray-700">Fecha Fin</label>
+                <div class="w-2/3 flex">
+                  <DatePicker
+                    v-model="currentTarea.fecha_fin"
+                    :model-config="{ type: 'string', mask: 'YYYY-MM-DDTHH:mm:00', timeAdjust: 'none' }"
+                    :masks="{ input: 'DD/MM/YYYY HH:mm' }"
+                    :is-24hr="true"
+                    mode="dateTime"
+                    :disabled="modalType === 'detail'"
+                    class="w-full"
+                    :popover="{ 
+                      visibility: 'click', 
+                      placement: 'auto', 
+                      isInteractive: true, 
+                      modifiers: [{ name: 'preventOverflow', options: { padding: 8 } }],
+                      positionFixed: true
+                    }"
+                    @update:model-value="calcularDuracion"
+                  >
+                    <template v-slot="{ inputValue, inputEvents }">
+                      <div class="flex w-full">
+                        <input
+                          class="block w-full px-3 py-2 border border-gray-300 rounded-l-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 text-sm"
+                          :value="inputValue"
+                          v-on="inputEvents"
+                          :disabled="modalType === 'detail'"
+                        />
+                        <button 
+                          type="button"
+                          @click.stop="setCurrentDateTime('fin')"
+                          class="px-2 py-2 bg-indigo-100 text-indigo-700 rounded-r-lg hover:bg-indigo-200"
+                          title="Establecer hora actual"
+                          :disabled="modalType === 'detail'"
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          </svg>
+                        </button>
+                      </div>
+                    </template>
+                  </DatePicker>
+                </div>
+              </div>
+
+              <!-- Tiempo Facturable (solo en edición) -->
+              <div v-if="modalType === 'edit'" class="flex items-center">
+                <label class="w-1/3 text-sm font-medium text-gray-700">T. Facturable</label>
+                <input 
+                  type="text"
+                  v-model="currentTarea.tiempoFacturable"
+                  placeholder="Ej: 2h"
+                  class="w-2/3 px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition duration-200 text-sm"
+                >
+              </div>
             </div>
           </div>
         </div>
@@ -1264,6 +1356,7 @@
 <script setup>
 import { PlusIcon } from '@heroicons/vue/24/outline'
 import { Teleport } from 'vue'
+import { DatePicker } from 'v-calendar'
 
 
 </script>
@@ -1275,7 +1368,8 @@ export default {
 name: 'FormSolicitud',
 components: {
   PlusIcon,
-  Teleport
+  Teleport,
+  DatePicker
 },
 data() {
   return {
@@ -1417,8 +1511,8 @@ data() {
       fecha_programada: null,
       fecha_inicio: null,
       fecha_fin: null,
-      duracion: '',
-      tiempoFacturable: '',
+      duracion: '00:00',
+      tiempoFacturable: '00:00',
       motivo_cancelacion: '',
       solicitud: null,
       usuario_asignado: null,
@@ -2124,7 +2218,7 @@ nextPage() {
     this.currentSolicitudId = null;
     this.editableSolicitud = {
       usuario_soporte: null,
-      fecha_asignacion: "",
+      fecha_asignacion: "", 
       orden: null,
     };
   },
@@ -2275,7 +2369,42 @@ nextPage() {
       this.isSuccess = false;
     }
   },
-
+  setCurrentDateTime(field) {
+    // Obtener la fecha y hora actual
+    const now = new Date();
+    
+    // Ajustar la zona horaria (no añadir 5 horas)
+    // Crear una fecha en formato ISO pero manteniendo la hora local
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    const hours = String(now.getHours()).padStart(2, '0');
+    const minutes = String(now.getMinutes()).padStart(2, '0');
+    
+    // Formato: YYYY-MM-DDTHH:MM:00
+    const formattedDate = `${year}-${month}-${day}T${hours}:${minutes}:00`;
+    
+    console.log('Fecha actual formateada:', formattedDate);
+    
+    if (field === 'inicio') {
+      this.currentTarea.fecha_inicio = formattedDate;
+      console.log('Fecha inicio actualizada a:', this.currentTarea.fecha_inicio);
+      
+      // Recalcular duración si es necesario
+      if (this.currentTarea.fecha_fin) {
+        this.calcularDuracion();
+      }
+    } 
+    else if (field === 'fin') {
+      this.currentTarea.fecha_fin = formattedDate;
+      console.log('Fecha fin actualizada a:', this.currentTarea.fecha_fin);
+      
+      // Recalcular duración si es necesario
+      if (this.currentTarea.fecha_inicio) {
+        this.calcularDuracion();
+      }
+    }
+  },
   handleEstadoChange() {
     // Actualizar fecha de asignación solo cuando cambia de sin asignar (5) a asignado (6)
     if (this.originalEstado === 5 && this.editableSolicitud.estado === 6) {
@@ -2446,6 +2575,45 @@ nextPage() {
     }
   }
 },
+calcularDuracion() {
+    if (!this.currentTarea.fecha_inicio || !this.currentTarea.fecha_fin) return;
+    
+    try {
+      console.log('Calculando duración entre:', this.currentTarea.fecha_inicio, 'y', this.currentTarea.fecha_fin);
+      
+      // Crear objetos Date a partir de los strings
+      const inicio = new Date(this.currentTarea.fecha_inicio);
+      const fin = new Date(this.currentTarea.fecha_fin);
+      
+      // Verificar que las fechas sean válidas
+      if (isNaN(inicio.getTime()) || isNaN(fin.getTime())) {
+        console.error('Fechas inválidas para calcular duración');
+        return;
+      }
+      
+      // Calcular la diferencia en milisegundos
+      const diff = fin - inicio;
+      
+      // Si la diferencia es negativa, la fecha fin es anterior a la fecha inicio
+      if (diff < 0) {
+        console.error('La fecha fin es anterior a la fecha inicio');
+        return;
+      }
+      
+      // Convertir a horas y minutos
+      const hours = Math.floor(diff / (1000 * 60 * 60));
+      const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+      
+      // Formatear como HH:MM
+      this.currentTarea.duracion = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
+      console.log('Duración calculada:', this.currentTarea.duracion);
+      
+      // Por defecto, el tiempo facturable es igual a la duración
+      this.currentTarea.tiempoFacturable = this.currentTarea.duracion;
+    } catch (error) {
+      console.error('Error al calcular duración:', error);
+    }
+  },
   handleFileUpload(event) {
     this.selectedFile = event.target.files[0];
   }, 
@@ -2476,8 +2644,8 @@ nextPage() {
       fecha_programada: null,
       fecha_inicio: null,
       fecha_fin: null,
-      duracion: '',
-      tiempoFacturable: '',
+      duracion: '00:00',
+      tiempoFacturable: '00:00',
       motivo_cancelacion: '',
       solicitud: null,
       usuario_asignado: null,
@@ -2773,16 +2941,25 @@ nextPage() {
 },
 
   formatDateForInput(dateString) {
-  if (!dateString) return null;
-  
-  const date = new Date(dateString);
-  
-  // Verificar si la fecha es válida
-  if (isNaN(date.getTime())) return null;
-  
-  // Formato YYYY-MM-DDThh:mm
-  return date.toISOString().slice(0, 16);
-},
+    if (!dateString) return null;
+    try {
+      // Crear un objeto Date a partir del string
+      const date = new Date(dateString);
+      if (isNaN(date.getTime())) return null; // Fecha inválida
+      
+      // Formatear como YYYY-MM-DDTHH:MM:00 usando la hora local
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      const hours = String(date.getHours()).padStart(2, '0');
+      const minutes = String(date.getMinutes()).padStart(2, '0');
+      
+      return `${year}-${month}-${day}T${hours}:${minutes}:00`;
+    } catch (error) {
+      console.error('Error al formatear fecha para input:', error);
+      return null;
+    }
+  },
 
   getUsuarioNombre(usuarioId) {
     return this.usuariosMap[usuarioId] || 'Sin asignar';
@@ -2895,33 +3072,52 @@ nextPage() {
   // Guardar Tarea (crear/editar)
   async saveTarea() {
   try {
-    const isNew = this.modalType === 'new';
-    const endpoint = isNew ? '/tareas/' : `/tareas/${this.currentTarea.id}/`;
-    const method = isNew ? 'post' : 'put';
-
-    // Validaciones básicas
-    if (!this.currentTarea.descripcion?.trim()) {
+    // Validar campos requeridos
+    if (!this.currentTarea.descripcion.trim()) {
       this.statusMessage = 'La descripción es obligatoria';
       this.isSuccess = false;
       return;
     }
 
-    if (isNew && !this.currentTarea.usuario_asignado) {
-      this.statusMessage = 'El usuario asignado es obligatorio';
+    if (!this.currentTarea.usuario_asignado) {
+      this.statusMessage = 'Debe seleccionar un usuario asignado';
       this.isSuccess = false;
       return;
     }
+
+    if (this.currentTarea.estado === 4 && !this.currentTarea.motivo_cancelacion) {
+      this.statusMessage = 'El motivo de cancelación es obligatorio para tareas canceladas';
+      this.isSuccess = false;
+      return;
+    }
+
+    // Verificar si es una tarea nueva o existente
+    const isNew = this.modalType === 'new';
+    const endpoint = isNew ? '/tareas/' : `/tareas/${this.currentTarea.id}/`;
+    const method = isNew ? 'post' : 'put';
 
     // Preparar los datos asegurándose de que todos los campos requeridos estén presentes
     const tareaToSave = {
       descripcion: this.currentTarea.descripcion.trim(),
       solicitud: Number(this.currentTarea.solicitud),
       usuario_asignado: Number(this.currentTarea.usuario_asignado),
-      estado: 5,
+      estado: Number(this.currentTarea.estado),
       duracion: this.currentTarea.duracion || "00:00",
       tiempoFacturable: this.currentTarea.tiempoFacturable || "00:00",
-      fecha_programada: this.currentTarea.fecha_programada || null
+      fecha_programada: this.currentTarea.fecha_programada,
+      fecha_inicio: this.currentTarea.fecha_inicio,
+      fecha_fin: this.currentTarea.fecha_fin
     };
+
+    // Si es una tarea editada y tiene usuario reasignado, incluirlo
+    if (!isNew && this.currentTarea.usuario_reasignado) {
+      tareaToSave.usuario_reasignado = Number(this.currentTarea.usuario_reasignado);
+    }
+
+    // Si es una tarea cancelada, incluir el motivo
+    if (this.currentTarea.estado === 4) {
+      tareaToSave.motivo_cancelacion = this.currentTarea.motivo_cancelacion.trim();
+    }
 
     // Log para debugging
     console.log('Datos a enviar:', JSON.stringify(tareaToSave, null, 2));
@@ -2968,7 +3164,6 @@ nextPage() {
       }
       this.isSuccess = false;
     }
-
   } catch (error) {
     console.error('Error general:', error);
     this.statusMessage = error.message || 'Error al procesar la tarea';
@@ -2977,21 +3172,32 @@ nextPage() {
 },
 // Nueva Tarea
 NuevaTarea(solicitud) {
-    const fechaActual = new Date().toISOString();
-    this.modalType = 'new';
-    this.currentTarea = {
-      descripcion: '',
-      fecha_programada: null,
-      fecha_inicio: this.formatDateForInput(fechaActual), // Fecha actual por defecto
-      fecha_fin: null,
-      duracion: '',
-      tiempoFacturable: '', // Agregado
-      solicitud: solicitud.id,
-      usuario_asignado: null,
-      estado: 5
-    };
-    this.showModalTarea = true;
-  },
+  // Obtener la fecha y hora actual
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const day = String(now.getDate()).padStart(2, '0');
+  const hours = String(now.getHours()).padStart(2, '0');
+  const minutes = String(now.getMinutes()).padStart(2, '0');
+  
+  // Formato: YYYY-MM-DDTHH:MM:00
+  const fechaActual = `${year}-${month}-${day}T${hours}:${minutes}:00`;
+  
+  this.modalType = 'new';
+  this.currentTarea = {
+    descripcion: '',
+    fecha_programada: null,
+    fecha_inicio: fechaActual, // Fecha actual por defecto
+    fecha_fin: null,
+    duracion: '00:00',
+    tiempoFacturable: '00:00',
+    solicitud: solicitud.id,
+    usuario_asignado: null,
+    estado: 5,
+    motivo_cancelacion: ''
+  };
+  this.showModalTarea = true;
+},
   resetNewSolicitud() {
   this.newSolicitud = {
     titulo: '',

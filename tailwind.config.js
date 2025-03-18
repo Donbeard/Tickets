@@ -3,6 +3,7 @@ export default {
   content: [
     "./index.html",
     "./src/**/*.{vue,js,ts,jsx,tsx}",
+    'node_modules/flowbite/**/*.js'
   ],
   theme: {
     extend: {
@@ -12,8 +13,18 @@ export default {
       left:{
         30: '30rem',
       }
-      
     },
   },
-  plugins: [],
+  plugins: [
+    async () => {
+      try {
+        // Intentar importar con la extensión .js como sugiere el error
+        const flowbite = await import('flowbite/plugin.js');
+        return flowbite.default;
+      } catch (error) {
+        console.error('Error al cargar flowbite/plugin.js:', error);
+        return null;
+      }
+    }
+  ],
 }

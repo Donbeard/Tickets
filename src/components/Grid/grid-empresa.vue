@@ -87,7 +87,7 @@
             </tr>
             
             <!-- Filas con columnas separadas -->
-            <tr v-for="empresa in filteredEmpresas" :key="empresa.id" class="hover:bg-gray-50">
+            <tr v-for="empresa in paginatedEmpresas" :key="empresa.id" class="hover:bg-gray-50">
               <!-- NIT -->
               <td class="px-3 py-1.5 text-xs text-gray-500">
                 {{ empresa.nit }}
@@ -174,9 +174,84 @@
       </div>
       
       <!-- Paginación -->
-      <div class="mt-4 flex items-center justify-between">
-        <div class="text-sm text-gray-700">
-          Mostrando <span class="font-medium">{{ filteredEmpresas.length }}</span> de <span class="font-medium">{{ empresas.length }}</span> empresas
+      <div class="flex items-center justify-between border-t border-gray-200 bg-white px-4 py-3 sm:px-6 mt-4">
+        <div class="flex flex-1 justify-between sm:hidden">
+          <button
+            @click="prevPage"
+            :disabled="currentPage === 1"
+            :class="[
+              'relative inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700',
+              currentPage === 1 ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-50'
+            ]"
+          >
+            Anterior
+          </button>
+          <button
+            @click="nextPage"
+            :disabled="currentPage === totalPages"
+            :class="[
+              'relative ml-3 inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700',
+              currentPage === totalPages ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-50'
+            ]"
+          >
+            Siguiente
+          </button>
+        </div>
+        <div class="hidden sm:flex sm:flex-1 sm:items-center sm:justify-between">
+          <div>
+            <p class="text-sm text-gray-700">
+              Mostrando <span class="font-medium">{{ startItem }}</span> a <span class="font-medium">{{ endItem }}</span> de <span class="font-medium">{{ filteredEmpresas.length }}</span> resultados
+            </p>
+          </div>
+          <div>
+            <nav class="isolate inline-flex -space-x-px rounded-md shadow-sm" aria-label="Pagination">
+              <button
+                @click="prevPage"
+                :disabled="currentPage === 1"
+                class="relative inline-flex items-center rounded-l-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0"
+                :class="{ 'opacity-50 cursor-not-allowed': currentPage === 1 }"
+              >
+                <span class="sr-only">Anterior</span>
+                <svg class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                  <path fill-rule="evenodd" d="M12.79 5.23a.75.75 0 01-.02 1.06L8.832 10l3.938 3.71a.75.75 0 11-1.04 1.08l-4.5-4.25a.75.75 0 010-1.08l4.5-4.25a.75.75 0 011.06.02z" clip-rule="evenodd" />
+                </svg>
+              </button>
+              
+              <!-- Páginas -->
+              <template v-for="(page, index) in displayedPages" :key="index">
+                <button
+                  v-if="page !== '...'"
+                  @click="changePage(page)"
+                  :class="[
+                    'relative inline-flex items-center px-4 py-2 text-sm font-semibold',
+                    page === currentPage
+                      ? 'z-10 bg-indigo-600 text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600'
+                      : 'text-gray-900 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0'
+                  ]"
+                >
+                  {{ page }}
+                </button>
+                <span
+                  v-else
+                  class="relative inline-flex items-center px-4 py-2 text-sm font-semibold text-gray-700 ring-1 ring-inset ring-gray-300 focus:outline-offset-0"
+                >
+                  ...
+                </span>
+              </template>
+              
+              <button
+                @click="nextPage"
+                :disabled="currentPage === totalPages"
+                class="relative inline-flex items-center rounded-r-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0"
+                :class="{ 'opacity-50 cursor-not-allowed': currentPage === totalPages }"
+              >
+                <span class="sr-only">Siguiente</span>
+                <svg class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                  <path fill-rule="evenodd" d="M7.21 14.77a.75.75 0 01.02-1.06L11.168 10 7.23 6.29a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z" clip-rule="evenodd" />
+                </svg>
+              </button>
+            </nav>
+          </div>
         </div>
       </div>
     </div>
@@ -459,6 +534,10 @@ export default {
     const userType = ref(localStorage.getItem('user_type'))
     const userTerceroId = ref(null)
 
+    // Añadir variables reactivas para la paginación
+    const itemsPerPage = ref(10);
+    const currentPage = ref(1);
+
     const columns = [
       { key: 'nit', label: 'NIT' },
       { key: 'nombre', label: 'Nombre' },
@@ -710,6 +789,90 @@ export default {
       fetchEmpresas()
     })
 
+    // Computed properties para paginación
+    const totalPages = computed(() => {
+      return Math.ceil(filteredEmpresas.value.length / itemsPerPage.value);
+    });
+
+    const startItem = computed(() => {
+      return filteredEmpresas.value.length === 0 ? 0 : (currentPage.value - 1) * itemsPerPage.value + 1;
+    });
+
+    const endItem = computed(() => {
+      return Math.min(currentPage.value * itemsPerPage.value, filteredEmpresas.value.length);
+    });
+
+    const paginatedEmpresas = computed(() => {
+      const start = (currentPage.value - 1) * itemsPerPage.value;
+      const end = start + itemsPerPage.value;
+      return filteredEmpresas.value.slice(start, end);
+    });
+
+    // Función para cambiar de página
+    const changePage = (page) => {
+      if (page >= 1 && page <= totalPages.value) {
+        currentPage.value = page;
+      }
+    };
+
+    // Función para ir a la página anterior
+    const prevPage = () => {
+      if (currentPage.value > 1) {
+        currentPage.value--;
+      }
+    };
+
+    // Función para ir a la página siguiente
+    const nextPage = () => {
+      if (currentPage.value < totalPages.value) {
+        currentPage.value++;
+      }
+    };
+
+    // Computed property para mostrar las páginas en la paginación
+    const displayedPages = computed(() => {
+      const total = totalPages.value;
+      const current = currentPage.value;
+      const pages = [];
+      
+      if (total <= 7) {
+        // Si hay 7 o menos páginas, mostrar todas
+        for (let i = 1; i <= total; i++) {
+          pages.push(i);
+        }
+      } else {
+        // Siempre mostrar la primera página
+        pages.push(1);
+        
+        // Si la página actual está entre las primeras 3, mostrar las primeras 5 páginas
+        if (current <= 3) {
+          for (let i = 2; i <= 5; i++) {
+            pages.push(i);
+          }
+          pages.push('...');
+          pages.push(total);
+        } 
+        // Si la página actual está entre las últimas 3, mostrar las últimas 5 páginas
+        else if (current >= total - 2) {
+          pages.push('...');
+          for (let i = total - 4; i <= total; i++) {
+            pages.push(i);
+          }
+        } 
+        // Si la página actual está en el medio, mostrar 2 páginas antes y 2 después
+        else {
+          pages.push('...');
+          for (let i = current - 1; i <= current + 1; i++) {
+            pages.push(i);
+          }
+          pages.push('...');
+          pages.push(total);
+        }
+      }
+      
+      return pages;
+    });
+
     return {
       empresas,
       showCreateModal,
@@ -736,7 +899,17 @@ export default {
       activeTab,
       userType,
       userTerceroId,
-      volverALista
+      volverALista,
+      itemsPerPage,
+      currentPage,
+      totalPages,
+      startItem,
+      endItem,
+      paginatedEmpresas,
+      changePage,
+      prevPage,
+      nextPage,
+      displayedPages
     }
   }
 }

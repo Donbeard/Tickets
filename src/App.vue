@@ -38,7 +38,7 @@
             <!-- Tooltip que aparece solo cuando el menú está contraído -->
             <div 
               v-if="isCollapsed" 
-              class="absolute left-full ml-2 w-auto px-2 py-1 bg-gray-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap z-50"
+              class="absolute left-full ml-2 w-auto px-2 py-1 bg-gray-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap z-50 pointer-events-none"
             >
               {{ item.name }}
             </div>
@@ -57,7 +57,7 @@
             <!-- Tooltip para el botón de cerrar sesión -->
             <div 
               v-if="isCollapsed" 
-              class="absolute left-full ml-2 w-auto px-2 py-1 bg-gray-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap z-50"
+              class="absolute left-full ml-2 w-auto px-2 py-1 bg-gray-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap z-50 pointer-events-none"
             >
               Cerrar sesión
             </div>
@@ -191,7 +191,7 @@ const navigation = computed(() => {
     { name: 'Tareas', href: '/tareas', icon: BookmarkIcon, allowedTypes: ['A', 'S'] },
     { name: 'Modulos', href: '/modulos', icon: DocumentTextIcon, allowedTypes: ['A', 'S'] },
     { name: 'Empresas', href: '/empresas', icon: BuildingOfficeIcon, allowedTypes: ['A', 'C', 'S'] },
-    { name: 'Licencias', href: '/licencias', icon: UserGroupIcon, allowedTypes: ['A', 'S'] },
+    //{ name: 'Licencias', href: '/licencias', icon: UserGroupIcon, allowedTypes: ['A', 'S'] },
   ]
 
   // Si no hay tipo de usuario, intentar obtenerlo de nuevo

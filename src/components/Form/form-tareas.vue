@@ -608,6 +608,21 @@
 
     <!-- Agregar después de la tabla -->
     <div class="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6">
+      <!-- Selector de registros por página -->
+      <div class="flex items-center space-x-3">
+        <label for="itemsPerPage" class="text-sm font-medium text-gray-700">Mostrar:</label>
+        <select 
+          v-model="itemsPerPage" 
+          id="itemsPerPage"
+          class="h-9 px-3 border border-gray-300 bg-white rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+        >
+          <option :value="10">10</option>
+          <option :value="20">20</option>
+          <option :value="50">50</option>
+          <option :value="100">100</option>
+        </select>
+        <span class="text-sm text-gray-600">registros</span>
+      </div>
       <div class="flex-1 flex justify-between sm:hidden">
         <button
           @click="prevPage"
@@ -619,6 +634,7 @@
         >
           Anterior
         </button>
+        
         <button
           @click="nextPage"
           :disabled="currentPage === totalPages"
@@ -633,7 +649,7 @@
       <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
         <div>
           <p class="text-sm text-gray-700">
-            Mostrando <span class="font-medium">{{ startItem }}</span> a <span class="font-medium">{{ endItem }}</span> de <span class="font-medium">{{ filteredTareas.length }}</span> resultados
+            |   Mostrando <span class="font-medium">{{ startItem }}</span> a <span class="font-medium">{{ endItem }}</span> de <span class="font-medium">{{ filteredTareas.length }}</span> resultados
           </p>
         </div>
         <div>
@@ -716,6 +732,7 @@
           </nav>
         </div>
       </div>
+      
     </div>
 
     <!-- Modal para Crear/Editar Tarea -->

@@ -1091,232 +1091,169 @@
       <!-- Contenido del formulario - Mejorar el espaciado -->
       <div class="bg-white px-8 pt-6 pb-4 sm:p-8 sm:pb-6">
         <div class="space-y-6">
-          <!-- Descripción -->
-          <div class="flex items-start">
-            <label class="w-1/4 text-sm font-medium text-gray-700 pt-2">Descripción <span class="text-red-500">*</span></label>
-            <div class="w-3/4">
-              <textarea 
-                v-model="currentTarea.descripcion"
-                :disabled="modalType === 'detail'"
-                rows="3"
-                class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition duration-200 resize-none"
-                :class="{'bg-gray-50': modalType === 'detail'}"
-              ></textarea>
-            </div>
+          <!-- Descripción - Ancho completo -->
+          <div class="mb-6">
+            <label class="block text-sm font-medium text-gray-700 mb-2">Descripción <span class="text-red-500">*</span></label>
+            <textarea 
+              v-model="currentTarea.descripcion"
+              :disabled="modalType === 'detail'"
+              rows="3"
+              class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition duration-200 resize-none"
+              :class="{'bg-gray-50': modalType === 'detail'}"
+            ></textarea>
           </div>
 
-          <!-- Reorganizar los campos en dos columnas para aprovechar el espacio -->
-          <div class="grid grid-cols-2 gap-8">
+          <!-- Grid de dos columnas -->
+          <div class="grid grid-cols-2 gap-6">
             <!-- Columna izquierda -->
-            <div class="space-y-6">
+            <div class="space-y-4">
               <!-- Usuario Asignado -->
               <div class="flex items-center">
-                <label class="w-1/3 text-sm font-medium text-gray-700">Usuario Asignado <span class="text-red-500">*</span></label>
-                <div class="w-2/3">
-                  <select 
-                    v-model="currentTarea.usuario_asignado"
-                    class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition duration-200"
-                  >
-                    <option value="">Seleccione un usuario</option>
-                    <option v-for="(nombre, id) in usuariosSoporteMap" :key="id" :value="id">
-                      {{ nombre }}
-                    </option>
-                  </select>
-                </div>
+                <label class="block text-sm font-medium text-gray-700 w-1/3">Usuario:</label>
+                <select 
+                  v-model="currentTarea.usuario_asignado"
+                  class="block w-2/3 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 text-sm"
+                >
+                  <option value="">Seleccione</option>
+                  <option v-for="(nombre, id) in usuariosSoporteMap" :key="id" :value="id">
+                    {{ nombre }}
+                  </option>
+                </select>
               </div>
 
-              <!-- Estado - Mostrar en ambos modos (nuevo y edición) -->
+              <!-- Tipo -->
               <div class="flex items-center">
-                <label class="w-1/3 text-sm font-medium text-gray-700">Estado <span class="text-red-500">*</span></label>
-                <div class="w-2/3">
-                  <select 
-                    v-model="currentTarea.estado"
-                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                  >
-                    <option v-for="estado in estados" :key="estado.id" :value="estado.id">
-                      {{ estado.nombre }}
-                    </option>
-                  </select>
-                </div>
+                <label class="block text-sm font-medium text-gray-700 w-1/3">Tipo:</label>
+                <select 
+                  v-model="currentTarea.tipo"
+                  class="block w-2/3 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 text-sm"
+                >
+                  <option v-for="option in tipoOptions" :key="option.value" :value="option.value">
+                    {{ option.label }}
+                  </option>
+                </select>
               </div>
 
-              <!-- Fecha Programada - Mostrar en ambos modos (nuevo y edición) -->
+              <!-- Estado -->
               <div class="flex items-center">
-                <label class="w-1/3 text-sm font-medium text-gray-700">F. Programada</label>
+                <label class="block text-sm font-medium text-gray-700 w-1/3">Estado:</label>
+                <select 
+                  v-model="currentTarea.estado"
+                  class="block w-2/3 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 text-sm"
+                >
+                  <option v-for="estado in estados" :key="estado.id" :value="estado.id">
+                    {{ estado.nombre }}
+                  </option>
+                </select>
+              </div>
+
+              <!-- Fecha Programada -->
+              <div class="flex items-center">
+                <label class="block text-sm font-medium text-gray-700 w-1/3">F. Programada:</label>
                 <div class="w-2/3">
                   <DatePicker
                     v-model="currentTarea.fecha_programada"
-                    :model-config="{ type: 'string', mask: 'YYYY-MM-DDTHH:mm:00', timeAdjust: 'none' }"
+                    :model-config="{ type: 'string', mask: 'YYYY-MM-DDTHH:mm:00' }"
                     :masks="{ input: 'DD/MM/YYYY HH:mm' }"
                     :is-24hr="true"
                     mode="dateTime"
-                    :disabled="modalType === 'detail'"
                     class="w-full"
-                    :popover="{ 
-                      visibility: 'click', 
-                      placement: 'auto', 
-                      isInteractive: true, 
-                      modifiers: [{ name: 'preventOverflow', options: { padding: 8 } }],
-                      positionFixed: true
-                    }"
                   >
                     <template v-slot="{ inputValue, inputEvents }">
                       <input
                         class="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 text-sm"
                         :value="inputValue"
                         v-on="inputEvents"
-                        :disabled="modalType === 'detail'"
+                      />
+                    </template>
+                  </DatePicker>
+                </div>
+              </div>
+            </div>
+
+            <!-- Columna derecha -->
+            <div class="space-y-4">
+              <!-- Fecha Inicio -->
+              <div class="flex items-center">
+                <label class="block text-sm font-medium text-gray-700 w-1/3">F. Inicio:</label>
+                <div class="w-2/3">
+                  <DatePicker
+                    v-model="currentTarea.fecha_inicio"
+                    :model-config="{ type: 'string', mask: 'YYYY-MM-DDTHH:mm:00' }"
+                    :masks="{ input: 'DD/MM/YYYY HH:mm' }"
+                    :is-24hr="true"
+                    mode="dateTime"
+                    class="w-full"
+                    @update:model-value="calcularDuracion"
+                  >
+                    <template v-slot="{ inputValue, inputEvents }">
+                      <input
+                        class="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 text-sm"
+                        :value="inputValue"
+                        v-on="inputEvents"
                       />
                     </template>
                   </DatePicker>
                 </div>
               </div>
 
-              <!-- Usuario Reasignado (solo en edición) -->
+              <!-- Fecha Fin (solo en edición) -->
               <div v-if="modalType === 'edit'" class="flex items-center">
-                <label class="w-1/3 text-sm font-medium text-gray-700">Usuario Reasignado</label>
+                <label class="block text-sm font-medium text-gray-700 w-1/3">F. Fin:</label>
                 <div class="w-2/3">
-                  <select 
-                    v-model="currentTarea.usuario_reasignado"
-                    class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition duration-200"
-                  >
-                    <option value="">Seleccione un usuario</option>
-                    <option v-for="(nombre, id) in usuariosSoporteMap" :key="id" :value="id">
-                      {{ nombre }}
-                    </option>
-                  </select>
-                </div>
-              </div>
-
-              <!-- Fecha de Inicio -->
-              <div class="flex items-center">
-                <label class="w-1/3 text-sm font-medium text-gray-700">Fecha Inicio <span class="text-red-500">*</span></label>
-                <div class="w-2/3 flex">
                   <DatePicker
-                    v-model="currentTarea.fecha_inicio"
-                    :model-config="{ type: 'string', mask: 'YYYY-MM-DDTHH:mm:00', timeAdjust: 'none' }"
+                    v-model="currentTarea.fecha_fin"
+                    :model-config="{ type: 'string', mask: 'YYYY-MM-DDTHH:mm:00' }"
                     :masks="{ input: 'DD/MM/YYYY HH:mm' }"
                     :is-24hr="true"
                     mode="dateTime"
-                    :disabled="modalType === 'detail'"
                     class="w-full"
-                    :popover="{ 
-                      visibility: 'click', 
-                      placement: 'auto', 
-                      isInteractive: true, 
-                      modifiers: [{ name: 'preventOverflow', options: { padding: 8 } }],
-                      positionFixed: true
-                    }"
                     @update:model-value="calcularDuracion"
                   >
                     <template v-slot="{ inputValue, inputEvents }">
-                      <div class="flex w-full">
-                        <input
-                          class="block w-full px-3 py-2 border border-gray-300 rounded-l-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 text-sm"
-                          :value="inputValue"
-                          v-on="inputEvents"
-                          :disabled="modalType === 'detail'"
-                        />
-                        <button 
-                          type="button"
-                          @click.stop="setCurrentDateTime('inicio')"
-                          class="px-2 py-2 bg-indigo-100 text-indigo-700 rounded-r-lg hover:bg-indigo-200"
-                          title="Establecer hora actual"
-                          :disabled="modalType === 'detail'"
-                        >
-                          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                          </svg>
-                        </button>
-                      </div>
+                      <input
+                        class="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 text-sm"
+                        :value="inputValue"
+                        v-on="inputEvents"
+                      />
                     </template>
                   </DatePicker>
                 </div>
               </div>
 
-              <!-- Duración (solo en edición y calculada automáticamente) -->
+              <!-- Duración (solo en edición) -->
               <div v-if="modalType === 'edit'" class="flex items-center">
-                <label class="w-1/3 text-sm font-medium text-gray-700">Duración</label>
+                <label class="block text-sm font-medium text-gray-700 w-1/3">Duración:</label>
                 <input 
                   type="text"
                   v-model="currentTarea.duracion"
                   readonly
-                  class="w-2/3 px-4 py-2 bg-gray-100 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition duration-200"
+                  class="block w-2/3 px-3 py-2 bg-gray-100 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 text-sm"
                   placeholder="Auto"
                 >
-              </div>
-            </div>
-
-            <!-- Columna derecha -->
-            <div class="space-y-6">
-              <!-- Motivo de Cancelación (solo si estado es 4-Cancelado) -->
-              <div v-if="currentTarea.estado === 4" class="flex items-center">
-                <label class="w-1/3 text-sm font-medium text-gray-700">Motivo Cancelación <span class="text-red-500">*</span></label>
-                <div class="w-2/3">
-                  <textarea 
-                    v-model="currentTarea.motivo_cancelacion"
-                    rows="2"
-                    class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition duration-200 resize-none"
-                    placeholder="Ingrese el motivo de la cancelación"
-                  ></textarea>
-                </div>
-              </div>
-
-              <!-- Fecha Fin (solo en edición) -->
-              <div v-if="modalType === 'edit'" class="flex items-center">
-                <label class="w-1/3 text-sm font-medium text-gray-700">Fecha Fin</label>
-                <div class="w-2/3 flex">
-                  <DatePicker
-                    v-model="currentTarea.fecha_fin"
-                    :model-config="{ type: 'string', mask: 'YYYY-MM-DDTHH:mm:00', timeAdjust: 'none' }"
-                    :masks="{ input: 'DD/MM/YYYY HH:mm' }"
-                    :is-24hr="true"
-                    mode="dateTime"
-                    :disabled="modalType === 'detail'"
-                    class="w-full"
-                    :popover="{ 
-                      visibility: 'click', 
-                      placement: 'auto', 
-                      isInteractive: true, 
-                      modifiers: [{ name: 'preventOverflow', options: { padding: 8 } }],
-                      positionFixed: true
-                    }"
-                    @update:model-value="calcularDuracion"
-                  >
-                    <template v-slot="{ inputValue, inputEvents }">
-                      <div class="flex w-full">
-                        <input
-                          class="block w-full px-3 py-2 border border-gray-300 rounded-l-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 text-sm"
-                          :value="inputValue"
-                          v-on="inputEvents"
-                          :disabled="modalType === 'detail'"
-                        />
-                        <button 
-                          type="button"
-                          @click.stop="setCurrentDateTime('fin')"
-                          class="px-2 py-2 bg-indigo-100 text-indigo-700 rounded-r-lg hover:bg-indigo-200"
-                          title="Establecer hora actual"
-                          :disabled="modalType === 'detail'"
-                        >
-                          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                          </svg>
-                        </button>
-                      </div>
-                    </template>
-                  </DatePicker>
-                </div>
               </div>
 
               <!-- Tiempo Facturable (solo en edición) -->
               <div v-if="modalType === 'edit'" class="flex items-center">
-                <label class="w-1/3 text-sm font-medium text-gray-700">T. Facturable</label>
+                <label class="block text-sm font-medium text-gray-700 w-1/3">T. Facturable:</label>
                 <input 
                   type="text"
                   v-model="currentTarea.tiempoFacturable"
                   placeholder="Ej: 2h"
-                  class="w-2/3 px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition duration-200 text-sm"
+                  class="block w-2/3 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 text-sm"
                 >
+              </div>
+
+              <!-- Cita -->
+              <div class="flex items-center">
+                <label class="block text-sm font-medium text-gray-700 w-1/3">¿Cita?:</label>
+                <select 
+                  v-model="currentTarea.cita"
+                  class="block w-2/3 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 text-sm"
+                >
+                  <option value="N">No</option>
+                  <option value="S">Sí</option>
+                </select>
               </div>
             </div>
           </div>
@@ -1519,6 +1456,11 @@ data() {
       usuario_reasignado: null,
       estado: 5
     },
+    tipoOptions: [
+      { value: 'G', label: 'Garantía' },
+      { value: 'I', label: 'Interno' },
+      { value: 'F', label: 'Facturable' }
+    ],
     };
 },
 computed: {
@@ -3073,7 +3015,7 @@ calcularDuracion() {
   async saveTarea() {
   try {
     // Validar campos requeridos
-    if (!this.currentTarea.descripcion.trim()) {
+    if (!this.currentTarea.descripcion?.trim()) {
       this.statusMessage = 'La descripción es obligatoria';
       this.isSuccess = false;
       return;
@@ -3081,6 +3023,12 @@ calcularDuracion() {
 
     if (!this.currentTarea.usuario_asignado) {
       this.statusMessage = 'Debe seleccionar un usuario asignado';
+      this.isSuccess = false;
+      return;
+    }
+
+    if (!this.currentTarea.tipo) {
+      this.statusMessage = 'Debe seleccionar un tipo';
       this.isSuccess = false;
       return;
     }
@@ -3096,17 +3044,19 @@ calcularDuracion() {
     const endpoint = isNew ? '/tareas/' : `/tareas/${this.currentTarea.id}/`;
     const method = isNew ? 'post' : 'put';
 
-    // Preparar los datos asegurándose de que todos los campos requeridos estén presentes
+    // Preparar los datos asegurándose de que todos los campos tengan el formato correcto
     const tareaToSave = {
       descripcion: this.currentTarea.descripcion.trim(),
       solicitud: Number(this.currentTarea.solicitud),
       usuario_asignado: Number(this.currentTarea.usuario_asignado),
       estado: Number(this.currentTarea.estado),
-      duracion: this.currentTarea.duracion || "00:00",
-      tiempoFacturable: this.currentTarea.tiempoFacturable || "00:00",
-      fecha_programada: this.currentTarea.fecha_programada,
+      tipo: this.currentTarea.tipo, // No convertir a número, debe ser string ('G', 'I', 'F')
+      cita: this.currentTarea.cita || 'N', // Valor por defecto 'N'
       fecha_inicio: this.currentTarea.fecha_inicio,
-      fecha_fin: this.currentTarea.fecha_fin
+      fecha_programada: this.currentTarea.fecha_programada || null,
+      fecha_fin: this.currentTarea.fecha_fin || null,
+      duracion: this.currentTarea.duracion || "00:00",
+      tiempoFacturable: this.currentTarea.tiempoFacturable || "00:00"
     };
 
     // Si es una tarea editada y tiene usuario reasignado, incluirlo
@@ -3120,53 +3070,57 @@ calcularDuracion() {
     }
 
     // Log para debugging
-    console.log('Datos a enviar:', JSON.stringify(tareaToSave, null, 2));
+    console.log('Datos a enviar:', {
+      endpoint,
+      method,
+      data: tareaToSave
+    });
 
-    try {
-      const response = await apiClient[method](endpoint, tareaToSave);
-      console.log('Respuesta del servidor:', response.data);
-      
-      this.showModalTarea = false;
-      this.statusMessage = `Tarea ${isNew ? 'creada' : 'actualizada'} exitosamente`;
-      this.isSuccess = true;
+    const response = await apiClient[method](endpoint, tareaToSave);
+    console.log('Respuesta del servidor:', response.data);
+    
+    this.showModalTarea = false;
+    this.statusMessage = `Tarea ${isNew ? 'creada' : 'actualizada'} exitosamente`;
+    this.isSuccess = true;
 
-      // Recargar las tareas
-      const solicitudId = this.currentTarea.solicitud;
-      const tareasResponse = await apiClient.get('/tareas/');
-      const tareasActualizadas = tareasResponse.data.filter(
-        tarea => tarea.solicitud === solicitudId
-      );
-      
-      const solicitudActual = this.solicitudes.find(s => s.id === solicitudId);
-      if (solicitudActual) {
-        solicitudActual.tareas = tareasActualizadas;
-        this.$nextTick(() => {
-          this.$forceUpdate();
-        });
-      }
-
-    } catch (error) {
-      // Log detallado del error
-      console.error('Error de la API:', {
-        status: error.response?.status,
-        data: error.response?.data,
-        mensaje: error.message
+    // Recargar las tareas
+    const solicitudId = this.currentTarea.solicitud;
+    const tareasResponse = await apiClient.get('/tareas/');
+    const tareasActualizadas = tareasResponse.data.filter(
+      tarea => tarea.solicitud === solicitudId
+    );
+    
+    // Actualizar las tareas en la solicitud actual
+    const solicitudActual = this.solicitudes.find(s => s.id === solicitudId);
+    if (solicitudActual) {
+      solicitudActual.tareas = tareasActualizadas;
+      this.$nextTick(() => {
+        this.$forceUpdate();
       });
-
-      if (error.response?.data) {
-        this.statusMessage = typeof error.response.data === 'object' 
-          ? Object.entries(error.response.data)
-              .map(([campo, mensaje]) => `${campo}: ${mensaje}`)
-              .join('\n')
-          : error.response.data.toString();
-      } else {
-        this.statusMessage = 'Error al guardar la tarea';
-      }
-      this.isSuccess = false;
     }
+
   } catch (error) {
-    console.error('Error general:', error);
-    this.statusMessage = error.message || 'Error al procesar la tarea';
+    console.error('Error completo:', error);
+    console.error('Error de la API:', {
+      status: error.response?.status,
+      data: error.response?.data,
+      mensaje: error.message
+    });
+
+    // Mostrar mensaje de error más detallado
+    if (error.response?.data) {
+      const errorMessages = [];
+      if (typeof error.response.data === 'object') {
+        Object.entries(error.response.data).forEach(([campo, mensaje]) => {
+          errorMessages.push(`${campo}: ${mensaje}`);
+        });
+        this.statusMessage = errorMessages.join('\n');
+      } else {
+        this.statusMessage = error.response.data.toString();
+      }
+    } else {
+      this.statusMessage = 'Error al guardar la tarea';
+    }
     this.isSuccess = false;
   }
 },
@@ -3187,14 +3141,16 @@ NuevaTarea(solicitud) {
   this.currentTarea = {
     descripcion: '',
     fecha_programada: null,
-    fecha_inicio: fechaActual, // Fecha actual por defecto
+    fecha_inicio: fechaActual,
     fecha_fin: null,
     duracion: '00:00',
     tiempoFacturable: '00:00',
     solicitud: solicitud.id,
     usuario_asignado: null,
     estado: 5,
-    motivo_cancelacion: ''
+    motivo_cancelacion: '',
+    tipo: '', // Nuevo campo
+    cita: '', // Nuevo campo
   };
   this.showModalTarea = true;
 },

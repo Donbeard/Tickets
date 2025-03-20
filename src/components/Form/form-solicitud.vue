@@ -712,6 +712,40 @@
               </div>
             </div>
 
+            <!-- Después del campo Versión y antes del campo Adjuntar Anexo -->
+            <div class="flex items-center">
+              <label for="new-fecha-creacion" class="w-1/4 text-sm font-medium text-gray-700">Fecha Creación (Temporal):</label>
+              <div class="w-3/4">
+                <DatePicker
+                  v-model="newSolicitud.fecha_creacion_manual"
+                  :model-config="{ type: 'string', mask: 'YYYY-MM-DDTHH:mm:00' }"
+                  :masks="{ input: 'DD/MM/YYYY HH:mm' }"
+                  :is-24hr="true"
+                  mode="dateTime"
+                  class="w-3/4"
+                  :popover="{ 
+                    visibility: 'click', 
+                    placement: 'auto', 
+                    isInteractive: true, 
+                    modifiers: [{ name: 'preventOverflow', options: { padding: 8 } }],
+                    positionFixed: true
+                  }"
+                >
+                  <template v-slot="{ inputValue, inputEvents }">
+                    <input
+                      class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 text-sm"
+                      :value="inputValue"
+                      v-on="inputEvents"
+                      placeholder="Seleccione fecha y hora (opcional)"
+                    />
+                  </template>
+                </DatePicker>
+                <div class="text-xs text-gray-500 mt-1">
+                  Este campo es temporal para ingresar solicitudes con fechas anteriores.
+                </div>
+              </div>
+            </div>
+
             <!-- Manejo de anexos -->
             <div class="flex items-center">
               <label class="w-1/4 text-sm font-medium text-gray-700">Adjuntar Anexo:</label>
@@ -807,12 +841,14 @@
             <div class="flex items-center">
               <label for="edit-submodulo" class="w-1/4 text-sm font-medium text-gray-700">Submódulo:</label>
               <select 
-                id="edit-submodulo" 
-                v-model="editableSolicitud.submodulo" 
+                v-model="editableSolicitud.submodulo"
+                :disabled="!editableSolicitud.modulo"
                 class="w-3/4 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
               >
-                <option value="">Seleccione un submódulo</option>
-                <option v-for="submodulo in submodulos" :key="submodulo.id" :value="submodulo.id">
+                <option value="">
+                  {{ !editableSolicitud.modulo ? 'Primero seleccione un módulo' : 'Seleccione un submódulo' }}
+                </option>
+                <option v-for="submodulo in filteredSubmodulosEdit" :key="submodulo.id" :value="submodulo.id">
                   {{ submodulo.nombre }}
                 </option>
               </select>
@@ -1354,7 +1390,8 @@ data() {
       submodulo: null,
       accion: null,
       estado: 5, 
-      prioridad: 1
+      prioridad: 1,
+      fecha_creacion_manual: null
     },
     anexos: [],
     selectedFile: null,
@@ -1534,6 +1571,16 @@ computed: {
     }
     return this.submodulos.filter(submodulos => 
       submodulos.modulo === this.newSolicitud.modulo
+    );
+  },
+
+  // Nuevo computed property para edición
+  filteredSubmodulosEdit() {
+    if (!this.editableSolicitud.modulo) {
+      return [];
+    }
+    return this.submodulos.filter(submodulos => 
+      submodulos.modulo === this.editableSolicitud.modulo
     );
   },
   filteredColumns() {
@@ -2446,17 +2493,25 @@ nextPage() {
       return;
     }
 
-    // Preparar datos de la solicitud
+    // Formatear la fecha manualmente si existe
+    let fechaCreacion;
+    if (this.newSolicitud.fecha_creacion_manual) {
+      // Convertir a formato Django
+      const fecha = new Date(this.newSolicitud.fecha_creacion_manual);
+      fechaCreacion = fecha.toISOString().replace('Z', '000Z');
+    }
+
     const solicitudData = {
       titulo: this.newSolicitud.titulo,
       descripcion: this.newSolicitud.descripcion,
       modulo: this.newSolicitud.modulo,
       submodulo: this.newSolicitud.submodulo || null,
       accion: this.newSolicitud.accion,
-      prioridad: 1, // Prioridad correcta según instrucciones
-      estado: 5, // Estado inicial correcto según instrucciones
-      usuario_cliente: usuarioTercero.id, // Usar el ID de la relación usuario-tercero
-      version_error: this.newSolicitud.version ? parseInt(this.newSolicitud.version) : null
+      prioridad: 1,
+      estado: 5,
+      usuario_cliente: usuarioTercero.id,
+      version_error: this.newSolicitud.version ? parseInt(this.newSolicitud.version) : null,
+      created: fechaCreacion // Cambiar a 'created' en lugar de 'fecha_creacion'
     };
     
     // Depurar datos antes de enviar
@@ -2472,6 +2527,11 @@ nextPage() {
       formData.append('archivo', this.selectedFile);
       formData.append('solicitud', solicitudResponse.data.id);
       formData.append('descripcion', this.newSolicitud.descripcion_anexo || '');
+      
+      // Si se proporciona una fecha de creación manual, usarla
+      if (this.newSolicitud.fecha_creacion_manual) {
+        formData.append('fecha_creacion', this.newSolicitud.fecha_creacion_manual);
+      }
       
       try {
         await apiClient.post('/anexos/', formData, {

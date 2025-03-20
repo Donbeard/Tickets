@@ -5,6 +5,22 @@
       <div class="bg-white rounded-lg shadow">
         <div class="p-4 border-b border-gray-200 flex justify-between items-center">
           <h2 class="text-lg font-medium text-gray-900">Módulos y Submódulos</h2>
+          <div class="p-4 flex justify-between items-center">
+            <!-- Búsqueda de módulos -->
+            <div class="relative w-64">
+              <input
+                v-model="searchModulo"
+                type="text"
+                placeholder="Buscar módulo..."
+                class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+              >
+              <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+              </div>
+            </div>
+          </div>
           <button
             @click="handleNewModulo"
             class="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
@@ -19,13 +35,14 @@
             <thead class="bg-gray-50">
               <tr>
                 <th class="w-10 px-6 py-3"></th> <!-- Columna para expandir/colapsar -->
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nombre</th>
                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Descripción</th>
                 <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones</th>
               </tr>
             </thead>
             <tbody class="bg-white divide-y divide-gray-200">
-              <template v-for="modulo in modulos" :key="modulo.id">
+              <template v-for="modulo in sortedModulos" :key="modulo.id">
                 <!-- Fila del Módulo -->
                 <tr class="hover:bg-gray-50">
                   <td class="px-6 py-4">
@@ -38,6 +55,9 @@
                         :class="{'rotate-90': selectedModulo?.id === modulo.id}"
                       />
                     </button>
+                  </td>
+                  <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    {{ modulo.id }}
                   </td>
                   <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                     {{ modulo.nombre }}
@@ -67,24 +87,45 @@
                     <div class="border rounded-lg overflow-hidden">
                       <div class="bg-gray-100 px-4 py-2 flex justify-between items-center">
                         <h3 class="text-sm font-medium text-gray-700">Submódulos</h3>
-                        <button
-                          @click="handleNewSubmodulo"
-                          class="px-3 py-1 bg-indigo-600 text-white text-sm rounded hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
-                        >
-                          Nuevo Submódulo
-                        </button>
-                      </div>
+                          <div class="bg-gray-100 px-4 py-2 flex justify-between items-center">
+                            <div class="relative w-64">
+                              <input
+                                v-model="searchSubmodulo"
+                                type="text"
+                                placeholder="Buscar submódulo..."
+                                class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                              >
+                              <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                                </svg>
+                              </div>
+                            </div>
+                          </div>
+                          <button
+                            @click="handleNewSubmodulo"
+                            class="px-3 py-1 bg-indigo-600 text-white text-sm rounded hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+                          >
+                            Nuevo Submódulo
+                          </button>
+                        </div>
+                      
+                      
                       
                       <table class="min-w-full divide-y divide-gray-200">
                         <thead class="bg-gray-50">
                           <tr>
+                            <th class="px-6 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
                             <th class="px-6 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nombre</th>
                             <th class="px-6 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Descripción</th>
                             <th class="px-6 py-2 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones</th>
                           </tr>
                         </thead>
                         <tbody class="bg-white divide-y divide-gray-200">
-                          <tr v-for="submodulo in filteredSubmodulos" :key="submodulo.id">
+                          <tr v-for="submodulo in sortedSubmodulos" :key="submodulo.id">
+                            <td class="px-6 py-3 whitespace-nowrap text-sm text-gray-500">
+                              {{ submodulo.id }}
+                            </td>
                             <td class="px-6 py-3 whitespace-nowrap text-sm font-medium text-gray-900">
                               {{ submodulo.nombre }}
                             </td>
@@ -106,7 +147,7 @@
                               </button>
                             </td>
                           </tr>
-                          <tr v-if="filteredSubmodulos.length === 0">
+                          <tr v-if="sortedSubmodulos.length === 0">
                             <td colspan="4" class="px-6 py-4 text-center text-sm text-gray-500">
                               No hay submódulos para este módulo
                             </td>
@@ -161,7 +202,7 @@
                 v-model="moduloForm.nombre" 
                 type="text"
                 required
-                maxlength="20"
+                maxlength="50"
                 class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm transition-colors"
                 placeholder="Ingrese el nombre"
               >
@@ -235,7 +276,7 @@
                 v-model="submoduloForm.nombre" 
                 type="text"
                 required
-                maxlength="20"
+                maxlength="100"
                 class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm transition-colors"
                 placeholder="Ingrese el nombre"
               >
@@ -315,13 +356,34 @@ export default {
       showToast: false,
       statusMessage: '',
       isSuccess: true,
-      toastTimeout: null
+      toastTimeout: null,
+      searchModulo: '',
+      searchSubmodulo: ''
     };
   },
 
   computed: {
+    filteredModulos() {
+      return this.modulos.filter(modulo =>
+        modulo.nombre.toLowerCase().includes(this.searchModulo.toLowerCase()) ||
+        modulo.id.toString().includes(this.searchModulo)
+      );
+    },
+    
+    sortedModulos() {
+      return [...this.filteredModulos].sort((a, b) => a.nombre.localeCompare(b.nombre));
+    },
+
     filteredSubmodulos() {
-      return this.submodulos.filter(s => s.modulo === this.selectedModulo?.id);
+      const filtered = this.submodulos.filter(s => s.modulo === this.selectedModulo?.id);
+      return filtered.filter(submodulo =>
+        submodulo.nombre.toLowerCase().includes(this.searchSubmodulo.toLowerCase()) ||
+        submodulo.id.toString().includes(this.searchSubmodulo)
+      );
+    },
+
+    sortedSubmodulos() {
+      return [...this.filteredSubmodulos].sort((a, b) => a.nombre.localeCompare(b.nombre));
     }
   },
 

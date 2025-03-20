@@ -2903,14 +2903,15 @@ export default {
           modelValue: 'YYYY-MM-DDTHH:mm:00'
         },
         timePickerOptions: {
-          hours: { min: 6, max: 19, interval: 1 },
-          minutes: { interval: 30 }
+          hours: Array.from({ length: 13 }, (_, i) => i + 7), // 7 a 19
+          minutes: Array.from({ length: 60 }, (_, i) => i),
+          seconds: [0]
         },
         datePickerAttributes: []
       };
     };
 
-    // Obtener la configuración del DatePicker
+    // Obtener la configuración
     const datePickerConfig = setupDatePicker();
     const masks = datePickerConfig.masks;
     const timePickerOptions = datePickerConfig.timePickerOptions;
@@ -2938,6 +2939,7 @@ export default {
         }
       }
     };
+
 
     return {
       tareas,

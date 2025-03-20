@@ -1058,7 +1058,7 @@
             <p class="text-gray-700 whitespace-pre-wrap">{{ detalleSolicitud.descripcion }}</p>
           </div>
 
-          <!-- Anexos con mejor diseño -->
+          <!-- Anexos con previsualización -->
           <div class="bg-white rounded-lg">
             <h4 class="text-lg font-semibold text-gray-900 mb-4 flex items-center">
               <svg class="w-5 h-5 mr-2 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1068,17 +1068,57 @@
             </h4>
             <div v-if="anexos && anexos.length > 0" class="space-y-3">
               <div v-for="anexo in anexos" :key="anexo.id" 
-                   class="flex items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-200 hover:bg-gray-100 transition-colors duration-200">
-                <span class="text-sm text-gray-700 font-medium">{{ anexo.descripcion || 'Sin descripción' }}</span>
-                <button 
-                  @click="downloadAnexo(anexo)"
-                  class="inline-flex items-center px-4 py-2 border border-indigo-500 text-sm font-medium rounded-md text-indigo-600 bg-white hover:bg-indigo-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors duration-200"
-                >
-                  <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
-                  </svg>
-                  Descargar
-                </button>
+                   class="p-4 bg-gray-50 rounded-lg border border-gray-200">
+                <div class="flex items-center justify-between mb-2">
+                  <span class="text-sm text-gray-700 font-medium">{{ anexo.descripcion || 'Sin descripción' }}</span>
+                  <div class="flex space-x-2">
+                    <button 
+                      @click="viewAnexo(anexo)"
+                      class="inline-flex items-center px-4 py-2 border border-indigo-500 text-sm font-medium rounded-md text-indigo-600 bg-white hover:bg-indigo-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors duration-200"
+                    >
+                      <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                      </svg>
+                      Ver
+                    </button>
+                    <button 
+                      @click="downloadAnexo(anexo)"
+                      class="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors duration-200"
+                    >
+                      <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+                      </svg>
+                      Descargar
+                    </button>
+                  </div>
+                </div>
+                <!-- Área de previsualización -->
+                <div v-if="anexo.isViewing" class="mt-4">
+                  <div v-if="isImage(anexo)" class="flex justify-center border rounded-lg overflow-hidden">
+                    <img 
+                      :src="getAnexoUrl(anexo)" 
+                      class="max-h-96 object-contain cursor-pointer hover:opacity-90 transition-opacity" 
+                      :alt="anexo.descripcion"
+                      @click="() => {
+                        showImageModal = true;
+                        currentImageUrl = anexo.archivo;
+                      }"
+                    >
+                  </div>
+                  <div v-else-if="isPDF(anexo)" class="flex items-center">
+                    <a 
+                      :href="getAnexoUrl(anexo)" 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      class="inline-flex items-center text-indigo-600 hover:text-indigo-800"
+                    >
+                      <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path>
+                      </svg>
+                      Ver PDF en nueva pestaña
+                    </a>
+                  </div>
+                </div>
               </div>
             </div>
             <p v-else class="text-sm text-gray-500 italic">No hay anexos disponibles</p>
@@ -1324,13 +1364,45 @@
   </div>
 </div>
 
+<!-- Modal para ver imagen -->
+<Teleport to="body">
+  <div v-if="showImageModal" class="fixed inset-0 z-50 overflow-hidden" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+    <div class="flex items-center justify-center min-h-screen p-4">
+      <div 
+        class="fixed inset-0 bg-black bg-opacity-75 transition-opacity" 
+        @click="showImageModal = false"
+      ></div>
+      
+      <div class="relative bg-white rounded-lg max-w-4xl w-full mx-auto overflow-hidden">
+        <div class="absolute top-0 right-0 pt-4 pr-4 z-10">
+          <button 
+            @click="showImageModal = false" 
+            class="bg-white rounded-full p-2 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+          >
+            <svg class="h-6 w-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+        
+        <div class="relative">
+          <img 
+            :src="currentImageUrl" 
+            class="max-h-[80vh] w-auto mx-auto"
+            alt="Vista ampliada"
+          >
+        </div>
+      </div>
+    </div>
+  </div>
+</Teleport>
+
 </template>
 
 <script setup>
 import { PlusIcon } from '@heroicons/vue/24/outline'
 import { Teleport } from 'vue'
 import { DatePicker } from 'v-calendar'
-
 
 </script>
 
@@ -1498,6 +1570,8 @@ data() {
       { value: 'I', label: 'Interno' },
       { value: 'F', label: 'Facturable' }
     ],
+    showImageModal: false,
+    currentImageUrl: null
     };
 },
 computed: {
@@ -1669,6 +1743,8 @@ beforeUnmount() {
   if (this.toastTimeout) {
     clearTimeout(this.toastTimeout)
   }
+  // Asegurarse de restaurar el scroll cuando el componente se desmonta
+  this.toggleBodyScroll(false);
 },
 methods: {
   
@@ -2180,17 +2256,39 @@ nextPage() {
     this.currentPage++;
   }
 },
+isImage(anexo) {
+    const imageExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp'];
+    const extension = anexo.archivo.toLowerCase().split('.').pop();
+    console.log('Extensión del archivo:', extension);
+    console.log('¿Es imagen?:', imageExtensions.includes('.' + extension));
+    return imageExtensions.includes('.' + extension);
+  },
 
+  isPDF(anexo) {
+    const extension = anexo.archivo.toLowerCase().split('.').pop();
+    console.log('¿Es PDF?:', extension === 'pdf');
+    return extension === 'pdf';
+  },
+
+  getAnexoUrl(anexo) {
+    // Usar directamente la URL del archivo que viene del servidor
+    return anexo.archivo;
+  },
+
+  viewAnexo(anexo) {
+    console.log('Anexo completo:', anexo);
+    anexo.isViewing = !anexo.isViewing;
+  },
   async showSolicitudDetails(id) {
     try {
       // Debug del token
-      const token = localStorage.getItem('accessToken');
-      console.log('Token en showSolicitudDetails:', token ? 'Sí' : 'No');
-      console.log('Primeros 10 caracteres del token:', token ? token.substring(0, 10) + '...' : 'No hay token');
-
       const solicitudResponse = await apiClient.get(`/solicitudes/${id}/`);
       this.detalleSolicitud = solicitudResponse.data;
       const anexosResponse = await apiClient.get(`/anexos/${id}/solicitud-anexos/`);
+      this.anexos = anexosResponse.data.map(anexo => ({
+      ...anexo,
+      isViewing: false
+      }));
       this.anexos = anexosResponse.data;
       this.showModalDetails = true;
     } catch (error) {
@@ -2623,6 +2721,8 @@ calcularDuracion() {
     this.showModalDetails = false;
     this.showModalEdit = false;
     this.showModalCreate = false;
+    this.showImageModal = false; // Agregamos el modal de imagen
+    this.currentImageUrl = null;  // Limpiamos la URL de la imagen
     this.detalleSolicitud = null;
     this.editableSolicitud = {
       usuario_soporte: null,
@@ -2633,8 +2733,8 @@ calcularDuracion() {
       modulo: null,
       submodulo: null,
       accion: null,
-      estado: 5, // Corrección: estado debe ser 1 (numérico)
-      prioridad: 1 // Corrección: prioridad debe ser 1 (numérico)
+      estado: 5,
+      prioridad: 1
     };
     this.selectedFile = null;
     this.closeModalTareas = null;
@@ -2654,6 +2754,10 @@ calcularDuracion() {
       usuario_reasignado: null,
       estado: 1
     };
+    // Manejar el scroll directamente aquí
+    if (typeof window !== 'undefined' && window.document) {
+      window.document.body.style.overflow = 'auto';
+    }
   },
 
   async deleteSolicitud(id) {
@@ -3345,6 +3449,11 @@ watch: {
       this.initializeColumnOptions();
     },
     immediate: true
+  },
+  showImageModal(newValue) {
+    if (typeof window !== 'undefined' && window.document) {
+      window.document.body.style.overflow = newValue ? 'hidden' : 'auto';
+    }
   }
 },
 
@@ -3487,5 +3596,9 @@ border-color: rgba(0, 0, 0, 0.85) transparent transparent transparent;
 .tooltip-container:hover .tooltip-text {
 visibility: visible;
 opacity: 1;
+}
+
+.toggle-body-scroll {
+  overflow: hidden;
 }
 </style>

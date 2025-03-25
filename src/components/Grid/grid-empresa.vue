@@ -41,6 +41,16 @@
         </svg>
         Nueva Empresa
       </button>
+
+      <!-- Nuevo botón de Agregar Empresa -->
+      <button
+        @click="showAddEmpresaModal = true"
+        type="button"
+        class="inline-flex items-center justify-center rounded-md border border-transparent bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 sm:w-auto"
+      >
+        <PlusIcon class="-ml-1 mr-2 h-5 w-5" aria-hidden="true" />
+        Agregar Empresa
+      </button>
     </div>
 
     <div v-if="!selectedEmpresa">
@@ -494,6 +504,13 @@
       </div>
     </Transition>
   </Teleport>
+
+  <!-- Modal de Agregar Empresa -->
+  <AddUsuariosTerceros 
+    v-if="showAddEmpresaModal"
+    @close="showAddEmpresaModal = false"
+    @success="handleEmpresaAdded"
+  />
 </template>
 
 <script>
@@ -503,6 +520,8 @@ import ContactosEmpresa from '@/components/Form/contactos-empresa.vue'
 import NotasEmpresa from '@/components/Form/notas-empresa.vue'
 import LicenciaTab from '@/components/Grid/LicenciaTab.vue'
 import apiClient from '@/apiClient'
+import { PlusIcon } from '@heroicons/vue/24/outline'
+import AddUsuariosTerceros from '../Form/add-usuariosTerceros.vue'
 
 export default {
   name: 'GridEmpresa',
@@ -510,7 +529,9 @@ export default {
     CreateEmpresa,
     ContactosEmpresa,
     NotasEmpresa,
-    LicenciaTab
+    LicenciaTab,
+    PlusIcon,
+    AddUsuariosTerceros
   },
 
   setup() {
@@ -529,6 +550,7 @@ export default {
     const activeTab = ref('contactos')
     const userType = ref(localStorage.getItem('user_type'))
     const userTerceroId = ref(null)
+    const showAddEmpresaModal = ref(false)
 
     // Añadir variables reactivas para la paginación
     const itemsPerPage = ref(10);
@@ -869,6 +891,12 @@ export default {
       return pages;
     });
 
+    const handleEmpresaAdded = () => {
+      showAddEmpresaModal.value = false;
+      // Refrescar la lista de empresas
+      fetchEmpresas();
+    };
+
     return {
       empresas,
       showCreateModal,
@@ -905,7 +933,9 @@ export default {
       changePage,
       prevPage,
       nextPage,
-      displayedPages
+      displayedPages,
+      showAddEmpresaModal,
+      handleEmpresaAdded
     }
   }
 }

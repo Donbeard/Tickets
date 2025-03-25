@@ -112,6 +112,16 @@
                 class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500"
               />
             </div>
+            <div>
+              <label for="cargo" class="block text-sm font-medium text-gray-700">Cargo</label>
+              <input
+                id="cargo"
+                type="text"
+                v-model="form.cargo"
+                placeholder="Ingrese su cargo"
+                class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500"
+              />
+            </div>
           </div>
           <div>
             <button
@@ -166,6 +176,7 @@ export default {
         is_active: true,
         is_staff: false,
         is_superuser: false,
+        cargo: '',
       },
       statusMessage: '',
       isSuccess: false,
@@ -191,7 +202,6 @@ export default {
       };
       
       this.form.nits.push(newNit);
-      console.log('NIT añadido, array actual:', JSON.stringify(this.form.nits));
     },
     
     removeNit(index) {
@@ -217,16 +227,13 @@ export default {
         this.form.nits[index].empresaNombre = '';
         this.form.nits[index].terceroId = null;
         
-        console.log(`Validando NIT ${nit} en índice ${index}...`);
         
         const response = await apiClient.get(`/terceros/`);
         
-        console.log(`Respuesta RAW para NIT ${nit}:`, JSON.stringify(response.data));
         
         const tercero = response.data.find(t => t.nit.toString() === nit.toString());
         
         if (tercero) {
-          console.log(`Tercero encontrado para NIT ${nit}:`, JSON.stringify(tercero));
           
           const nitData = {
             value: nit,
@@ -235,11 +242,10 @@ export default {
             terceroId: tercero.id
           };
           
-          console.log(`Nuevo objeto para NIT ${nit}:`, JSON.stringify(nitData));
+
           
           this.form.nits[index] = nitData;
           
-          console.log(`Array completo después de actualización:`, JSON.stringify(this.form.nits));
           
           // Determinar el tipo de usuario según el NIT
           this.determinarTipoUsuario(nit);
@@ -248,10 +254,10 @@ export default {
           this.form.nits[index].empresaNombre = '';
           this.form.nits[index].terceroId = null;
           
-          console.log(`No se encontró tercero para NIT ${nit}`);
+
         }
       } catch (error) {
-        console.error(`Error al validar NIT ${nit}:`, error);
+
         this.form.nits[index].isValid = false;
         this.form.nits[index].empresaNombre = '';
         this.form.nits[index].terceroId = null;
@@ -266,10 +272,10 @@ export default {
       const nitsSupervisores = ['901430071','901244174']; // Añade aquí todos los NITs que deban ser tipo S
       
       if (nitsSupervisores.includes(nit.toString())) {
-        console.log(`NIT ${nit} corresponde a un usuario tipo S (Supervisor)`);
+
         this.form.tipo = 'S';
       } else {
-        console.log(`NIT ${nit} corresponde a un usuario tipo C (Cliente)`);
+
         this.form.tipo = 'C';
       }
     },
@@ -349,7 +355,7 @@ export default {
         
         if (debeSerSupervisor) {
           this.form.tipo = 'S';
-          console.log('Usuario será creado como Supervisor (S) debido al NIT');
+
         }
         
         const formData = {
@@ -363,10 +369,11 @@ export default {
           is_superuser: false,
           username: this.form.email,
           nombre: `${this.form.first_name} ${this.form.last_name}`,
-          tipo: this.form.tipo, // Ahora puede ser 'C' o 'S' según el NIT
+          tipo: this.form.tipo,
+          cargo: this.form.cargo || null,
         };
         
-        console.log('Datos de usuario a enviar:', formData);
+
         
         let usuarioCreado = false;
         let relacionesExitosas = false;
@@ -374,7 +381,7 @@ export default {
         
         try {
           userResponse = await apiClient.post('/usuarios/', formData);
-          console.log('Usuario registrado:', userResponse.data);
+
           usuarioCreado = true;
           
           const userId = userResponse.data.id;
@@ -390,9 +397,9 @@ export default {
           
           await Promise.all(relacionesPromises);
           relacionesExitosas = true;
-          console.log('Relaciones creadas sin token correctamente');
+
         } catch (errorSinToken) {
-          console.log('Error al crear usuario o relaciones sin token:', errorSinToken);
+
           
           if (errorSinToken.response?.status === 400 && 
               (errorSinToken.response?.data?.email || 
@@ -439,7 +446,7 @@ export default {
               }
               
               const token = loginResponse.data.access;
-              console.log('Token obtenido correctamente');
+
               
               const relacionesPromises = nitsValidos.map(async (terceroId) => {
                 const usuarioTerceroData = {
@@ -456,9 +463,9 @@ export default {
               
               await Promise.all(relacionesPromises);
               relacionesExitosas = true;
-              console.log('Relaciones creadas con token correctamente');
+
             } catch (errorConToken) {
-              console.error('Error al crear relaciones con token:', errorConToken);
+
               this.errors.push('No se pudieron vincular las empresas al usuario');
             }
           } else {
@@ -478,8 +485,7 @@ export default {
           this.isSuccess = false;
         }
       } catch (error) {
-        console.error('Error al registrar usuario:', error);
-        console.log('Error detallado:', JSON.stringify(error.response?.data, null, 2));
+
         this.isSuccess = false;
         
         if (error.response?.status === 0 || !error.response) {
@@ -513,7 +519,6 @@ export default {
   async mounted() {
     try {
       const response = await apiClient.get('/terceros/');
-      console.log('Terceros disponibles en el sistema:', JSON.stringify(response.data));
     } catch (error) {
       console.error('Error al consultar terceros:', error);
     }

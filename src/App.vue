@@ -20,50 +20,54 @@
 
       <!-- Navigation Items -->
       <nav>
-        <router-link
-          v-for="item in updatedNavigation"
-          :key="item.name"
-          :to="item.href"
-          :class="[
-            item.current 
-              ? 'bg-gray-900 text-white' 
-              : 'text-gray-300 hover:bg-gray-700 hover:text-white',
-            'group flex items-center px-2 py-2 text-base font-medium rounded-md mb-1',
-            isCollapsed ? 'justify-center' : ''
-          ]"
-          :aria-current="item.current ? 'page' : undefined"
-        >
-          <div class="relative">
-            <component :is="item.icon" class="h-6 w-6" :class="{ 'mr-3': !isCollapsed }" aria-hidden="true" />
-            <!-- Tooltip que aparece solo cuando el menú está contraído -->
-            <div 
-              v-if="isCollapsed" 
-              class="absolute left-full ml-2 w-auto px-2 py-1 bg-gray-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap z-50 pointer-events-none"
-            >
-              {{ item.name }}
+        <template v-for="item in updatedNavigation" :key="item.name">
+          <!-- Para items con href (rutas) -->
+          <router-link
+            v-if="item.href"
+            :to="item.href"
+            :class="[
+              item.current 
+                ? 'bg-gray-900 text-white' 
+                : 'text-gray-300 hover:bg-gray-700 hover:text-white',
+              'group flex items-center px-2 py-2 text-base font-medium rounded-md mb-1',
+              isCollapsed ? 'justify-center' : ''
+            ]"
+            :aria-current="item.current ? 'page' : undefined"
+          >
+            <div class="relative">
+              <component :is="item.icon" class="h-6 w-6" :class="{ 'mr-3': !isCollapsed }" aria-hidden="true" />
+              <div 
+                v-if="isCollapsed" 
+                class="absolute left-full ml-2 w-auto px-2 py-1 bg-gray-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap z-50 pointer-events-none"
+              >
+                {{ item.name }}
+              </div>
             </div>
-          </div>
-          <span v-if="!isCollapsed">{{ item.name }}</span>
-        </router-link>
-        <button 
-          @click="logout" 
-          :class="[
-            'text-gray-300 hover:bg-gray-700 hover:text-white group flex items-center px-2 py-2 text-base font-medium rounded-md mb-1',
-            isCollapsed ? 'justify-center' : ''
-          ]"
-        >
-          <div class="relative">
-            <LogoutIcon class="h-6 w-6" :class="{ 'mr-3': !isCollapsed }" aria-hidden="true" />
-            <!-- Tooltip para el botón de cerrar sesión -->
-            <div 
-              v-if="isCollapsed" 
-              class="absolute left-full ml-2 w-auto px-2 py-1 bg-gray-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap z-50 pointer-events-none"
-            >
-              Cerrar sesión
+            <span v-if="!isCollapsed">{{ item.name }}</span>
+          </router-link>
+
+          <!-- Para items con action (como cambiar empresa) -->
+          <button
+            v-else
+            @click="item.action"
+            :class="[
+              'text-gray-300 hover:bg-gray-700 hover:text-white w-full',
+              'group flex items-center px-2 py-2 text-base font-medium rounded-md mb-1',
+              isCollapsed ? 'justify-center' : ''
+            ]"
+          >
+            <div class="relative">
+              <component :is="item.icon" class="h-6 w-6" :class="{ 'mr-3': !isCollapsed }" aria-hidden="true" />
+              <div 
+                v-if="isCollapsed" 
+                class="absolute left-full ml-2 w-auto px-2 py-1 bg-gray-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap z-50 pointer-events-none"
+              >
+                {{ item.name }}
+              </div>
             </div>
-          </div>
-          <span v-if="!isCollapsed">Cerrar sesión</span>
-        </button>
+            <span v-if="!isCollapsed">{{ item.name }}</span>
+          </button>
+        </template>
       </nav>
     </aside>
 
@@ -71,11 +75,21 @@
     <div class="flex-1 flex flex-col overflow-hidden">
       <!-- Top bar para móvil -->
       <div class="bg-gray-800 text-white md:hidden" v-if="!$route.meta.hideNavbar">
-        <div class="flex items-center px-4 py-3">
-          <button @click="mobileMenuOpen = true" class="text-gray-400 hover:text-white">
-            <Bars3Icon class="h-6 w-6" aria-hidden="true" />
+        <div class="flex items-center justify-between px-4 py-3">
+          <div class="flex items-center">
+            <button @click="mobileMenuOpen = true" class="text-gray-400 hover:text-white">
+              <Bars3Icon class="h-6 w-6" aria-hidden="true" />
+            </button>
+            <img class="h-8 w-8 ml-3" src="https://static.wixstatic.com/media/7a7799_d00b73646de9440f88c6f421422244a3.png" alt="WxSoporte" />
+          </div>
+          
+          <button
+            @click="showCambiarEmpresaModal = true"
+            class="flex items-center space-x-2 px-3 py-1.5 text-sm text-gray-300 hover:text-white transition-colors duration-150"
+          >
+            <BuildingOfficeIcon class="h-5 w-5" />
+            <span class="font-medium max-w-[150px] truncate">{{ terceroNombre || 'Seleccionar' }}</span>
           </button>
-          <span class="ml-2 text-xl font-semibold">WxSoporte</span>
         </div>
 
         <!-- Menú móvil overlay -->
@@ -141,14 +155,22 @@
         </div>
       </main>
     </div>
+
+    <!-- Agregar el modal al final del template -->
+    <ChangeTerceros 
+      v-if="showCambiarEmpresaModal"
+      @close="showCambiarEmpresaModal = false"
+      @empresaSeleccionada="handleEmpresaSeleccionada"
+    />
   </div>
 </template>
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
-import { Bars3Icon, XMarkIcon, HomeIcon, ChevronLeftIcon, ChevronRightIcon, DocumentTextIcon, BookmarkIcon, BuildingOfficeIcon, UserGroupIcon } from '@heroicons/vue/24/outline'
+import { Bars3Icon, XMarkIcon, HomeIcon, ChevronLeftIcon, ChevronRightIcon, DocumentTextIcon, BookmarkIcon, ArrowsRightLeftIcon, BuildingOfficeIcon} from '@heroicons/vue/24/outline'
 import LogoutIcon from '@heroicons/vue/24/outline/ArrowRightOnRectangleIcon'
+import ChangeTerceros from '@/components/Form/change-terceros.vue'
 
 const router = useRouter()
 const route = useRoute()
@@ -191,10 +213,20 @@ const navigation = computed(() => {
     { name: 'Tareas', href: '/tareas', icon: BookmarkIcon, allowedTypes: ['A', 'S'] },
     { name: 'Modulos', href: '/modulos', icon: DocumentTextIcon, allowedTypes: ['A', 'S'] },
     { name: 'Empresas', href: '/empresas', icon: BuildingOfficeIcon, allowedTypes: ['A', 'C', 'S'] },
-    //{ name: 'Licencias', href: '/licencias', icon: UserGroupIcon, allowedTypes: ['A', 'S'] },
+    { 
+      name: `Cambiar Empresa (${terceroNombre.value || 'No seleccionada'})`, 
+      action: () => showCambiarEmpresaModal.value = true, 
+      icon: ArrowsRightLeftIcon, 
+      allowedTypes: ['A', 'C', 'S'] 
+    },
+    { 
+      name: 'Cerrar Sesión', 
+      action: logout, 
+      icon: LogoutIcon, 
+      allowedTypes: ['A', 'C', 'S'] 
+    },
   ]
 
-  // Si no hay tipo de usuario, intentar obtenerlo de nuevo
   if (!userType.value) {
     updateUserType()
   }
@@ -222,7 +254,8 @@ const logout = () => {
   localStorage.removeItem('refreshToken')
   localStorage.removeItem('user')
   localStorage.removeItem('user_type')
-  userType.value = null
+  localStorage.removeItem('terceroId')
+  localStorage.removeItem('terceroNombre')
   router.push('/')
 }
 
@@ -238,4 +271,12 @@ router.beforeEach((to, from, next) => {
   updateUserType()
   next()
 })
+
+const showCambiarEmpresaModal = ref(false)
+const terceroNombre = ref(localStorage.getItem('terceroNombre'))
+
+const handleEmpresaSeleccionada = (empresa) => {
+  terceroNombre.value = empresa.nombre
+  showCambiarEmpresaModal.value = false
+}
 </script>

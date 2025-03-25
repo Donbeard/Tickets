@@ -7,8 +7,7 @@
     </div>
 
     <div class="mt-10 sm:mx-auto sm:w-full sm:max-w-sm">
-      <!-- Paso 1: Formulario de validación de credenciales -->
-      <form v-if="!isValidated" class="space-y-6" @submit.prevent="validateCredentials">
+      <form class="space-y-6" @submit.prevent="validateCredentials">
         <div>
           <label for="email" class="block text-sm font-medium leading-6 text-gray-900">Usuario</label>
           <div class="mt-2">
@@ -29,44 +28,65 @@
           <button type="submit"
             class="flex w-full justify-center rounded-md bg-indigo-600 px-3 py-1.5 text-sm font-semibold leading-6 text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
             :disabled="isLoading">
-            {{ isLoading ? 'Validando...' : 'Validar Credenciales' }}
+            {{ isLoading ? 'Validando...' : 'Iniciar Sesión' }}
           </button>
         </div>
       </form>
 
-      <!-- Paso 2: Selección de empresa -->
-      <form v-else class="space-y-6" @submit.prevent="completeLogin">
-        <div>
-          <label for="empresa" class="block text-sm font-medium leading-6 text-gray-900">Seleccione Empresa</label>
-          <div class="mt-2">
-            <select id="empresa" v-model="selectedTerceroId" 
-              class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
-              required>
-              <option value="" disabled>Seleccione una empresa</option>
-              <option v-for="tercero in empresasUsuario" :key="tercero.id" :value="tercero.id">
-                {{ tercero.nombre }}
-              </option>
-            </select>
+      <!-- Modal de selección de empresa -->
+      <div v-if="showEmpresaModal" class="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+        <div class="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+          <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" aria-hidden="true"></div>
+
+          <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+
+          <div class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
+            <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+              <div class="sm:flex sm:items-start">
+                <div class="mt-3 text-center sm:mt-0 sm:text-left w-full">
+                  <h3 class="text-lg leading-6 font-medium text-gray-900" id="modal-title">
+                    Seleccione Empresa
+                  </h3>
+                  <div class="mt-4">
+                    <select 
+                      v-model="selectedTerceroId"
+                      class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
+                      required
+                    >
+                      <option value="" disabled>Seleccione una empresa</option>
+                      <option v-for="tercero in empresasUsuario" :key="tercero.id" :value="tercero.id">
+                        {{ tercero.nombre }}
+                      </option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+              <button 
+                type="button"
+                class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-indigo-600 text-base font-medium text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:ml-3 sm:w-auto sm:text-sm"
+                @click="completeLogin"
+                :disabled="isLoading || !selectedTerceroId"
+              >
+                {{ isLoading ? 'Accediendo...' : 'Ingresar' }}
+              </button>
+              <button 
+                type="button"
+                class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm"
+                @click="showEmpresaModal = false"
+              >
+                Cancelar
+              </button>
+            </div>
           </div>
         </div>
-
-        <div class="flex gap-4">
-          <button type="button" @click="isValidated = false"
-            class="flex w-1/2 justify-center rounded-md bg-gray-200 px-3 py-1.5 text-sm font-semibold leading-6 text-gray-800 shadow-sm hover:bg-gray-300">
-            Volver
-          </button>
-          <button type="submit"
-            class="flex w-1/2 justify-center rounded-md bg-indigo-600 px-3 py-1.5 text-sm font-semibold leading-6 text-white shadow-sm hover:bg-indigo-500"
-            :disabled="isLoading || !selectedTerceroId">
-            {{ isLoading ? 'Accediendo...' : 'Ingresar' }}
-          </button>
-        </div>
-      </form>
+      </div>
 
       <p v-if="errorMessage" class="mt-2 text-center text-sm text-red-600">
         {{ errorMessage }}
       </p>
-      <div class="mt-4 text-center" v-if="!isValidated">
+      <div class="mt-4 text-center">
         <p class="text-sm text-gray-600">
           ¿Quieres registrarte?
           <router-link to="/register" class="font-medium text-indigo-600 hover:text-indigo-500">
@@ -74,7 +94,7 @@
           </router-link>
         </p>
       </div>
-      <div class="mt-4 text-center" v-if="!isValidated">
+      <div class="mt-4 text-center">
         <p class="text-sm text-gray-600">
           ¿Olvidaste tu contraseña?
           <router-link to="/password-reset" class="font-medium text-indigo-600 hover:text-indigo-500">
@@ -97,7 +117,7 @@ export default {
       password: '',
       errorMessage: '',
       isLoading: false,
-      isValidated: false,
+      showEmpresaModal: false,
       userData: null,
       empresasUsuario: [],
       selectedTerceroId: '',
@@ -122,7 +142,6 @@ export default {
             return;
           }
         } catch (loginError) {
-          console.log('Intento con /api/login/ falló:', loginError.response?.data);
           // Continuar con el siguiente intento si falla
         }
         
@@ -153,12 +172,10 @@ export default {
             return;
           }
         } catch (emailTokenError) {
-          console.log('Intento con email en /api/token/ falló:', emailTokenError.response?.data);
           // Si llegamos aquí, todos los intentos han fallado
           this.errorMessage = "Credenciales incorrectas. Verifique su usuario y contraseña.";
         }
       } catch (error) {
-        console.error("Error general en validación:", error);
         this.errorMessage = "Error en la validación. Intente nuevamente.";
       } finally {
         this.isLoading = false;
@@ -167,12 +184,10 @@ export default {
     
     // Método auxiliar para procesar login exitoso
     async procesarLoginExitoso(responseData) {
-      // Guardar token temporalmente
       const tempToken = responseData.access;
       this.userData = responseData;
       
       try {
-        // Obtener las empresas asociadas al usuario
         const empresasResponse = await axios.get('http://144.76.41.52:8070/api/usuariosTerceros/', {
           headers: {
             'Authorization': `Bearer ${tempToken}`
@@ -180,43 +195,40 @@ export default {
         });
         
         if (empresasResponse.data && empresasResponse.data.length > 0) {
-          console.log('Todas las relaciones usuario-tercero:', empresasResponse.data);
-          console.log('ID del usuario actual:', this.userData.user.id);
-          console.log('Datos completos del usuario:', this.userData.user);
-          console.log('Tipo de usuario:', this.userData.user.tipo);
-          
-          // Filtrar manualmente las relaciones para este usuario específico
           const relacionesUsuario = empresasResponse.data.filter(relacion => 
             relacion.usuario.id === this.userData.user.id
           );
-          
-          console.log('Relaciones filtradas para este usuario:', relacionesUsuario);
           
           if (relacionesUsuario.length === 0) {
             this.errorMessage = "No tiene empresas asociadas a su cuenta.";
             return;
           }
           
-          this.empresasUsuario = relacionesUsuario.map(relacion => relacion.tercero);
-          
-          // Eliminar duplicados si es necesario (por ID de tercero)
+          // Eliminar duplicados
           const tercerosUnicos = [];
           const terceroIds = new Set();
-          
-          this.empresasUsuario.forEach(tercero => {
-            if (!terceroIds.has(tercero.id)) {
-              terceroIds.add(tercero.id);
-              tercerosUnicos.push(tercero);
+          relacionesUsuario.forEach(relacion => {
+            if (!terceroIds.has(relacion.tercero.id)) {
+              terceroIds.add(relacion.tercero.id);
+              tercerosUnicos.push(relacion.tercero);
             }
           });
           
           this.empresasUsuario = tercerosUnicos;
-          this.isValidated = true;
+
+          // Si solo hay una empresa, hacer login automático
+          if (this.empresasUsuario.length === 1) {
+            this.selectedTerceroId = this.empresasUsuario[0].id;
+            this.selectedTerceroNombre = this.empresasUsuario[0].nombre;
+            await this.completeLogin();
+          } else {
+            // Si hay más de una empresa, mostrar el modal
+            this.showEmpresaModal = true;
+          }
         } else {
           this.errorMessage = "No se encontraron empresas en el sistema.";
         }
       } catch (error) {
-        console.error("Error al obtener empresas:", error);
         this.errorMessage = "Error al obtener las empresas asociadas.";
       }
     },
@@ -241,8 +253,7 @@ export default {
           terceroNombre: this.selectedTerceroNombre
         };
         
-        console.log('Guardando información de usuario:', userInfo);
-        console.log('Tipo de usuario a guardar:', userInfo.tipo);
+
         
         localStorage.setItem('user', JSON.stringify(userInfo));
         localStorage.setItem('user_type', userInfo.tipo);
@@ -255,9 +266,7 @@ export default {
         
         // Configurar el token de autorización global para Axios
         axios.defaults.headers.common['Authorization'] = `Bearer ${this.userData.access}`;
-        
-        console.log('Login completado. Usuario:', userInfo);
-        console.log('Tercero seleccionado:', {id: this.selectedTerceroId, nombre: this.selectedTerceroNombre});
+
         
         // Verificar si hay una ruta guardada
         const redirectTo = sessionStorage.getItem('redirectTo');
@@ -266,7 +275,7 @@ export default {
         // Redirigir a la ruta guardada o a solicitudes por defecto
         this.$router.push(redirectTo || '/solicitudes');
       } catch (error) {
-        console.error("Error al completar login:", error);
+
         this.errorMessage = "Ocurrió un error al finalizar el proceso de inicio de sesión.";
       } finally {
         this.isLoading = false;

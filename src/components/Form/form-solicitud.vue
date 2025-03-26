@@ -651,8 +651,12 @@
                   :class="['w-3/4 px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition duration-200', showError && !newSolicitud.modulo ? 'border-red-500' : 'border-gray-300']"
                 >
                   <option value="">Seleccione un módulo</option>
-                  <option v-for="modulo in modulos" :key="modulo.id" :value="modulo.id">
-                    {{ modulo.nombre }}
+                  <option 
+                    v-for="modulo in [...modulos].sort((a, b) => a.nombre.localeCompare(b.nombre))" 
+                    :key="modulo.id" 
+                    :value="modulo.id"
+                  >
+                    {{ modulo.id }} - {{ modulo.nombre }}
                   </option>
                 </select>
                 <div v-if="showError && !newSolicitud.modulo" class="text-red-500 text-xs mt-1">
@@ -675,8 +679,15 @@
                   <option value="">
                     {{ !newSolicitud.modulo ? 'Primero seleccione un módulo' : 'Seleccione un submódulo (opcional)' }}
                   </option>
-                  <option v-for="submodulo in filteredSubmodulos" :key="submodulo.id" :value="submodulo.id">
-                    {{ submodulo.nombre }}
+                  <option 
+                    v-for="submodulo in submodulos
+                      .filter(s => s.modulo === newSolicitud.modulo || 
+                                  (s.modulo && s.modulo.id === newSolicitud.modulo))
+                      .sort((a, b) => a.nombre.localeCompare(b.nombre))" 
+                    :key="submodulo.id" 
+                    :value="submodulo.id"
+                  >
+                    {{ submodulo.id }} - {{ submodulo.nombre }}
                   </option>
                 </select>
                 <div v-if="showError && !newSolicitud.submodulo" class="text-red-500 text-xs mt-1">
@@ -850,8 +861,12 @@
                 class="w-3/4 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
               >
                 <option value="">Seleccione un módulo</option>
-                <option v-for="modulo in modulos" :key="modulo.id" :value="modulo.id">
-                  {{ modulo.nombre }}
+                <option 
+                  v-for="modulo in [...modulos].sort((a, b) => a.nombre.localeCompare(b.nombre))" 
+                  :key="modulo.id" 
+                  :value="modulo.id"
+                >
+                  {{ modulo.id }} - {{ modulo.nombre }}
                 </option>
               </select>
             </div>
@@ -867,8 +882,15 @@
                 <option value="">
                   {{ !editableSolicitud.modulo ? 'Primero seleccione un módulo' : 'Seleccione un submódulo' }}
                 </option>
-                <option v-for="submodulo in filteredSubmodulosEdit" :key="submodulo.id" :value="submodulo.id">
-                  {{ submodulo.nombre }}
+                <option 
+                  v-for="submodulo in submodulos
+                    .filter(s => s.modulo === editableSolicitud.modulo || 
+                                (s.modulo && s.modulo.id === editableSolicitud.modulo))
+                    .sort((a, b) => a.nombre.localeCompare(b.nombre))" 
+                  :key="submodulo.id" 
+                  :value="submodulo.id"
+                >
+                  {{ submodulo.id }} - {{ submodulo.nombre }}
                 </option>
               </select>
             </div>
@@ -1830,7 +1852,6 @@ methods: {
         }
       });
 
-      console.log('Mapa de usuariosTerceros creado:', this.usuariosTercerosMap);
 
       // 2. Cargar solicitudes
       console.log('Iniciando carga de solicitudes...');
@@ -1840,7 +1861,6 @@ methods: {
         }
       });
 
-      console.log('Solicitudes recibidas:', solicitudesResponse.data);
 
       // Procesar cada solicitud
       this.allSolicitudes = solicitudesResponse.data.map(solicitud => {
@@ -1901,7 +1921,6 @@ methods: {
     // Formato: YYYY-MM-DDTHH:MM:SS
     const formattedDate = `${year}-${month}-${day}T${hours}:${minutes}:${seconds}`;
     
-    console.log('Fecha formateada con +5 horas:', formattedDate);
     return formattedDate;
   },
     async fetchTerceros() {

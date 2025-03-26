@@ -213,12 +213,12 @@ const navigation = computed(() => {
     { name: 'Tareas', href: '/tareas', icon: BookmarkIcon, allowedTypes: ['A', 'S'] },
     { name: 'Modulos', href: '/modulos', icon: DocumentTextIcon, allowedTypes: ['A', 'S'] },
     { name: 'Empresas', href: '/empresas', icon: BuildingOfficeIcon, allowedTypes: ['A', 'C', 'S'] },
-    { 
-      name: `Cambiar Empresa (${terceroNombre.value || 'No seleccionada'})`, 
-      action: () => showCambiarEmpresaModal.value = true, 
-      icon: ArrowsRightLeftIcon, 
-      allowedTypes: ['A', 'C', 'S'] 
-    },
+    //{ 
+    //  name: `Cambiar Empresa (${terceroNombre.value || 'No seleccionada'})`, 
+    //  action: () => showCambiarEmpresaModal.value = true, 
+    //  icon: ArrowsRightLeftIcon, 
+    //  allowedTypes: ['A', 'C', 'S'] 
+    //},
     { 
       name: 'Cerrar Sesión', 
       action: logout, 

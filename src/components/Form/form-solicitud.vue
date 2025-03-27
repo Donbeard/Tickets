@@ -98,19 +98,42 @@
               <Teleport to="body">
                 <div
                   v-if="dropdownOpen[column.key]"
-                  class="origin-top-right fixed rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 focus:outline-none"
+                  class="origin-top-right absolute mt-2 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 focus:outline-none"
                   :style="{
                     zIndex: 1000,
                     top: `${dropdownPosition.y}px`,
                     left: `${dropdownPosition.x}px`,
-                    maxHeight: '80vh',
-                    overflowY: 'auto',
-                    minWidth: '200px'
                   }"
+                  @click.stop
                 >
-                  <div class="py-1">
-                    <template v-for="option in columnOptions[column.key]" :key="option.id">
-                      <div class="flex items-center px-4 py-2">
+                  <!-- Campo de búsqueda para empresas -->
+                  <div v-if="column.key === 'empresa'" class="p-2">
+                    <input 
+                      type="text" 
+                      v-model="empresaSearch" 
+                      placeholder="Buscar empresa..." 
+                      class="w-full px-2 py-1 text-xs border rounded"
+                      @input="filterEmpresas"
+                    >
+                    <div class="mt-2 flex justify-end">
+                      <button 
+                        @click="empresaSearch = ''; filterEmpresas()" 
+                        class="text-xs text-gray-600 hover:text-gray-800"
+                      >
+                        Limpiar
+                      </button>
+                    </div>
+                  </div>
+                  
+                  <div class="max-h-60 overflow-y-auto">
+                    <template v-for="option in column.key === 'empresa' ? 
+                      filteredEmpresas : 
+                      (column.key === 'modulo' || column.key === 'submodulo' ? 
+                        columnFilterOptions[column.key] : 
+                        columnOptions[column.key])" 
+                      :key="option.id"
+                    >
+                      <div class="flex items-center px-4 py-2 hover:bg-gray-100">
                         <input
                           type="checkbox"
                           :id="`${column.key}-${option.id}`"
@@ -294,8 +317,12 @@
                 </template>
                 <template v-else-if="column.key === 'submodulo'">
                   <div class="tooltip-container">
-                    <span class="block truncate">{{ solicitud.submodulo_nombre }}</span>
-                    <span class="tooltip-text">{{ solicitud.submodulo_nombre }}</span>
+                    <span class="block truncate">
+                      {{ getSubmoduloNombre(solicitud.submodulo) || 'No asignado' }}
+                    </span>
+                    <span class="tooltip-text">
+                      {{ getSubmoduloNombre(solicitud.submodulo) || 'No asignado' }}
+                    </span>
                   </div>
                 </template>
                 <template v-else-if="column.key === 'modulo'">
@@ -345,6 +372,16 @@
                 </template>
                 <template v-else-if="column.key.includes('fecha')">
                   {{ formatDate(solicitud[column.key]) }}
+                </template>
+                <template v-else-if="column.key === 'empresa'">
+                  <div class="tooltip-container">
+                    <span class="inline-block truncate empresa-text overflow-hidden">
+                      {{ solicitud.empresa_nombre }}
+                    </span>
+                    <span class="tooltip-text">
+                      {{ solicitud.empresa_nombre }}
+                    </span>
+                  </div>
                 </template>
                 <template v-else>
                   <div class="tooltip-container">
@@ -765,7 +802,7 @@
                       class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 text-sm"
                       :value="inputValue"
                       v-on="inputEvents"
-                      placeholder="Seleccione fecha y hora (opcional)"
+                      placeholder="Ingrese solicitudes con fechas anteriores a la actual."
                     />
                   </template>
                 </DatePicker>
@@ -1639,6 +1676,7 @@ data() {
       hours: { min: 8, max: 18 },
       minutes: { step: 5 }
     },
+    empresaSearch: '',
     };
 },
 computed: {
@@ -1743,6 +1781,44 @@ computed: {
   totalPages() {
     return Math.ceil(this.filteredAndSortedSolicitudes.length / this.pageSize);
   },
+  columnFilterOptions() {
+    const getUniqueModulos = () => {
+      const modulosUnicos = [...new Set(this.solicitudes.map(s => s.modulo))].filter(Boolean);
+      return modulosUnicos.map(moduloId => {
+        const modulo = this.modulos.find(m => m.id === moduloId);
+        return modulo ? {
+          id: modulo.id,
+          nombre: modulo.nombre
+        } : null;
+      }).filter(Boolean);
+    };
+
+    const getUniqueSubmodulos = () => {
+      const submodulosUnicos = [...new Set(this.solicitudes.map(s => s.submodulo))].filter(Boolean);
+      return submodulosUnicos.map(submoduloId => {
+        const submodulo = this.submodulos.find(s => s.id === submoduloId);
+        return submodulo ? {
+          id: submodulo.id,
+          nombre: submodulo.nombre
+        } : null;
+      }).filter(Boolean);
+    };
+
+    return {
+      ...this.columnOptions,
+      modulo: getUniqueModulos(),
+      submodulo: getUniqueSubmodulos()
+    };
+  },
+  filteredEmpresas() {
+    if (!this.columnOptions.empresa) return [];
+    if (!this.empresaSearch.trim()) return this.columnOptions.empresa;
+    
+    const searchTerm = this.empresaSearch.toLowerCase().trim();
+    return this.columnOptions.empresa.filter(empresa => 
+      empresa.nombre.toLowerCase().includes(searchTerm)
+    );
+  }
 },
 created() {
   const user = JSON.parse(localStorage.getItem('user'));
@@ -1815,6 +1891,7 @@ beforeUnmount() {
 methods: {
   
   async created() {
+    await this.fetchSubmodulos();
     console.log('Componente creado - Iniciando carga de datos');
     try {
       this.isLoading = true;
@@ -1978,18 +2055,25 @@ async fetchPrioridades() {
     console.error('Error al obtener prioridades:', error);
   }
 },
-async fetchSubmodulos() {
+getSubmoduloNombre(submoduloId) {
+    if (!submoduloId) return 'No asignado';
+    
+    const submodulo = this.submodulos.find(s => s.id === submoduloId);
+    if (!submodulo) {
+      // Si no encontramos el submódulo, intentamos usar el nombre guardado
+      return this.solicitud?.submodulo_nombre || 'No asignado';
+    }
+    
+    return submodulo.nombre;
+  },
+  
+  // Asegurarse que los submódulos estén cargados
+  async fetchSubmodulos() {
     try {
       const response = await apiClient.get('/submodulos/');
       this.submodulos = response.data;
     } catch (error) {
-      console.error('Error al obtener submódulos:', error);
-    }
-  },
-  startEditing(rowId, field) {
-    if (this.userType === 'S' || this.userType === 'A') {
-      this.editingRowId = rowId;
-      this.editingField = field;
+      console.error('Error al cargar submódulos:', error);
     }
   },
   async saveField(solicitud, field) {
@@ -2116,6 +2200,8 @@ async setFechaSistema() {
     return solicitudDate >= start && solicitudDate <= end;
   },
   toggleDropdown(columnKey, event) {
+    console.log('Abriendo dropdown para:', columnKey);
+    console.log('Opciones disponibles:', this.columnFilterOptions[columnKey]);
     // Cerrar otros dropdowns abiertos
     Object.keys(this.dropdownOpen).forEach(key => {
       if (key !== columnKey) {
@@ -2132,6 +2218,9 @@ async setFechaSistema() {
         x: rect.left,
         y: rect.bottom + window.scrollY
       };
+    }
+    if (columnKey === 'empresa') {
+      this.empresaSearch = '';
     }
   },
   getColumnOptions(columnKey) {
@@ -2979,7 +3068,6 @@ calcularDuracion() {
     }
   },
   handleNewSolicitud() {
-    console.log('Botón clickeado') // Debug
     this.showModalCreate = true
     this.newSolicitud = {
       titulo: '',
@@ -3661,6 +3749,7 @@ background-color: #f3f4f6; /* Gris claro */
 .tooltip-container {
 position: relative;
 display: inline-block;
+max-width: 150px;
 width: 100%;
 }
 
@@ -3720,6 +3809,77 @@ opacity: 1;
 .toggle-body-scroll {
   overflow: hidden;
 }
+
+.tooltip-container {
+  position: relative;
+  display: inline-block;
+}
+
+.tooltip-container:hover .tooltip-text {
+  visibility: visible;
+  opacity: 1;
+}
+
+.tooltip-text {
+  visibility: hidden;
+  opacity: 0;
+  position: absolute;
+  z-index: 1;
+  bottom: 125%;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: rgba(0, 0, 0, 0.8);
+  color: white;
+  text-align: center;
+  padding: 5px 10px;
+  border-radius: 6px;
+  font-size: 12px;
+  white-space: nowrap;
+  transition: opacity 0.3s;
+}
+
+.tooltip-text::after {
+  content: "";
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  margin-left: -5px;
+  border-width: 5px;
+  border-style: solid;
+  border-color: rgba(0, 0, 0, 0.8) transparent transparent transparent;
+}
+
+.tooltip-container {
+  position: relative;
+  display: inline-block;
+  width: 100%;
+}
+
+.empresa-text {
+  /* Pantalla grande: texto completo */
+  max-width: 300px;
+}
+
+/* Pantalla mediana */
+@media (max-width: 1280px) {
+  .empresa-text {
+    max-width: 200px;
+  }
+}
+
+/* Pantalla pequeña */
+@media (max-width: 1024px) {
+  .empresa-text {
+    max-width: 150px;
+  }
+}
+
+/* Pantalla muy pequeña */
+@media (max-width: 768px) {
+  .empresa-text {
+    max-width: 100px;
+  }
+}
+
+/* ... resto de los estilos del tooltip ... */
 </style>
-
-

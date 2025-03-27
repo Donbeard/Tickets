@@ -14,6 +14,7 @@
                 id="first_name"
                 type="text"
                 v-model="form.first_name"
+                @input="handleFirstNameInput"
                 required
                 placeholder="Ingrese sus nombres"
                 class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500"
@@ -25,6 +26,7 @@
                 id="last_name"
                 type="text"
                 v-model="form.last_name"
+                @input="handleLastNameInput"
                 required
                 placeholder="Ingrese sus apellidos"
                 class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500"
@@ -118,6 +120,7 @@
                 id="cargo"
                 type="text"
                 v-model="form.cargo"
+                @input="handleCargoInput"
                 placeholder="Ingrese su cargo"
                 class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500"
               />
@@ -380,101 +383,76 @@ export default {
         let userResponse = null;
         
         try {
+          // 1. Crear usuario
+          console.log('', {
+            ...formData,
+            password: '[REDACTED]' // No logear la contraseña
+          });
           userResponse = await apiClient.post('/usuarios/', formData);
-
           usuarioCreado = true;
           
-          const userId = userResponse.data.id;
+          // 2. Obtener token
+
+          const loginResponse = await apiClient.post('/token/', {
+            username: this.form.email,
+            password: this.form.password
+          });
           
+          if (!loginResponse.data?.access) {
+
+            throw new Error('No se pudo obtener token de autenticación');
+          }
+
+          
+          const token = loginResponse.data.access;
+          
+          // 3. Crear relaciones
+
           const relacionesPromises = nitsValidos.map(async (terceroId) => {
             const usuarioTerceroData = {
-              usuario: userId,
+              usuario: userResponse.data.id,
               tercero: terceroId
             };
             
-            return await apiClient.post('/usuariosTerceros/', usuarioTerceroData);
+            try {
+              console.log(``, {
+                headers: { Authorization: `Bearer ${token ? 'TOKEN_PRESENTE' : 'TOKEN_AUSENTE'}` }
+              });
+              
+              const response = await apiClient.post('/usuariosTerceros/', usuarioTerceroData, {
+                headers: {
+                  'Authorization': `Bearer ${token}`
+                }
+              });
+              
+              return response;
+              
+            } catch (error) {
+              console.error(``, {
+                status: error.response?.status,
+                statusText: error.response?.statusText,
+                data: error.response?.data,
+                headers: error.response?.headers
+              });
+              throw error;
+            }
           });
           
           await Promise.all(relacionesPromises);
           relacionesExitosas = true;
-
-        } catch (errorSinToken) {
-
           
-          if (errorSinToken.response?.status === 400 && 
-              (errorSinToken.response?.data?.email || 
-               errorSinToken.response?.data?.username)) {
-            
-            this.isSuccess = false;
-            
-            if (errorSinToken.response?.data?.username) {
-              const mensajesUsername = Array.isArray(errorSinToken.response.data.username) ? 
-                errorSinToken.response.data.username : [errorSinToken.response.data.username];
-                
-              mensajesUsername.forEach(msg => {
-                const mensajeTraducido = this.traducirMensajeError(msg);
-                this.errors.push(mensajeTraducido);
-              });
-              
-              this.statusMessage = 'Este correo electrónico ya está registrado';
-            }
-            
-            if (errorSinToken.response?.data?.email) {
-              const mensajesEmail = Array.isArray(errorSinToken.response.data.email) ? 
-                errorSinToken.response.data.email : [errorSinToken.response.data.email];
-                
-              mensajesEmail.forEach(msg => {
-                const mensajeTraducido = this.traducirMensajeError(msg);
-                this.errors.push(mensajeTraducido);
-              });
-              
-              this.statusMessage = 'Este correo electrónico ya está registrado';
-            }
-            
-            return;
-          }
-          
-          if (usuarioCreado && userResponse?.data) {
-            try {
-              const loginResponse = await apiClient.post('/token/', {
-                username: this.form.email,
-                password: this.form.password
-              });
-              
-              if (!loginResponse.data || !loginResponse.data.access) {
-                throw new Error('No se pudo obtener token de autenticación');
-              }
-              
-              const token = loginResponse.data.access;
-
-              
-              const relacionesPromises = nitsValidos.map(async (terceroId) => {
-                const usuarioTerceroData = {
-                  usuario: userResponse.data.id,
-                  tercero: terceroId
-                };
-                
-                return await apiClient.post('/usuariosTerceros/', usuarioTerceroData, {
-                  headers: {
-                    'Authorization': `Bearer ${token}`
-                  }
-                });
-              });
-              
-              await Promise.all(relacionesPromises);
-              relacionesExitosas = true;
-
-            } catch (errorConToken) {
-
-              this.errors.push('No se pudieron vincular las empresas al usuario');
-            }
-          } else {
-            throw errorSinToken;
-          }
+        } catch (error) {
+          console.error('', {
+            fase: usuarioCreado ? 'creación de relaciones' : 'creación de usuario',
+            status: error.response?.status,
+            message: error.message,
+            data: error.response?.data
+          });
+          throw error;
         }
         
         if (relacionesExitosas) {
-          this.statusMessage = 'Usuario registrado exitosamente';
+          this.statusMessage = '¡Usuario registrado exitosamente!';
           this.isSuccess = true;
           setTimeout(() => {
             this.$router.push('/');
@@ -485,10 +463,16 @@ export default {
           this.isSuccess = false;
         }
       } catch (error) {
-
         this.isSuccess = false;
-        
-        if (error.response?.status === 0 || !error.response) {
+        if (error.response?.status === 401) {
+          console.error('', {
+            endpoint: error.config?.url,
+            method: error.config?.method,
+            hasToken: !!error.config?.headers?.Authorization,
+            responseData: error.response?.data
+          });
+          this.errors.push(`No autorizado al intentar ${error.config?.method} ${error.config?.url}`);
+        } else if (error.response?.status === 0 || !error.response) {
           this.errors.push('No se pudo conectar con el servidor. Verifique su conexión a internet.');
         } else if (error.response?.status === 400) {
           const errorData = error.response.data;
@@ -504,8 +488,6 @@ export default {
               this.errors.push(`${key}: ${mensajeTraducido}`);
             }
           }
-        } else if (error.response?.status === 401) {
-          this.errors.push('No tiene permisos para realizar esta acción. Por favor, inicie sesión nuevamente.');
         } else if (error.response?.status === 404) {
           this.errors.push('El servicio de registro no está disponible en este momento.');
         } else if (error.response?.status === 500) {
@@ -515,12 +497,25 @@ export default {
         }
       }
     },
+    capitalizeFirstLetter(string) {
+      if (!string) return '';
+      return string.charAt(0).toUpperCase() + string.slice(1).toLowerCase();
+    },
+    handleFirstNameInput(event) {
+      this.form.first_name = this.capitalizeFirstLetter(event.target.value);
+    },
+    handleLastNameInput(event) {
+      this.form.last_name = this.capitalizeFirstLetter(event.target.value);
+    },
+    handleCargoInput(event) {
+      this.form.cargo = this.capitalizeFirstLetter(event.target.value);
+    }
   },
   async mounted() {
     try {
-      const response = await apiClient.get('/terceros/');
+      await apiClient.get('/terceros/');
     } catch (error) {
-      console.error('Error al consultar terceros:', error);
+      console.error('', error);
     }
   },
 };

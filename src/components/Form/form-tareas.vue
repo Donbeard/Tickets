@@ -824,10 +824,12 @@
                       class="block w-2/3 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 text-sm"
                     >
                       <option value="">Sin asignar</option>
-                      <option v-for="usuario in usuariosSoporte" 
-                              :key="usuario.id" 
-                              :value="usuario.id">
-                        {{ usuario.nombre }} {{ usuario.apellido }}
+                      <option 
+                        v-for="usuario in usuariosSoporte" 
+                        :key="usuario.id" 
+                        :value="usuario.id"
+                      >
+                        {{ usuario.nombre }}
                       </option>
                     </select>
                   </div>
@@ -1025,10 +1027,12 @@
                       class="block w-3/4 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 text-sm"
                     >
                       <option value="">Sin reasignar</option>
-                      <option v-for="usuario in usuariosSoporte" 
-                              :key="usuario.id" 
-                              :value="usuario.id">
-                        {{ usuario.nombre }} {{ usuario.apellido }}
+                      <option 
+                        v-for="usuario in usuariosSoporte" 
+                        :key="usuario.id" 
+                        :value="usuario.id"
+                      >
+                        {{ usuario.nombre }}
                       </option>
                     </select>
                   </div>
@@ -1893,7 +1897,12 @@ export default {
 
     // Filtrar usuarios de soporte (tipo "S")
     const usuariosSoporte = computed(() => {
-      return usuarios.value.filter(usuario => usuario.tipo === 'S');
+      return usuarios.value
+        .filter(usuario => usuario.tipo === 'S')
+        .map(user => ({
+          id: user.id,
+          nombre: `${user.first_name || ''} ${user.last_name || ''}`.trim() || user.username
+        }));
     });
 
     // Reemplazar completamente la función setCurrentDateTime
@@ -2971,7 +2980,7 @@ export default {
     return {
       tareas,
       solicitudes,
-      usuarios,
+      usuarios: [],
       estados,
       searchQuery,
       filteredTareas,

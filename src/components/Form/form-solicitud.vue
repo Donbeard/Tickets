@@ -1004,6 +1004,21 @@
                 </select>
               </div>
             </template>
+
+            <!-- Agregar dentro del modal de edición, justo después del selector de estado -->
+            <div v-if="editableSolicitud.estado === 6 && originalEstado !== 6" class="flex items-center mt-4 animate__animated animate__fadeIn">
+              <label for="tarea-descripcion" class="w-1/4 text-sm font-medium text-gray-700">Descripción de tarea:</label>
+              <div class="w-3/4">
+                <textarea 
+                  id="tarea-descripcion" 
+                  v-model="nuevaTareaDescripcion" 
+                  rows="2"
+                  placeholder="Descripción para la tarea que se creará automáticamente"
+                  class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                ></textarea>
+                <p class="text-xs text-gray-500 mt-1">Esta tarea se creará automáticamente al guardar la solicitud.</p>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -1296,7 +1311,7 @@
               </select>
             </div>
           </div>
-
+          
           <!-- Fecha Programada -->
           <div class="flex items-center">
             <label class="block text-sm font-medium text-gray-700 w-1/4">
@@ -1351,6 +1366,25 @@
           </div>
 
           <!-- Campos adicionales solo para edición -->
+          <div v-if="modalType === 'edit'" class="flex items-center mt-4">
+            <label class="block text-sm font-medium text-gray-700 w-1/4">
+              Reasignar a:
+            </label>
+            <select
+              v-model="currentTarea.usuario_reasignado"
+              class="block w-3/4 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 text-sm"
+            >
+              <option value="">Sin reasignar</option>
+              <option 
+                v-for="(nombre, id) in usuariosSoporteMap" 
+                :key="id" 
+                :value="id"
+                :disabled="id == currentTarea.usuario_asignado"
+              >
+                {{ nombre }}
+              </option>
+            </select>
+          </div>
           <template v-if="modalType === 'edit'">
             <!-- Fecha Fin -->
             <div class="flex items-center">
@@ -1616,6 +1650,7 @@ data() {
     usuariosSoporteMap: {},
     usuariosSoporteList: [],
     colombiaTime: null,
+    tareaOriginal: null,
     dropdownPosition: {
       x: 0,
       y: 0
@@ -1677,6 +1712,7 @@ data() {
       minutes: { step: 5 }
     },
     empresaSearch: '',
+    nuevaTareaDescripcion: '',
     };
 },
 computed: {
@@ -2693,12 +2729,16 @@ isImage(anexo) {
   }
 },
   
-  async updateSolicitud() {
-    try {
-      // Copia base de la solicitud a actualizar
-      const solicitudToUpdate = { ...this.editableSolicitud };
-      
-     // Lógica para fecha de asignación (verificación adicional)
+async updateSolicitud() {
+  try {
+    // Copia base de la solicitud a actualizar
+    const solicitudToUpdate = { ...this.editableSolicitud };
+    
+    // Guardar el estado y soporte anteriores para comparar después
+    const estadoAnterior = this.originalEstado;
+
+    
+    // Lógica para fecha de asignación (verificación adicional)
     if (this.originalEstado === 5 && this.editableSolicitud.estado === 6) {
       // Doble verificación de fecha de asignación
       if (!solicitudToUpdate.fecha_asignacion) {
@@ -2718,6 +2758,40 @@ isImage(anexo) {
 
     // Enviar solicitud actualizada
     await apiClient.put(`/solicitudes/${this.editableSolicitud.id}/`, solicitudToUpdate);
+    
+    // Verificar si el estado cambió a "asignado" (6) y se seleccionó un usuario de soporte
+    const estadoAsignado = solicitudToUpdate.estado === 6;
+    const nuevoSoporte = solicitudToUpdate.usuario_soporte;
+    const cambioASoporteAsignado = 
+      (estadoAnterior !== 6 && estadoAsignado) && nuevoSoporte;
+    
+    // Si cambió a estado asignado y tiene usuario de soporte, crear tarea automáticamente
+    if (cambioASoporteAsignado) {
+      console.log("Creando tarea automática para solicitud asignada");
+      
+      // Usar la descripción personalizada o una descripción por defecto
+      const descripcionTarea = this.nuevaTareaDescripcion || 
+        `Tarea automática para solicitud: ${solicitudToUpdate.titulo}`;
+      
+      // Crear objeto de tarea
+      const nuevaTarea = {
+        solicitud: solicitudToUpdate.id,
+        descripcion: descripcionTarea,
+        estado: 6,
+        usuario_asignado: nuevoSoporte,
+        tipo: "I", 
+        cita: "N"
+      };
+      
+      try {
+        // Crear la tarea
+        await apiClient.post("/tareas/", nuevaTarea);
+        console.log("Tarea creada automáticamente");
+      } catch (tareaError) {
+        console.error("Error al crear tarea automática:", tareaError);
+      }
+    }
+    
     await this.fetchSolicitudes();
     this.closeModal();
     this.statusMessage = 'Solicitud actualizada correctamente';
@@ -2943,6 +3017,7 @@ calcularDuracion() {
     if (typeof window !== 'undefined' && window.document) {
       window.document.body.style.overflow = 'auto';
     }
+    this.nuevaTareaDescripcion = '';
   },
 
   async deleteSolicitud(id) {
@@ -3337,6 +3412,7 @@ calcularDuracion() {
     try {
       const response = await apiClient.get(`/tareas/${tareaId}/`);
       this.currentTarea = response.data;
+      this.tareaOriginal = { ...response.data }; // Guardar copia original
       this.modalType = 'edit';
       this.showModalTarea = true;
     } catch (error) {
@@ -3360,13 +3436,71 @@ calcularDuracion() {
   async EliminarTarea(tareaId) {
     if (confirm('¿Está seguro de eliminar esta tarea?')) {
       try {
-        await apiClient.delete(`/tareas/${tareaId}/`);
-        // Actualizar la lista de tareas
+        // Guardar el ID de la solicitud antes de eliminar la tarea
         const solicitudId = this.currentTarea.solicitud;
-        await this.loadTareas(solicitudId);
-        this.mostrarMensaje('Tarea eliminada exitosamente', true);
+        console.log('Eliminando tarea:', tareaId, 'de solicitud:', solicitudId);
+        
+        // Eliminar la tarea
+        await apiClient.delete(`/tareas/${tareaId}/`);
+        
+        // Cerrar el modal si está abierto
+        this.showModalTarea = false;
+        
+        // Recargar las tareas de la solicitud
+        if (solicitudId) {
+          try {
+            // Obtener todas las tareas y filtrar manualmente
+            const response = await apiClient.get('/tareas/');
+            
+            // Filtrar las tareas por el ID de la solicitud
+            const tareasFiltradas = response.data.filter(
+              tarea => tarea.solicitud === solicitudId
+            );
+            
+            console.log(`Recargadas ${tareasFiltradas.length} tareas para la solicitud #${solicitudId}`);
+            
+            // Actualizar las tareas en todas las instancias de la solicitud
+            this.solicitudes.forEach(solicitud => {
+              if (solicitud.id === solicitudId) {
+                solicitud.tareas = tareasFiltradas;
+              }
+            });
+            
+            // Si estamos viendo la solicitud actual, también actualizamos sus tareas
+            if (this.currentSolicitud && this.currentSolicitud.id === solicitudId) {
+              this.currentSolicitud.tareas = tareasFiltradas;
+            }
+            
+            // Forzar actualización de la vista
+            this.$forceUpdate();
+            
+          } catch (loadError) {
+            console.error('Error al recargar tareas:', loadError);
+          }
+        }
+        
+        // Mostrar mensaje de éxito usando el toast
+        this.statusMessage = 'Tarea eliminada exitosamente';
+        this.isSuccess = true;
+        this.showToast = true;
+        
+        // Ocultar el toast después de 3 segundos
+        setTimeout(() => {
+          this.showToast = false;
+        }, 3000);
+        
       } catch (error) {
-        this.mostrarMensaje('Error al eliminar la tarea', false);
+        console.error('Error al eliminar tarea:', error);
+        
+        // Mostrar mensaje de error usando el toast
+        this.statusMessage = 'Error al eliminar la tarea';
+        this.isSuccess = false;
+        this.showToast = true;
+        
+        // Ocultar el toast después de 3 segundos
+        setTimeout(() => {
+          this.showToast = false;
+        }, 3000);
       }
     }
   },
@@ -3415,6 +3549,9 @@ calcularDuracion() {
     const endpoint = isNew ? '/tareas/' : `/tareas/${this.currentTarea.id}/`;
     const method = isNew ? 'post' : 'put';
 
+    // Verificar si hay reasignación
+    const hayReasignacion = !isNew && this.currentTarea.usuario_reasignado;
+
     // Preparar los datos asegurándose de que todos los campos tengan el formato correcto
     const tareaToSave = {
       descripcion: this.currentTarea.descripcion.trim(),
@@ -3431,7 +3568,7 @@ calcularDuracion() {
     };
 
     // Si es una tarea editada y tiene usuario reasignado, incluirlo
-    if (!isNew && this.currentTarea.usuario_reasignado) {
+    if (hayReasignacion) {
       tareaToSave.usuario_reasignado = Number(this.currentTarea.usuario_reasignado);
     }
 
@@ -3449,6 +3586,30 @@ calcularDuracion() {
 
     const response = await apiClient[method](endpoint, tareaToSave);
     console.log('Respuesta del servidor:', response.data);
+    
+    // Si hay reasignación, crear una nueva tarea para el usuario reasignado
+    if (hayReasignacion) {
+      try {
+        // Obtener nombres para la descripción
+        const usuarioOriginalNombre = this.usuariosSoporteMap[tareaToSave.usuario_asignado] || "Usuario anterior";
+        const nuevoUsuarioNombre = this.usuariosSoporteMap[tareaToSave.usuario_reasignado] || "Nuevo usuario";
+        
+        // Crear nueva tarea para el usuario reasignado
+        const nuevaTarea = {
+          solicitud: tareaToSave.solicitud,
+          descripcion: `Tarea reasignada de ${usuarioOriginalNombre} a ${nuevoUsuarioNombre}: ${tareaToSave.descripcion}`,
+          estado: 6, // Estado asignado
+          usuario_asignado: tareaToSave.usuario_reasignado,
+          tipo: "I",
+          cita: "N",
+        };
+        
+        await apiClient.post("/tareas/", nuevaTarea);
+        console.log("Tarea creada automáticamente por reasignación");
+      } catch (tareaError) {
+        console.error("Error al crear tarea por reasignación:", tareaError);
+      }
+    }
     
     this.showModalTarea = false;
     this.statusMessage = `Tarea ${isNew ? 'creada' : 'actualizada'} exitosamente`;
@@ -3495,6 +3656,7 @@ calcularDuracion() {
     this.isSuccess = false;
   }
 },
+
 // Nueva Tarea
 NuevaTarea(solicitud) {
   // Obtener la fecha y hora actual

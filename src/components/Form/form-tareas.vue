@@ -1502,86 +1502,146 @@ export default {
       showModalEdit.value = true;
     };
 
-    // Modificar la función updateTarea para formatear las fechas antes de enviarlas al servidor
+    // Modificar el método updateTarea para manejar la reasignación
     const updateTarea = async () => {
       try {
-        // Verificar que currentTarea existe
-        if (!currentTarea.value) {
-          errorMessage.value = 'Error: No hay datos para actualizar';
-          return;
-        }
-        
         // Validar campos requeridos
-        if (!currentTarea.value.descripcion || !currentTarea.value.solicitud) {
-          errorMessage.value = 'Por favor complete los campos requeridos';
+        if (!currentTarea.value.descripcion?.trim()) {
+          errorMessage.value = 'La descripción es obligatoria';
           return;
         }
+
+        // Verificar si hay reasignación
+        const hayReasignacion = currentTarea.value.usuario_reasignado && 
+                               currentTarea.value.usuario_reasignado !== currentTarea.value.usuario_asignado;
         
-        // Crear una copia de los datos para enviar
-        const tareaData = { ...currentTarea.value };
+        // Preparar los datos para actualizar
+        const tareaToUpdate = { ...currentTarea.value };
         
-        // Asegurarse de que el tipo esté definido
-        tareaData.tipo = tareaData.tipo || 'I';
-        
-        // Calcular la duración si no está definida
-        if (!tareaData.duracion && tareaData.fecha_inicio && tareaData.fecha_fin) {
-          calcularDuracion();
-          tareaData.duracion = currentTarea.value.duracion;
+        // Formatear fechas si es necesario
+        if (tareaToUpdate.fecha_programada && typeof tareaToUpdate.fecha_programada === 'object') {
+          tareaToUpdate.fecha_programada = tareaToUpdate.fecha_programada.toISOString();
         }
         
-        // Si la duración está vacía, establecerla como 0
-        if (!tareaData.duracion) {
-          tareaData.duracion = '00:00:00';
+        if (tareaToUpdate.fecha_inicio && typeof tareaToUpdate.fecha_inicio === 'object') {
+          tareaToUpdate.fecha_inicio = tareaToUpdate.fecha_inicio.toISOString();
         }
         
+        if (tareaToUpdate.fecha_fin && typeof tareaToUpdate.fecha_fin === 'object') {
+          tareaToUpdate.fecha_fin = tareaToUpdate.fecha_fin.toISOString();
+        }
         
-        // Obtener el token
-        const token = localStorage.getItem('accessToken');
-        
-        if (!token) {
-          errorMessage.value = 'No hay sesión activa. Por favor inicie sesión nuevamente.';
-          return;
+        // Validar que fecha_fin sea posterior a fecha_inicio
+        if (tareaToUpdate.fecha_inicio && tareaToUpdate.fecha_fin) {
+          if (new Date(tareaToUpdate.fecha_fin) < new Date(tareaToUpdate.fecha_inicio)) {
+            errorMessage.value = 'La fecha de fin debe ser posterior a la fecha de inicio.';
+            return;
+          }
         }
         
         // Enviar solicitud al servidor
-        const response = await apiClient.put(`/tareas/${tareaData.id}/`, tareaData, {
+        const token = localStorage.getItem('accessToken');
+        const response = await apiClient.put(`/tareas/${currentTarea.value.id}/`, tareaToUpdate, {
           headers: {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json'
           }
         });
         
+        console.log('Tarea actualizada:', response.data);
         
-        // Actualizar la tarea en la lista local
-        const index = tareas.value.findIndex(t => t.id === tareaData.id);
-        if (index !== -1) {
-          tareas.value[index] = response.data;
+        // Si hay reasignación, crear una nueva tarea para el usuario reasignado
+        if (hayReasignacion) {
+          try {
+            // Obtener nombres para la descripción
+            const usuarioOriginal = usuarios.value.find(u => u.id === currentTarea.value.usuario_asignado);
+            const usuarioReasignado = usuarios.value.find(u => u.id === currentTarea.value.usuario_reasignado);
+            
+            const usuarioOriginalNombre = usuarioOriginal ? usuarioOriginal.nombre : "Usuario anterior";
+            const nuevoUsuarioNombre = usuarioReasignado ? usuarioReasignado.nombre : "Nuevo usuario";
+            
+            // Crear nueva tarea para el usuario reasignado
+            const nuevaTarea = {
+              solicitud: currentTarea.value.solicitud,
+              descripcion: `Tarea reasignada de ${usuarioOriginalNombre} a ${nuevoUsuarioNombre}: ${currentTarea.value.descripcion}`,
+              estado: 6, // Estado asignado
+              usuario_asignado: currentTarea.value.usuario_reasignado,
+              fecha_programada: currentTarea.value.fecha_programada || formatearFechaHoraActual(),
+              tipo: currentTarea.value.tipo || 'I',
+              cita: currentTarea.value.cita || 'N',
+              fecha_inicio: formatearFechaHoraActual()
+            };
+            
+            await apiClient.post("/tareas/", nuevaTarea, {
+              headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+              }
+            });
+            
+            console.log("Tarea creada automáticamente por reasignación");
+          } catch (tareaError) {
+            console.error("Error al crear tarea por reasignación:", tareaError);
+          }
         }
         
-        // Cerrar el modal y limpiar el formulario
+        // Cerrar el modal y mostrar mensaje de éxito
         showModalEdit.value = false;
-        currentTarea.value = { solicitud: '', tipo: 'I', cita: 'N' };
         errorMessage.value = '';
         
-        // Mostrar mensaje de éxito
-        emit('showMessage', {
-          type: 'success',
-          text: 'Tarea actualizada exitosamente'
-        });
+        // Mostrar notificación de éxito
+        isSuccess.value = true;
+        statusMessage.value = 'Tarea actualizada exitosamente';
+        showToast.value = true;
         
-        // Recargar las tareas para actualizar la lista
+        // Recargar las tareas
         await fetchTareas();
         
       } catch (error) {
-        showNotification('Error completo al actualizar tarea:', error);
+        console.error('Error al actualizar tarea:', error);
         
-        // Mostrar mensaje de error específico si está disponible
-        if (error.response && error.response.data) {
-          errorMessage.value = `Error: ${JSON.stringify(error.response.data)}`;
+        // Manejar diferentes tipos de errores
+        if (error.response) {
+          if (error.response.status === 401) {
+            errorMessage.value = 'No hay sesión activa. Por favor inicie sesión nuevamente.';
+          } else if (error.response.status === 400) {
+            const errorData = error.response.data;
+            if (errorData.fecha_fin) {
+              errorMessage.value = `Error en fecha de fin: ${errorData.fecha_fin[0]}`;
+            } else if (errorData.fecha_inicio) {
+              errorMessage.value = `Error en fecha de inicio: ${errorData.fecha_inicio[0]}`;
+            } else if (errorData.fecha_programada) {
+              errorMessage.value = `Error en fecha programada: ${errorData.fecha_programada[0]}`;
+            } else if (errorData.detail) {
+              errorMessage.value = errorData.detail;
+            } else {
+              errorMessage.value = 'Error de validación en los datos. Por favor, revise los campos.';
+            }
+          } else {
+            errorMessage.value = 'Error al actualizar la tarea. Por favor, intente de nuevo.';
+          }
         } else {
-          errorMessage.value = `Error al actualizar la tarea: ${error.message}`;
+          errorMessage.value = 'Error de conexión. Por favor, verifique su conexión a internet.';
         }
+        
+        // Mostrar notificación de error
+        isSuccess.value = false;
+        statusMessage.value = 'Error al actualizar la tarea';
+        showToast.value = true;
       }
+    };
+
+    // Función auxiliar para formatear la fecha y hora actual
+    const formatearFechaHoraActual = () => {
+      const now = new Date();
+      const year = now.getFullYear();
+      const month = String(now.getMonth() + 1).padStart(2, '0');
+      const day = String(now.getDate()).padStart(2, '0');
+      const hours = String(now.getHours()).padStart(2, '0');
+      const minutes = String(now.getMinutes()).padStart(2, '0');
+      
+      // Formato: YYYY-MM-DDTHH:MM:00
+      return `${year}-${month}-${day}T${hours}:${minutes}:00`;
     };
 
     const deleteTarea = async (id) => {

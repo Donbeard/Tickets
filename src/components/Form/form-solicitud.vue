@@ -7,6 +7,9 @@
     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-8 pt-4 sm:pt-6 px-4 sm:px-6 lg:px-8">
       <h1 class="text-3xl font-bold text-gray-900">
         Solicitudes ¡Bienvenido, <span class="text-indigo-600">{{ nombreCompleto }}</span>!
+        <span v-if="empresaActual" class="block text-lg text-gray-600 mt-1">
+          Empresa: <span class="text-indigo-600">{{ empresaActual }}</span>
+        </span>
       </h1>
       
       <div class="flex flex-col sm:flex-row gap-4 mt-4 sm:mt-0">
@@ -1019,6 +1022,39 @@
                 <p class="text-xs text-gray-500 mt-1">Esta tarea se creará automáticamente al guardar la solicitud.</p>
               </div>
             </div>
+
+            <!-- Fecha Programada para la tarea -->
+            <div v-if="editableSolicitud.estado === 6 && originalEstado !== 6" class="flex items-center mt-4 animate__animated animate__fadeIn">
+              <label for="tarea-fecha-programada" class="w-1/4 text-sm font-medium text-gray-700">Fecha Programada:</label>
+              <div class="w-3/4">
+                <DatePicker
+                  v-model="nuevaTareaFechaProgramada"
+                  :model-config="{ type: 'string', mask: 'YYYY-MM-DDTHH:mm:00' }"
+                  :masks="{ input: 'DD/MM/YYYY HH:mm' }"
+                  :is-24hr="true"
+                  mode="dateTime"
+                  class="w-full"
+                  :popover="{ 
+                    visibility: 'click', 
+                    placement: 'auto', 
+                    isInteractive: true, 
+                    modifiers: [{ name: 'preventOverflow', options: { padding: 8 } }],
+                    positionFixed: true
+                  }"
+                >
+                  <template v-slot="{ inputValue, inputEvents }">
+                    <input
+                      id="tarea-fecha-programada"
+                      class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 text-sm"
+                      :value="inputValue"
+                      v-on="inputEvents"
+                      placeholder="Seleccione fecha y hora para programar la tarea"
+                    />
+                  </template>
+                </DatePicker>
+                <p class="text-xs text-gray-500 mt-1">Fecha y hora para programar la ejecución de la tarea.</p>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -1713,6 +1749,8 @@ data() {
     },
     empresaSearch: '',
     nuevaTareaDescripcion: '',
+    nuevaTareaFechaProgramada: null,
+    empresaActual: '',
     };
 },
 computed: {
@@ -1916,6 +1954,41 @@ mounted() {
   const userData = JSON.parse(localStorage.getItem('user') || '{}');
   this.terceroId = userData.terceroId || null;
   this.terceroNombre = userData.terceroNombre || 'Sin empresa';
+  
+  // Obtener la empresa actual del usuario
+  try {
+    // Obtener el usuario directamente de localStorage como JSON
+    const currentUser = JSON.parse(localStorage.getItem('user'));
+    const token = localStorage.getItem('accessToken');
+    
+    if (currentUser && currentUser.terceroId) {
+      // Obtener el terceroId del usuario
+      const terceroId = currentUser.terceroId;
+      
+      // Cargar usuarios-terceros para validar la relación usando promesas
+      apiClient.get('/usuariosTerceros/', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      })
+      .then(response => {
+        // Buscar el tercero correspondiente
+        const usuarioTercero = response.data.find(ut => 
+          ut.tercero && ut.tercero.id === terceroId
+        );
+        
+        if (usuarioTercero && usuarioTercero.tercero) {
+          this.empresaActual = usuarioTercero.tercero.nombre;
+          console.log('Empresa actual:', this.empresaActual);
+        }
+      })
+      .catch(error => {
+        console.error('Error al obtener usuarios-terceros:', error);
+      });
+    }
+  } catch (error) {
+    console.error('Error al obtener la empresa actual:', error);
+  }
 },
 beforeUnmount() {
   window.removeEventListener('click', this.closeDropdowns);
@@ -2780,7 +2853,8 @@ async updateSolicitud() {
         estado: 6,
         usuario_asignado: nuevoSoporte,
         tipo: "I", 
-        cita: "N"
+        cita: "N",
+        fecha_programada: this.nuevaTareaFechaProgramada || null
       };
       
       try {
@@ -3018,6 +3092,7 @@ calcularDuracion() {
       window.document.body.style.overflow = 'auto';
     }
     this.nuevaTareaDescripcion = '';
+    this.nuevaTareaFechaProgramada = '';
   },
 
   async deleteSolicitud(id) {

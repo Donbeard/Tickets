@@ -11,7 +11,7 @@ import GridEmpresa from '@/components/Grid/grid-empresa.vue';
 import GridLicencias from '@/components/Grid/grid-licencias.vue';
 
 const router = createRouter({
-  history: createWebHistory(),
+  history: createWebHistory('/api/'),
   routes : [
     { path: '/', component: login, meta: { hideNavbar: true, allowWithoutAuth: true } },
     { path: '/solicitudes', component: formSolicitud, meta: { requiresAuth: true} },

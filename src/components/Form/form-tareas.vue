@@ -50,9 +50,15 @@
                         </svg>
                       </span>
                     </div>
-                    <button @click.stop="toggleFilter('empresa')" class="text-black hover:text-gray-700">
-                      <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+                    <!-- Botón de filtro de empresa (dejarlo como estaba antes) -->
+                    <button 
+                      @click="toggleFilter('empresa')" 
+                      class="px-2 py-1 text-xs border rounded hover:bg-gray-100 flex items-center"
+                      :class="{ 'bg-indigo-100 border-indigo-300': activeFilter === 'empresa' }"
+                    >
+                      <span>Empresa</span>
+                      <svg class="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
                       </svg>
                     </button>
                   </div>
@@ -69,10 +75,10 @@
                     <div class="max-h-60 overflow-y-auto">
                       <div v-for="empresa in filteredEmpresas" :key="empresa.id" class="flex items-center mb-1">
                         <input 
-                          type="checkbox" 
+                          type="radio" 
                           :id="`empresa-${empresa.id}`" 
                           :value="empresa.id" 
-                          v-model="empresaFilters"
+                          v-model="empresaFilter"
                           @change="applyFilters"
                           class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
                         />
@@ -80,10 +86,12 @@
                           {{ empresa.nombre }}
                         </label>
                       </div>
+                      <div v-if="filteredEmpresas.length === 0" class="text-sm text-gray-500 py-1">
+                        No se encontraron empresas
+                      </div>
                     </div>
                     <div class="mt-2 flex justify-between">
-                      <button @click="selectAllEmpresas" class="text-xs text-indigo-600 hover:text-indigo-800">Seleccionar todos</button>
-                      <button @click="clearEmpresaFilters" class="text-xs text-gray-600 hover:text-gray-800">Limpiar</button>
+                      <button @click="clearEmpresaFilter" class="text-xs text-gray-600 hover:text-gray-800">Limpiar</button>
                     </div>
                   </div>
                 </th>
@@ -283,8 +291,17 @@
                     </button>
                   </div>
                   <div v-if="activeFilter === 'usuario_asignado'" class="mt-2 p-2 bg-white shadow rounded border absolute z-10 w-64" @click.stop>
+                    <div class="mb-2">
+                      <input 
+                        type="text" 
+                        v-model="usuarioSearchQuery" 
+                        @input="filterUsuarios"
+                        placeholder="Buscar usuario..." 
+                        class="w-full px-2 py-1 text-xs border rounded"
+                      >
+                    </div>
                     <div class="max-h-60 overflow-y-auto">
-                      <div v-for="usuario in getUsuariosAsignados" :key="usuario.id" class="flex items-center mb-1">
+                      <div v-for="usuario in filteredUsuariosAsignados" :key="usuario.id" class="flex items-center mb-1">
                         <input 
                           type="checkbox" 
                           :id="`usuario-asignado-${usuario.id}`" 
@@ -294,8 +311,11 @@
                           class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
                         />
                         <label :for="`usuario-asignado-${usuario.id}`" class="ml-2 block text-sm text-gray-900">
-                          {{ usuario.nombre }} {{ usuario.apellido }}
+                          {{ usuario.nombre || usuario.email || `Usuario #${usuario.id}` }}
                         </label>
+                      </div>
+                      <div v-if="filteredUsuariosAsignados.length === 0" class="text-sm text-gray-500 py-1">
+                        No se encontraron usuarios
                       </div>
                     </div>
                     <div class="mt-2 flex justify-between">
@@ -326,8 +346,17 @@
                     </button>
                   </div>
                   <div v-if="activeFilter === 'usuario_reasignado'" class="mt-2 p-2 bg-white shadow rounded border absolute z-10 w-64" @click.stop>
+                    <div class="mb-2">
+                      <input 
+                        type="text" 
+                        v-model="usuarioReasignadoSearchQuery" 
+                        @input="filterUsuariosReasignados"
+                        placeholder="Buscar usuario..." 
+                        class="w-full px-2 py-1 text-xs border rounded"
+                      >
+                    </div>
                     <div class="max-h-60 overflow-y-auto">
-                      <div v-for="usuario in getUsuariosReasignados" :key="usuario.id" class="flex items-center mb-1">
+                      <div v-for="usuario in filteredUsuariosReasignados" :key="usuario.id" class="flex items-center mb-1">
                         <input 
                           type="checkbox" 
                           :id="`usuario-reasignado-${usuario.id}`" 
@@ -337,7 +366,7 @@
                           class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
                         />
                         <label :for="`usuario-reasignado-${usuario.id}`" class="ml-2 block text-sm text-gray-900">
-                          {{ usuario.nombre }} {{ usuario.apellido }}
+                          {{ usuario.nombre || usuario.email || `Usuario #${usuario.id}` }}
                         </label>
                       </div>
                     </div>
@@ -1257,7 +1286,14 @@ export default {
       try {
         const response = await apiClient.get('/solicitudes/');
         solicitudes.value = response.data;
+        console.log('Solicitudes cargadas:', solicitudes.value.length);
+        
+        // Mostrar algunas solicitudes para depuración
+        if (solicitudes.value.length > 0) {
+          console.log('Muestra de solicitudes:', solicitudes.value.slice(0, 3));
+        }
       } catch (error) {
+        console.error('Error al obtener solicitudes:', error);
         showNotification('Error al obtener solicitudes:', error);
       }
     };
@@ -1265,7 +1301,20 @@ export default {
     const fetchUsuarios = async () => {
       try {
         const response = await apiClient.get('/usuarios/');
-        usuarios.value = response.data;
+        
+        // Procesar los usuarios para asegurar que todos tengan un nombre válido
+        usuarios.value = response.data.map(usuario => {
+          // Si el usuario no tiene nombre o es vacío, usar el correo o un valor por defecto
+          if (!usuario.nombre || usuario.nombre.trim() === '') {
+            return {
+              ...usuario,
+              nombre: usuario.email || usuario.username || `Usuario ID: ${usuario.id}`
+            };
+          }
+          return usuario;
+        });
+        
+        console.log('Usuarios cargados:', usuarios.value.length);
       } catch (error) {
         showNotification('Error al obtener usuarios:', error);
       }
@@ -1719,25 +1768,21 @@ export default {
       }
     };
 
+    // Modificar la función getUserName para manejar casos especiales
     const getUserName = (userId) => {
       if (!userId) return '-';
       
-      // Buscar el usuario por ID
       const usuario = usuarios.value.find(u => u.id === userId);
+      if (!usuario) return `Usuario #${userId}`;
       
-      if (!usuario) return userId; // Si no se encuentra, mostrar el ID
-      
-      // Formatear el nombre completo
-      const firstName = usuario.nombre || '';
-      const lastName = usuario.apellido || '';
-      return `${firstName} ${lastName}`.trim() || usuario.username || userId;
+      return usuario.nombre || usuario.email || usuario.username || `Usuario #${userId}`;
     };
 
     const toggleFilter = (filterName) => {
       activeFilter.value = activeFilter.value === filterName ? null : filterName;
     };
 
-    const applyFilters = () => {
+    const applyFilters = async () => {
       showNotification('Aplicando filtros...');
       
       // Aplicar todos los filtros activos
@@ -1748,15 +1793,32 @@ export default {
         const query = searchQuery.value.toLowerCase();
         filtered = filtered.filter(tarea => 
           (tarea.descripcion && tarea.descripcion.toLowerCase().includes(query)) ||
-          (tarea.solicitud && tarea.solicitud.toString().includes(query))
+          (tarea.id && tarea.id.toString().includes(query))
         );
       }
       
       // Filtros de solicitud
-      if (solicitudFilters.value.length > 0) {
-        filtered = filtered.filter(tarea => 
-          solicitudFilters.value.includes(tarea.solicitud)
-        );
+      if (solicitudSearchQuery.value) {
+        const query = solicitudSearchQuery.value.toLowerCase();
+        console.log(`Filtrando por solicitud con texto: "${query}"`);
+        
+        filtered = filtered.filter(tarea => {
+          // Verificar directamente el ID de la solicitud
+          if (tarea.solicitud && tarea.solicitud.toString().toLowerCase().includes(query)) {
+            console.log(`Tarea ${tarea.id} coincide por ID de solicitud ${tarea.solicitud}`);
+            return true;
+          }
+          
+          // Buscar la solicitud correspondiente para verificar descripción
+          const solicitud = solicitudes.value.find(s => s.id === tarea.solicitud);
+          if (solicitud && solicitud.descripcion && 
+              solicitud.descripcion.toLowerCase().includes(query)) {
+            console.log(`Tarea ${tarea.id} coincide por descripción de solicitud "${solicitud.descripcion}"`);
+            return true;
+          }
+          
+          return false;
+        });
       }
       
       // Filtros de estado
@@ -1767,25 +1829,103 @@ export default {
       }
       
       // Filtros de usuario asignado
-      if (usuarioFilters.value.length > 0) {
-        filtered = filtered.filter(tarea => 
-          usuarioFilters.value.includes(tarea.usuario_asignado)
-        );
+      if (usuarioAsignadoFilters.value.length > 0) {
+        filtered = filtered.filter(tarea => {
+          // Convertir a número para asegurar comparación correcta
+          const usuarioId = typeof tarea.usuario_asignado === 'string' 
+            ? parseInt(tarea.usuario_asignado, 10) 
+            : tarea.usuario_asignado;
+          
+          return usuarioAsignadoFilters.value.includes(usuarioId);
+        });
       }
       
       // Filtros de usuario reasignado
       if (usuarioReasignadoFilters.value.length > 0) {
-        filtered = filtered.filter(tarea => 
-          usuarioReasignadoFilters.value.includes(tarea.usuario_reasignado)
-        );
+        filtered = filtered.filter(tarea => {
+          // Convertir a número para asegurar comparación correcta
+          const usuarioId = typeof tarea.usuario_reasignado === 'string' 
+            ? parseInt(tarea.usuario_reasignado, 10) 
+            : tarea.usuario_reasignado;
+          
+          return usuarioReasignadoFilters.value.includes(usuarioId);
+        });
       }
       
       // Filtros de empresa
-      if (empresaFilters.value.length > 0) {
-        filtered = filtered.filter(tarea => {
-          const solicitud = solicitudes.value.find(s => s.id == tarea.solicitud);
-          return solicitud && empresaFilters.value.includes(solicitud.empresa);
-        });
+      if (empresaFilter.value) {
+        const terceroId = Number(empresaFilter.value);
+        console.log(`Filtrando por tercero ID: ${terceroId}`);
+        
+        // Intentar cargar tareas directamente por tercero
+        try {
+          // Guardar el estado actual de las tareas filtradas
+          const currentFiltered = [...filtered];
+          
+          // Mostrar un indicador de carga
+          showNotification('Buscando tareas para este tercero...', true);
+          
+          // Hacer una solicitud específica al backend para obtener tareas por tercero
+          const response = await apiClient.get(`/usuariosTerceros/${terceroId}/`);
+          const tareasDelTercero = response.data;
+          
+          console.log(`Tareas obtenidas para el tercero ${terceroId}:`, tareasDelTercero.length);
+          
+          if (tareasDelTercero.length > 0) {
+            // Filtrar las tareas actuales para incluir solo las que están en la respuesta
+            filtered = currentFiltered.filter(tarea => 
+              tareasDelTercero.some(t => t.id === tarea.id)
+            );
+            
+            console.log('Después de filtro de tercero:', filtered.length, 'tareas');
+          } else {
+            console.log('No se encontraron tareas para este tercero desde el backend');
+            filtered = [];
+          }
+        } catch (error) {
+          console.error('Error al obtener tareas por tercero:', error);
+          
+          // Si el endpoint no existe, intentar un enfoque alternativo
+          console.log('Intentando enfoque alternativo...');
+          
+          // Buscar en todas las propiedades de las tareas y solicitudes
+          const tareasEncontradas = [];
+          
+          // Examinar cada tarea
+          for (const tarea of tareas.value) {
+            // Verificar si la tarea tiene alguna propiedad con el valor del tercero
+            let tareaCoincide = false;
+            for (const [key, value] of Object.entries(tarea)) {
+              if (Number(value) === terceroId) {
+                console.log(`Tarea ${tarea.id} tiene ${key}=${terceroId}`);
+                tareaCoincide = true;
+                break;
+              }
+            }
+            
+            if (tareaCoincide) {
+              tareasEncontradas.push(tarea);
+              continue;
+            }
+            
+            // Si la tarea no coincide directamente, verificar su solicitud
+            const solicitud = solicitudes.value.find(s => s.id === tarea.solicitud);
+            if (solicitud) {
+              for (const [key, value] of Object.entries(solicitud)) {
+                if (Number(value) === terceroId) {
+                  console.log(`Solicitud ${solicitud.id} de la tarea ${tarea.id} tiene ${key}=${terceroId}`);
+                  tareasEncontradas.push(tarea);
+                  break;
+                }
+              }
+            }
+          }
+          
+          console.log(`Se encontraron ${tareasEncontradas.length} tareas relacionadas con el tercero ${terceroId}`);
+          filtered = filtered.filter(tarea => 
+            tareasEncontradas.some(t => t.id === tarea.id)
+          );
+        }
       }
       
       // Filtros de fecha programada
@@ -1957,12 +2097,9 @@ export default {
 
     // Filtrar usuarios de soporte (tipo "S")
     const usuariosSoporte = computed(() => {
-      return usuarios.value
-        .filter(usuario => usuario.tipo === 'S')
-        .map(user => ({
-          id: user.id,
-          nombre: `${user.first_name || ''} ${user.last_name || ''}`.trim() || user.username
-        }));
+      return usuarios.value.filter(usuario => 
+        usuario.tipo === 'S' || usuario.tipo === 'A'
+      ).sort((a, b) => a.nombre.localeCompare(b.nombre));
     });
 
     // Reemplazar completamente la función setCurrentDateTime
@@ -2624,53 +2761,39 @@ export default {
 
     // Función para obtener todas las empresas únicas (corregida)
     const getUniqueEmpresas = () => {
-
+      // Obtener IDs únicos de empresas a través de las solicitudes
+      const empresasIds = new Set();
       
-      // Crear un conjunto para almacenar empresas únicas
-      const empresasSet = new Set();
-      
-      // Obtener todas las empresas de las solicitudes
-      solicitudes.value.forEach(solicitud => {
-        if (solicitud.empresa) {
-          empresasSet.add(solicitud.empresa);
+      // Para cada tarea, buscar su solicitud y agregar la empresa
+      tareas.value.forEach(tarea => {
+        if (tarea.solicitud) {
+          const solicitud = solicitudes.value.find(s => s.id === tarea.solicitud);
+          if (solicitud && solicitud.empresa) {
+            empresasIds.add(Number(solicitud.empresa));
+          }
         }
       });
       
-      // Convertir el conjunto a un array
-      const empresasArray = Array.from(empresasSet);
-      
-
-      
-      return empresasArray;
+      // Filtrar las empresas por los IDs encontrados
+      return Array.from(empresasIds).map(id => {
+        // Buscar la empresa en allEmpresas
+        const empresa = allEmpresas.value.find(e => e.id === id);
+        return empresa || { id, nombre: `Empresa #${id}` };
+      }).sort((a, b) => a.nombre.localeCompare(b.nombre));
     };
 
     // Función para filtrar empresas basado en la búsqueda
     const filterEmpresas = () => {
-  
-      // Obtener todas las empresas únicas
-      const todasEmpresas = getUniqueEmpresas();
-      
-      // Si no hay consulta de búsqueda, mostrar todas las empresas
-      if (!empresaSearchQuery.value) {
-        allEmpresas.value = todasEmpresas;
-        filteredEmpresas.value = todasEmpresas;
-
-        return;
+      if (empresaSearchQuery.value) {
+        const query = empresaSearchQuery.value.toLowerCase();
+        // Filtrar de allEmpresas en lugar de llamar a getUniqueEmpresas
+        filteredEmpresas.value = allEmpresas.value.filter(empresa => 
+          empresa.nombre.toLowerCase().includes(query)
+        );
+      } else {
+        // Usar todas las empresas si no hay búsqueda
+        filteredEmpresas.value = [...allEmpresas.value];
       }
-      
-      // Filtrar empresas según la consulta de búsqueda
-      const query = empresaSearchQuery.value.toLowerCase();
-      const filtered = todasEmpresas.filter(empresaId => {
-        // Obtener el nombre de la empresa
-        const empresa = terceros.value.find(t => t.id === empresaId);
-        if (!empresa) return false;
-        
-        // Verificar si el nombre contiene la consulta
-        return empresa.nombre.toLowerCase().includes(query);
-      });
-      
-      filteredEmpresas.value = filtered;
-
     };
 
     // Función para seleccionar todas las empresas (corregida)
@@ -2682,10 +2805,10 @@ export default {
     };
 
     // Función para limpiar los filtros de empresa
-    const clearEmpresaFilters = () => {
-      empresaFilters.value = [];
+    const clearEmpresaFilter = () => {
+      console.log('Limpiando filtro de empresa');
+      empresaFilter.value = null; // Cambiar a null en lugar de cadena vacía
       empresaSearchQuery.value = '';
-      filteredEmpresas.value = [...allEmpresas.value];
       applyFilters();
     };
 
@@ -3037,6 +3160,86 @@ export default {
       }, 3000);
     };
 
+    // Agregar un computed para todos los usuarios (para los filtros)
+    const todosUsuarios = computed(() => {
+      return [...usuarios.value].sort((a, b) => a.nombre.localeCompare(b.nombre));
+    });
+
+    // Agregar las variables que faltan
+    const usuarioSearchQuery = ref('');
+    const usuarioReasignadoSearchQuery = ref('');
+
+    // Obtener solo los usuarios que están en las tareas
+    const usuariosEnTareas = computed(() => {
+      // Obtener IDs únicos de usuarios asignados en las tareas
+      const idsAsignados = new Set(tareas.value.map(t => t.usuario_asignado).filter(Boolean));
+      // Obtener IDs únicos de usuarios reasignados en las tareas
+      const idsReasignados = new Set(tareas.value.map(t => t.usuario_reasignado).filter(Boolean));
+      
+      // Combinar los conjuntos
+      const todosIds = new Set([...idsAsignados, ...idsReasignados]);
+      
+      // Filtrar usuarios por los IDs encontrados
+      return [...usuarios.value]
+        .filter(u => todosIds.has(u.id))
+        .sort((a, b) => (a.nombre || '').localeCompare(b.nombre || ''));
+    });
+
+    // Filtrar usuarios para el campo de búsqueda
+    const filteredUsuariosAsignados = computed(() => {
+      if (!usuarioSearchQuery.value) return usuariosEnTareas.value;
+      
+      const query = usuarioSearchQuery.value.toLowerCase();
+      return usuariosEnTareas.value.filter(usuario => 
+        (usuario.nombre && usuario.nombre.toLowerCase().includes(query)) ||
+        (usuario.email && usuario.email.toLowerCase().includes(query))
+      );
+    });
+
+    // Filtrar usuarios reasignados para el campo de búsqueda
+    const filteredUsuariosReasignados = computed(() => {
+      if (!usuarioReasignadoSearchQuery.value) return usuariosEnTareas.value;
+      
+      const query = usuarioReasignadoSearchQuery.value.toLowerCase();
+      return usuariosEnTareas.value.filter(usuario => 
+        (usuario.nombre && usuario.nombre.toLowerCase().includes(query)) ||
+        (usuario.email && usuario.email.toLowerCase().includes(query))
+      );
+    });
+
+    // Funciones para filtrar usuarios
+    const filterUsuarios = () => {
+      // La función no necesita hacer nada más, el computed se encargará
+      console.log("Filtrando usuarios con:", usuarioSearchQuery.value);
+    };
+
+    const filterUsuariosReasignados = () => {
+      // La función no necesita hacer nada más, el computed se encargará
+      console.log("Filtrando usuarios reasignados con:", usuarioReasignadoSearchQuery.value);
+    };
+
+    // Función para cargar las empresas (que podrían ser terceros)
+    const fetchEmpresas = async () => {
+      try {
+        // Cargar terceros
+        const response = await apiClient.get('/terceros/');
+        allEmpresas.value = response.data;
+        console.log('Terceros cargados:', allEmpresas.value.length);
+        
+        // Actualizar la lista filtrada
+        filteredEmpresas.value = [...allEmpresas.value];
+      } catch (error) {
+        console.error('Error al obtener terceros:', error);
+        showNotification('Error al obtener terceros', false);
+      }
+    };
+
+    // Asegurarse de llamar a fetchEmpresas en onMounted
+    onMounted(() => {
+      fetchTareas();
+      fetchEmpresas();
+    });
+
     return {
       tareas,
       solicitudes,
@@ -3135,7 +3338,7 @@ export default {
       getUniqueEmpresas,
       filterEmpresas,
       selectAllEmpresas,
-      clearEmpresaFilters,
+      clearEmpresaFilter,
       checkDateFilter,
       applyPredefinedDateFilter,
       tipoOptions,
@@ -3154,7 +3357,15 @@ export default {
       updateDateTime,
       showToast,
       isSuccess,
-      statusMessage
+      statusMessage,
+      todosUsuarios,
+      usuarioSearchQuery,
+      usuarioReasignadoSearchQuery,
+      usuariosEnTareas,
+      filteredUsuariosAsignados,
+      filteredUsuariosReasignados,
+      filterUsuarios,
+      filterUsuariosReasignados
     };
   }
   

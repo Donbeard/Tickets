@@ -16,7 +16,7 @@ const checkAuthAndRedirect = async () => {
     const path = redirect.replace(/.*\/Tickets\//, '/');
     
     // Verificar si es una ruta de autenticación (login, registro, recuperación de contraseña)
-    const authRoutes = ['/ingreso', '/register', '/password-reset', '/password-reset-confirm'];
+    const authRoutes = ['/', '/register', '/password-reset', '/password-reset-confirm'];
     const isAuthRoute = authRoutes.some(route => path.startsWith(route));
     
     // Si es una ruta de autenticación, redirigir directamente
@@ -32,10 +32,10 @@ const checkAuthAndRedirect = async () => {
       if (isValid) {
         router.push(path); // Token válido, redirigir a la ruta original
       } else {
-        router.push('/ingreso'); // Token inválido, ir al login
+        router.push('/'); // Token inválido, ir al login
       }
     } else {
-      router.push('/ingreso'); // No hay token, ir al login
+      router.push('/'); // No hay token, ir al login
     }
   }
 };

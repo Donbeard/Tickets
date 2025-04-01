@@ -209,9 +209,9 @@ const navigation = computed(() => {
   console.log('Calculando navegación para tipo:', userType.value)
   
   const allNavItems = [
-    { name: 'Solicitudes', href: '/solicitudes', icon: HomeIcon, allowedTypes: ['S', 'A', 'C'] },
-    { name: 'Tareas', href: '/tareas', icon: BookmarkIcon, allowedTypes: ['A', 'S'] },
-    { name: 'Modulos', href: '/modulos', icon: DocumentTextIcon, allowedTypes: ['A', 'S'] },
+    { name: 'Solicitudes', href: '/solicitud', icon: HomeIcon, allowedTypes: ['S', 'A', 'C'] },
+    { name: 'Tareas', href: '/tarea', icon: BookmarkIcon, allowedTypes: ['A', 'S'] },
+    { name: 'Modulos', href: '/modulo', icon: DocumentTextIcon, allowedTypes: ['A', 'S'] },
     { name: 'Empresas', href: '/empresas', icon: BuildingOfficeIcon, allowedTypes: ['A', 'C', 'S'] },
     //{ 
     //  name: `Cambiar Empresa (${terceroNombre.value || 'No seleccionada'})`, 

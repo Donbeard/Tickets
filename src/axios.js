@@ -28,7 +28,7 @@ api.interceptors.response.use(
             console.error('Error al refrescar el token', err);
             localStorage.removeItem('access_token');
             localStorage.removeItem('refresh_token');
-            window.location.href = '/'; // Redirige a login si no se puede refrescar el token
+            window.location.href = '/login'; // Redirige a login si no se puede refrescar el token
           }
         }
       }

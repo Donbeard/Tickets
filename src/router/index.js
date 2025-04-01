@@ -13,13 +13,13 @@ import GridLicencias from '@/components/Grid/grid-licencias.vue';
 const router = createRouter({
   history: createWebHistory('/api/'),
   routes : [
-    { path: '/', component: login, meta: { hideNavbar: true, allowWithoutAuth: true } },
-    { path: '/solicitudes', component: formSolicitud, meta: { requiresAuth: true} },
-    { path: '/tareas', component: formTareas, meta: { requiresAuth: true } },
+    { path: '/login', component: login, meta: { hideNavbar: true, allowWithoutAuth: true } },
+    { path: '/solicitud', component: formSolicitud, meta: { requiresAuth: true} },
+    { path: '/tarea', component: formTareas, meta: { requiresAuth: true } },
     { path: '/register', component: FormRegister, meta: { hideNavbar: true, allowWithoutAuth: true } },
     { path: '/password-reset', component: PaswordReset, meta: { hideNavbar: true, allowWithoutAuth: true } },
     { path: '/password-reset-confirm/:uid/:token', component: PaswordResetConfirm, meta: { hideNavbar: true, allowWithoutAuth: true } },
-    { path: '/modulos', component: Modulos, meta: { requiresAuth: true } },
+    { path: '/modulo', component: Modulos, meta: { requiresAuth: true } },
     { path: '/submodulos', component: Submodulos, meta: { requiresAuth: true } },
     { path: '/empresas', component: GridEmpresa, meta: { requiresAuth: true } },
     { path: '/licencias', component: GridLicencias, meta: { requiresAuth: true } },

@@ -145,7 +145,7 @@
           <div class="text-center">
             <p class="text-sm text-gray-600">
               ¿Ya tienes una cuenta?
-              <router-link to="/" class="font-medium text-indigo-600 hover:text-indigo-500">
+              <router-link to="/login" class="font-medium text-indigo-600 hover:text-indigo-500">
                 Iniciar sesión
               </router-link>
             </p>
@@ -455,7 +455,7 @@ export default {
           this.statusMessage = '¡Usuario registrado exitosamente!';
           this.isSuccess = true;
           setTimeout(() => {
-            this.$router.push('/');
+            this.$router.push('/login');
           }, 2000);
         } else if (usuarioCreado) {
           this.statusMessage = 'Usuario creado pero no se pudieron vincular las empresas';

@@ -78,12 +78,12 @@ apiClient.interceptors.response.use(
           localStorage.removeItem('accessToken');
           localStorage.removeItem('refreshToken');
           localStorage.removeItem('user');
-          router.push('/');
+          router.push('/ingreso');
           return Promise.reject(err);
         }
       } else {
         // No hay refresh token, redirigir a login
-        router.push('/');
+        router.push('/ingreso');
       }
     }
 

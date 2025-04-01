@@ -13,7 +13,7 @@ import GridLicencias from '@/components/Grid/grid-licencias.vue';
 const router = createRouter({
   history: createWebHistory('/api/'),
   routes : [
-    { path: '/login', component: login, meta: { hideNavbar: true, allowWithoutAuth: true } },
+    { path: '/ingreso', component: login, meta: { hideNavbar: true, allowWithoutAuth: true } },
     { path: '/solicitud', component: formSolicitud, meta: { requiresAuth: true} },
     { path: '/tarea', component: formTareas, meta: { requiresAuth: true } },
     { path: '/register', component: FormRegister, meta: { hideNavbar: true, allowWithoutAuth: true } },
@@ -40,7 +40,7 @@ router.beforeEach((to, from, next) => {
     // Guardar la ruta a la que intentaba acceder
     sessionStorage.setItem('redirectTo', to.fullPath);
     console.log('Ruta protegida, redirigiendo a login');
-    return next('/');
+    return next('/ingreso');
   }
   
   next();

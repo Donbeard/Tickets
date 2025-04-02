@@ -27,7 +27,7 @@
               name="search"
               id="search"
               class="focus:ring-indigo-500 focus:border-indigo-500 block w-full pl-10 pr-10 py-2 border-gray-300 rounded-md"
-              placeholder="Buscar solicitudes..."
+              placeholder="Buscar titulo de solicitud..."
               @input="handleSearchInput"
             />
             <button
@@ -1382,20 +1382,39 @@
             <div class="w-3/4">
               <DatePicker
                 v-model="currentTarea.fecha_inicio"
-                :model-config="{ type: 'string', mask: 'YYYY-MM-DDTHH:mm:00' }"
+                :model-config="{ type: 'string', mask: 'YYYY-MM-DDTHH:mm:00', timeAdjust: 'none' }"
                 :masks="{ input: 'DD/MM/YYYY HH:mm' }"
                 :time-picker-options="timePickerOptions"
                 :is-24hr="true"
                 mode="dateTime"
                 class="w-full"
                 @update:model-value="calcularDuracion"
+                :popover="{ 
+                  visibility: 'click', 
+                  placement: 'auto', 
+                  isInteractive: true, 
+                  modifiers: [{ name: 'preventOverflow', options: { padding: 8 } }],
+                  positionFixed: true
+                }"
               >
                 <template v-slot="{ inputValue, inputEvents }">
-                  <input
-                    class="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 text-sm"
-                    :value="inputValue"
-                    v-on="inputEvents"
-                  />
+                  <div class="relative">
+                    <input
+                      class="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 text-sm"
+                      :value="inputValue"
+                      v-on="inputEvents"
+                    />
+                    <button 
+                      type="button"
+                      @click="setCurrentDateTime('inicio')"
+                      class="absolute inset-y-0 right-0 px-3 flex items-center bg-gray-100 hover:bg-gray-200 text-gray-600 rounded-r-lg transition-colors"
+                      title="Usar fecha y hora actual"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                    </button>
+                  </div>
                 </template>
               </DatePicker>
             </div>
@@ -1430,20 +1449,39 @@
               <div class="w-3/4">
                 <DatePicker
                   v-model="currentTarea.fecha_fin"
-                  :model-config="{ type: 'string', mask: 'YYYY-MM-DDTHH:mm:00' }"
+                  :model-config="{ type: 'string', mask: 'YYYY-MM-DDTHH:mm:00', timeAdjust: 'none' }"
                   :masks="{ input: 'DD/MM/YYYY HH:mm' }"
                   :time-picker-options="timePickerOptions"
                   :is-24hr="true"
                   mode="dateTime"
                   class="w-full"
                   @update:model-value="calcularDuracion"
+                  :popover="{ 
+                    visibility: 'click', 
+                    placement: 'auto', 
+                    isInteractive: true, 
+                    modifiers: [{ name: 'preventOverflow', options: { padding: 8 } }],
+                    positionFixed: true
+                  }"
                 >
                   <template v-slot="{ inputValue, inputEvents }">
-                    <input
-                      class="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 text-sm"
-                      :value="inputValue"
-                      v-on="inputEvents"
-                    />
+                    <div class="relative">
+                      <input
+                        class="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 text-sm"
+                        :value="inputValue"
+                        v-on="inputEvents"
+                      />
+                      <button 
+                        type="button"
+                        @click="setCurrentDateTime('fin')"
+                        class="absolute inset-y-0 right-0 px-3 flex items-center bg-gray-100 hover:bg-gray-200 text-gray-600 rounded-r-lg transition-colors"
+                        title="Usar fecha y hora actual"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                      </button>
+                    </div>
                   </template>
                 </DatePicker>
               </div>
@@ -1751,6 +1789,7 @@ data() {
     nuevaTareaDescripcion: '',
     nuevaTareaFechaProgramada: null,
     empresaActual: '',
+    originalSolicitudes: [],
     };
 },
 computed: {
@@ -2235,6 +2274,7 @@ getSubmoduloNombre(submoduloId) {
       }
     }
   },
+  
   cargarUsuario() {
     const userData = localStorage.getItem('user');
       if (userData) {
@@ -2364,6 +2404,18 @@ async setFechaSistema() {
 
     // Aplicar paginación después de ordenar
     this.applyPagination();
+  },
+  filterEmpresas() {
+    if (!this.empresaSearch) {
+      // Mostrar todas las empresas disponibles
+      this.filteredEmpresas = this.empresas;
+    } else {
+      // Filtrar empresas por nombre
+      const searchLower = this.empresaSearch.toLowerCase();
+      this.filteredEmpresas = this.empresas.filter(empresa => 
+        empresa.nombre.toLowerCase().includes(searchLower)
+      );
+    }
   },
   filterSolicitudes() {
     if (!Array.isArray(this.allSolicitudes)) return [];
@@ -2521,10 +2573,15 @@ async setFechaSistema() {
       new Date(b.fecha_creacion) - new Date(a.fecha_creacion)
     );
     
+    // Guardar una copia de las solicitudes originales para la búsqueda
+    this.originalSolicitudes = [...this.allSolicitudes];
+    
     this.applyPagination();
     
+    console.log("originalSolicitudes:", this.originalSolicitudes.length);
+    console.log("allSolicitudes:", this.allSolicitudes.length);
   } catch (error) {
-    console.error('Error al obtener solicitudes:', error);
+    console.error("Error al obtener solicitudes:", error);
   }
 },
 
@@ -3345,19 +3402,33 @@ calcularDuracion() {
 }),
   // Función con debounce para la búsqueda
   handleSearchInput() {
-    if (this.debouncedSearchTimeout) {
-      clearTimeout(this.debouncedSearchTimeout);
+    if (!this.searchQuery) {
+      // Si no hay texto de búsqueda, restaurar todas las solicitudes
+      this.allSolicitudes = [...this.originalSolicitudes];
+    } else {
+      // Filtrar por título, asegurando que solicitud.titulo existe
+      const query = this.searchQuery.toLowerCase();
+      this.allSolicitudes = this.originalSolicitudes.filter(solicitud => 
+        solicitud.titulo && solicitud.titulo.toLowerCase().includes(query)
+      );
     }
     
-    this.debouncedSearchTimeout = setTimeout(() => {
-      this.filterSolicitudes();
-      console.log("Buscando:", this.searchQuery);
-    }, 300);
+    // Actualizar la paginación después de filtrar
+    this.currentPage = 1;
+    this.applyPagination();
+    
+    // Depuración
+    console.log("Búsqueda:", this.searchQuery);
+    console.log("Solicitudes filtradas:", this.allSolicitudes.length);
+    console.log("Solicitudes mostradas:", this.solicitudes.length);
   },
   // Función para limpiar la búsqueda
   clearSearch() {
     this.searchQuery = '';
-    this.filterSolicitudes();
+    this.allSolicitudes = [...this.originalSolicitudes];
+    this.currentPage = 1;
+    this.applyPagination();
+    console.log("Búsqueda limpiada, solicitudes restauradas:", this.allSolicitudes.length);
   },
   
   // Método para cancelar la edición
@@ -3583,9 +3654,15 @@ calcularDuracion() {
   formatDateForServer(dateString) {
     if (!dateString) return null;
     try {
+      // Crear objeto Date a partir del string
       const date = new Date(dateString);
       if (isNaN(date.getTime())) return null; // Fecha inválida
-      return date.toISOString(); // Formato ISO para el servidor
+      
+      // Ajustar a hora Colombia (UTC-5)
+      const colombiaTime = new Date(date.getTime() - (date.getTimezoneOffset() + 300) * 60000);
+      
+      // Formatear como ISO string
+      return colombiaTime.toISOString();
     } catch (error) {
       console.error('Error al formatear fecha:', error);
       return null;
@@ -3633,14 +3710,54 @@ calcularDuracion() {
       solicitud: Number(this.currentTarea.solicitud),
       usuario_asignado: Number(this.currentTarea.usuario_asignado),
       estado: Number(this.currentTarea.estado),
-      tipo: this.currentTarea.tipo, // No convertir a número, debe ser string ('G', 'I', 'F')
-      cita: this.currentTarea.cita || 'N', // Valor por defecto 'N'
-      fecha_inicio: this.currentTarea.fecha_inicio,
-      fecha_programada: this.currentTarea.fecha_programada || null,
-      fecha_fin: this.currentTarea.fecha_fin || null,
+      tipo: this.currentTarea.tipo,
+      cita: this.currentTarea.cita || 'N',
       duracion: this.currentTarea.duracion || "00:00",
       tiempoFacturable: this.currentTarea.tiempoFacturable || "00:00"
     };
+
+    // Formatear fechas si existen
+    if (this.currentTarea.fecha_inicio) {
+      // Si es un objeto Date, convertirlo a ISO string
+      if (typeof this.currentTarea.fecha_inicio === 'object') {
+        tareaToSave.fecha_inicio = this.currentTarea.fecha_inicio.toISOString();
+      } else {
+        // Asegurarse de que sea un formato ISO válido
+        const fechaInicio = new Date(this.currentTarea.fecha_inicio);
+        if (!isNaN(fechaInicio.getTime())) {
+          tareaToSave.fecha_inicio = fechaInicio.toISOString();
+        }
+      }
+    }
+
+    if (this.currentTarea.fecha_programada) {
+      if (typeof this.currentTarea.fecha_programada === 'object') {
+        tareaToSave.fecha_programada = this.currentTarea.fecha_programada.toISOString();
+      } else {
+        const fechaProgramada = new Date(this.currentTarea.fecha_programada);
+        if (!isNaN(fechaProgramada.getTime())) {
+          tareaToSave.fecha_programada = fechaProgramada.toISOString();
+        }
+      }
+    }
+
+    if (this.currentTarea.fecha_fin) {
+      if (typeof this.currentTarea.fecha_fin === 'object') {
+        tareaToSave.fecha_fin = this.currentTarea.fecha_fin.toISOString();
+      } else {
+        const fechaFin = new Date(this.currentTarea.fecha_fin);
+        if (!isNaN(fechaFin.getTime())) {
+          tareaToSave.fecha_fin = fechaFin.toISOString();
+        }
+      }
+      
+      // Validar que fecha_fin sea posterior a fecha_inicio
+      if (tareaToSave.fecha_inicio && new Date(tareaToSave.fecha_fin) < new Date(tareaToSave.fecha_inicio)) {
+        this.statusMessage = 'La fecha de fin debe ser posterior a la fecha de inicio.';
+        this.isSuccess = false;
+        return;
+      }
+    }
 
     // Si es una tarea editada y tiene usuario reasignado, incluirlo
     if (hayReasignacion) {
@@ -3677,6 +3794,7 @@ calcularDuracion() {
           usuario_asignado: tareaToSave.usuario_reasignado,
           tipo: "I",
           cita: "N",
+          fecha_inicio: this.formatearFechaHoraActual()
         };
         
         await apiClient.post("/tareas/", nuevaTarea);
@@ -3734,13 +3852,17 @@ calcularDuracion() {
 
 // Nueva Tarea
 NuevaTarea(solicitud) {
-  // Obtener la fecha y hora actual
+  // Obtener la fecha y hora actual en Colombia (UTC-5)
   const now = new Date();
-  const year = now.getFullYear();
-  const month = String(now.getMonth() + 1).padStart(2, '0');
-  const day = String(now.getDate()).padStart(2, '0');
-  const hours = String(now.getHours()).padStart(2, '0');
-  const minutes = String(now.getMinutes()).padStart(2, '0');
+  
+  // Ajustar a hora Colombia (UTC-5)
+  const colombiaTime = new Date(now.getTime() - (now.getTimezoneOffset() + 300) * 60000);
+  
+  const year = colombiaTime.getFullYear();
+  const month = String(colombiaTime.getMonth() + 1).padStart(2, '0');
+  const day = String(colombiaTime.getDate()).padStart(2, '0');
+  const hours = String(colombiaTime.getHours()).padStart(2, '0');
+  const minutes = String(colombiaTime.getMinutes()).padStart(2, '0');
   
   // Formato: YYYY-MM-DDTHH:MM:00
   const fechaActual = `${year}-${month}-${day}T${hours}:${minutes}:00`;
@@ -3757,8 +3879,8 @@ NuevaTarea(solicitud) {
     usuario_asignado: null,
     estado: 5,
     motivo_cancelacion: '',
-    tipo: '', // Nuevo campo
-    cita: '', // Nuevo campo
+    tipo: '', 
+    cita: '', 
   };
   this.showModalTarea = true;
 },

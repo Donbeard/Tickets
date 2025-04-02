@@ -503,7 +503,22 @@
                 
                 
                 
-                <!-- En la sección de encabezados de la tabla -->
+                <!-- En la sección de encabezados de la tabla, junto a las otras columnas de fecha -->
+                <th @click="sortTareas('fecha_creacion')" class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer">
+                  <div class="flex items-center">
+                    Fecha Creación
+                    <span v-if="sortColumn === 'fecha_creacion'" class="ml-1">
+                      <svg v-if="sortDirection === 'asc'" class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"></path>
+                      </svg>
+                      <svg v-else class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                      </svg>
+                    </span>
+                  </div>
+                </th>
+                
+                <!-- En la sección de filas de la tabla -->
                 <th scope="col" class="px-4 py-1 text-left text-xs font-medium text-Black uppercase tracking-wider">
                   <div class="flex items-center justify-between">
                     <div class="flex items-center cursor-pointer" @click="sortTareas('tipo')">
@@ -562,8 +577,17 @@
                 </td>
                 <!-- Empresa -->
                 <td class="px-4 py-2 whitespace-nowrap text-xs text-black">
-                  {{ getEmpresaSolicitud(tarea.solicitud) }}
+                  <div class="relative group">
+                    <span class="block max-w-[150px] truncate" :title="getEmpresaSolicitud(tarea.solicitud)">
+                      {{ getEmpresaSolicitud(tarea.solicitud) }}
+                    </span>
+                    <div v-if="getEmpresaSolicitud(tarea.solicitud).length > 20" 
+                        class="absolute z-10 invisible group-hover:visible bg-black text-white text-xs rounded py-1 px-2 -mt-1 left-0 ml-6 w-auto max-w-xs whitespace-normal">
+                      {{ getEmpresaSolicitud(tarea.solicitud) }}
+                    </div>
+                  </div>
                 </td>
+                
                 <!-- Solicitud -->
                 <td class="px-3 py-2 whitespace-nowrap text-xs text-black">
                   {{ tarea.solicitud }} - {{ getSolicitudTitulo(tarea.solicitud) }}
@@ -613,7 +637,10 @@
                   {{ formatDate(tarea.fecha_fin) }}
                 </td>
                 
-                
+                <!-- En la sección de datos de la tabla, dentro del v-for de las filas -->
+                <td class="px-4 py-2 whitespace-nowrap text-xs text-black">
+                  {{ formatDate(tarea.fecha_creacion) }}
+                </td>
                 
                 <!-- En la sección de filas de la tabla -->
                 <td class="px-3 py-2 whitespace-nowrap text-xs">
@@ -1188,6 +1215,41 @@
       </div>
     </Transition>
   </Teleport>
+
+  <!-- En la sección de filtros, junto a los otros filtros de fecha -->
+  <div class="mb-4">
+    <button 
+      @click="toggleFilter('creacion')" 
+      class="flex items-center px-3 py-2 text-sm font-medium rounded-md"
+      :class="activeFilter === 'creacion' ? 'bg-indigo-100 text-indigo-700' : 'text-gray-700 hover:bg-gray-100'"
+    >
+      <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+      </svg>
+      Filtrar por Fecha Creación
+    </button>
+    
+    <div v-if="activeFilter === 'creacion'" class="mt-2 p-3 bg-white rounded-md shadow-md animate__animated animate__fadeIn">
+      <div class="grid grid-cols-2 gap-4">
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Desde:</label>
+          <input 
+            type="date" 
+            v-model="creacionFilters.startDate"
+            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+          >
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Hasta:</label>
+          <input 
+            type="date" 
+            v-model="creacionFilters.endDate"
+            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+          >
+        </div>
+      </div>
+    </div>
+  </div>
 </template>
 
 <script>
@@ -1970,6 +2032,21 @@ export default {
         filtered = filtered.filter(tarea => {
           if (!tarea.fecha_fin) return false;
           return new Date(tarea.fecha_fin) <= new Date(finFilters.value.endDate);
+        });
+      }
+      
+      // Filtros de fecha de creación
+      if (creacionFilters.value.startDate) {
+        filtered = filtered.filter(tarea => {
+          if (!tarea.fecha_creacion) return false;
+          return new Date(tarea.fecha_creacion) >= new Date(creacionFilters.value.startDate);
+        });
+      }
+      
+      if (creacionFilters.value.endDate) {
+        filtered = filtered.filter(tarea => {
+          if (!tarea.fecha_creacion) return false;
+          return new Date(tarea.fecha_creacion) <= new Date(creacionFilters.value.endDate);
         });
       }
       
@@ -3240,6 +3317,12 @@ export default {
       fetchEmpresas();
     });
 
+    // Agregar filtro de fecha de creación
+    const creacionFilters = ref({
+      startDate: '',
+      endDate: ''
+    });
+
     return {
       tareas,
       solicitudes,
@@ -3365,7 +3448,8 @@ export default {
       filteredUsuariosAsignados,
       filteredUsuariosReasignados,
       filterUsuarios,
-      filterUsuariosReasignados
+      filterUsuariosReasignados,
+      creacionFilters
     };
   }
   

@@ -324,61 +324,6 @@
                     </div>
                   </div>
                 </th>
-                
-                <!-- Reasignado a -->
-                <th scope="col" class="px-4 py-1 text-left text-xs font-medium text-Black uppercase tracking-wider">
-                  <div class="flex items-center justify-between">
-                    <div class="flex items-center cursor-pointer" @click="sortTareas('usuario_reasignado')">
-                      Reasignado a
-                      <span class="ml-1">
-                        <svg v-if="getSortIcon('usuario_reasignado') === 'asc'" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"></path>
-                        </svg>
-                        <svg v-else-if="getSortIcon('usuario_reasignado') === 'desc'" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
-                        </svg>
-                      </span>
-                    </div>
-                    <button @click.stop="toggleFilter('usuario_reasignado')" class="text-black hover:text-gray-700">
-                      <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
-                      </svg>
-                    </button>
-                  </div>
-                  <div v-if="activeFilter === 'usuario_reasignado'" class="mt-2 p-2 bg-white shadow rounded border absolute z-10 w-64" @click.stop>
-                    <div class="mb-2">
-                      <input 
-                        type="text" 
-                        v-model="usuarioReasignadoSearchQuery" 
-                        @input="filterUsuariosReasignados"
-                        placeholder="Buscar usuario..." 
-                        class="w-full px-2 py-1 text-xs border rounded"
-                      >
-                    </div>
-                    <div class="max-h-60 overflow-y-auto">
-                      <div v-for="usuario in filteredUsuariosReasignados" :key="usuario.id" class="flex items-center mb-1">
-                        <input 
-                          type="checkbox" 
-                          :id="`usuario-reasignado-${usuario.id}`" 
-                          :value="usuario.id" 
-                          v-model="usuarioReasignadoFilters"
-                          @change="applyFilters"
-                          class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
-                        />
-                        <label :for="`usuario-reasignado-${usuario.id}`" class="ml-2 block text-sm text-gray-900">
-                          {{ usuario.nombre || usuario.email || `Usuario #${usuario.id}` }}
-                        </label>
-                      </div>
-                    </div>
-                    <div class="mt-2 flex justify-between">
-                      <button @click="selectAllUsuariosReasignados" class="text-xs text-indigo-600 hover:text-indigo-800">Seleccionar todos</button>
-                      <button @click="clearUsuarioReasignadoFilters" class="text-xs text-gray-600 hover:text-gray-800">Limpiar</button>
-                    </div>
-                  </div>
-                </th>
-                
-                
-                
                 <!-- F. Inicio -->
                 <th scope="col" class="px-4 py-1 text-left text-xs font-medium text-Black uppercase tracking-wider">
                   <div class="flex items-center justify-between">
@@ -619,14 +564,7 @@
                 <td class="px-3 py-2 whitespace-nowrap text-xs text-black">
                   {{ getUserName(tarea.usuario_asignado) }}
                 </td>
-                
-                <!-- Reasignado a -->
-                <td class="px-3 py-2 whitespace-nowrap text-xs text-black">
-                  {{ tarea.usuario_reasignado ? getUserName(tarea.usuario_reasignado) : '-' }}
-                </td>
-                
-                
-                
+                           
                 <!-- F. Inicio -->
                 <td class="px-3 py-2 whitespace-nowrap text-xs text-black">
                   {{ formatDate(tarea.fecha_inicio) }}

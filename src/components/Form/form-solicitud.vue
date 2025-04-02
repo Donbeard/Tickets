@@ -2576,10 +2576,19 @@ async setFechaSistema() {
     // Guardar una copia de las solicitudes originales para la búsqueda
     this.originalSolicitudes = [...this.allSolicitudes];
     
+
+    const estadoTerminadoId = 7; // Ajustar este ID según tu base de datos
+    this.allSolicitudes = this.allSolicitudes.filter(s => s.estado !== estadoTerminadoId);
+    
+    // Actualizar los filtros para reflejar esta selección por defecto
+    if (!this.filters.estado) {
+      this.filters.estado = this.estados
+        .filter(e => e.id !== estadoTerminadoId)
+        .map(e => e.id);
+    }
+    
     this.applyPagination();
     
-    console.log("originalSolicitudes:", this.originalSolicitudes.length);
-    console.log("allSolicitudes:", this.allSolicitudes.length);
   } catch (error) {
     console.error("Error al obtener solicitudes:", error);
   }

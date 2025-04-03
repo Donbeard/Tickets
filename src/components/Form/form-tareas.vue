@@ -130,6 +130,20 @@
                     </div>
                   </div>
                 </th>
+                <!-- Fecha Creacion -->
+                <th @click="sortTareas('fecha_creacion')" class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer">
+                  <div class="flex items-center">
+                    Fecha Creación
+                    <span v-if="sortColumn === 'fecha_creacion'" class="ml-1">
+                      <svg v-if="sortDirection === 'asc'" class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"></path>
+                      </svg>
+                      <svg v-else class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                      </svg>
+                    </span>
+                  </div>
+                </th>
                 <!-- F. Programada -->
                 <th scope="col" class="px-4 py-1 text-left text-xs font-medium text-Black uppercase tracking-wider">
                   <div class="flex items-center justify-between">
@@ -187,6 +201,127 @@
                     </div>
                     <div class="mt-2 flex justify-end">
                       <button @click="clearDateFilter('programada')" class="text-xs text-gray-600 hover:text-gray-800">Limpiar</button>
+                    </div>
+                  </div>
+                </th>
+                <!-- F. Inicio -->
+                <th scope="col" class="px-4 py-1 text-left text-xs font-medium text-Black uppercase tracking-wider">
+                  <div class="flex items-center justify-between">
+                    <div class="flex items-center cursor-pointer" @click="sortTareas('fecha_inicio')">
+                      F. Inicio
+                      <span class="ml-1">
+                        <svg v-if="getSortIcon('fecha_inicio') === 'asc'" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"></path>
+                        </svg>
+                        <svg v-else-if="getSortIcon('fecha_inicio') === 'desc'" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                        </svg>
+                      </span>
+                    </div>
+                    <button @click.stop="toggleFilter('inicio')" class="text-black hover:text-gray-700">
+                      <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+                      </svg>
+                    </button>
+                  </div>
+                  <div v-if="activeFilter === 'inicio'" class="mt-2 p-2 bg-white shadow rounded border absolute z-10 w-48">
+                    <div class="space-y-1">
+                      <div v-for="(option, index) in dateOptions" :key="index" class="flex items-center">
+                        <input 
+                          type="radio" 
+                          :id="`inicio-${index}`" 
+                          :value="option.value" 
+                          v-model="inicioFilterOption"
+                          @change="applyDateFilter('inicio', option.value)"
+                          class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300"
+                        />
+                        <label :for="`inicio-${index}`" class="ml-2 block text-sm text-gray-900">
+                          {{ option.label }}
+                        </label>
+                      </div>
+                      <div class="mt-2 pt-2 border-t border-gray-200">
+                        <div class="text-sm font-medium text-gray-700 mb-1">Personalizado:</div>
+                        <div class="space-y-2">
+                          <input
+                            type="date"
+                            v-model="inicioFilters.startDate"
+                            @change="inicioFilterOption = 'custom'; applyFilters()"
+                            class="block w-full px-2 py-1 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500"
+                            placeholder="Desde"
+                          />
+                          <input
+                            type="date"
+                            v-model="inicioFilters.endDate"
+                            @change="inicioFilterOption = 'custom'; applyFilters()"
+                            class="block w-full px-2 py-1 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500"
+                            placeholder="Hasta"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                    <div class="mt-2 flex justify-end">
+                      <button @click="clearDateFilter('inicio')" class="text-xs text-gray-600 hover:text-gray-800">Limpiar</button>
+                    </div>
+                  </div>
+                </th>
+                
+                <!-- F. Fin -->
+                <th scope="col" class="px-4 py-1 text-left text-xs font-medium text-Black uppercase tracking-wider">
+                  <div class="flex items-center justify-between">
+                    <div class="flex items-center cursor-pointer" @click="sortTareas('fecha_fin')">
+                      F. Fin
+                      <span class="ml-1">
+                        <svg v-if="getSortIcon('fecha_fin') === 'asc'" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"></path>
+                        </svg>
+                        <svg v-else-if="getSortIcon('fecha_fin') === 'desc'" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                        </svg>
+                      </span>
+                    </div>
+                    <button @click.stop="toggleFilter('fin')" class="text-black hover:text-gray-700">
+                      <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+                      </svg>
+                    </button>
+                  </div>
+                  <div v-if="activeFilter === 'fin'" class="mt-2 p-2 bg-white shadow rounded border absolute z-10 w-48">
+                    <div class="space-y-1">
+                      <div v-for="(option, index) in dateOptions" :key="index" class="flex items-center">
+                        <input 
+                          type="radio" 
+                          :id="`fin-${index}`" 
+                          :value="option.value" 
+                          v-model="finFilterOption"
+                          @change="applyDateFilter('fin', option.value)"
+                          class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300"
+                        />
+                        <label :for="`fin-${index}`" class="ml-2 block text-sm text-gray-900">
+                          {{ option.label }}
+                        </label>
+                      </div>
+                      <div class="mt-2 pt-2 border-t border-gray-200">
+                        <div class="text-sm font-medium text-gray-700 mb-1">Personalizado:</div>
+                        <div class="space-y-2">
+                          <input
+                            type="date"
+                            v-model="finFilters.startDate"
+                            @change="finFilterOption = 'custom'; applyFilters()"
+                            class="block w-full px-2 py-1 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500"
+                            placeholder="Desde"
+                          />
+                          <input
+                            type="date"
+                            v-model="finFilters.endDate"
+                            @change="finFilterOption = 'custom'; applyFilters()"
+                            class="block w-full px-2 py-1 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500"
+                            placeholder="Hasta"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                    <div class="mt-2 flex justify-end">
+                      <button @click="clearDateFilter('fin')" class="text-xs text-gray-600 hover:text-gray-800">Limpiar</button>
                     </div>
                   </div>
                 </th>
@@ -324,144 +459,6 @@
                     </div>
                   </div>
                 </th>
-                <!-- F. Inicio -->
-                <th scope="col" class="px-4 py-1 text-left text-xs font-medium text-Black uppercase tracking-wider">
-                  <div class="flex items-center justify-between">
-                    <div class="flex items-center cursor-pointer" @click="sortTareas('fecha_inicio')">
-                      F. Inicio
-                      <span class="ml-1">
-                        <svg v-if="getSortIcon('fecha_inicio') === 'asc'" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"></path>
-                        </svg>
-                        <svg v-else-if="getSortIcon('fecha_inicio') === 'desc'" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
-                        </svg>
-                      </span>
-                    </div>
-                    <button @click.stop="toggleFilter('inicio')" class="text-black hover:text-gray-700">
-                      <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
-                      </svg>
-                    </button>
-                  </div>
-                  <div v-if="activeFilter === 'inicio'" class="mt-2 p-2 bg-white shadow rounded border absolute z-10 w-48">
-                    <div class="space-y-1">
-                      <div v-for="(option, index) in dateOptions" :key="index" class="flex items-center">
-                        <input 
-                          type="radio" 
-                          :id="`inicio-${index}`" 
-                          :value="option.value" 
-                          v-model="inicioFilterOption"
-                          @change="applyDateFilter('inicio', option.value)"
-                          class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300"
-                        />
-                        <label :for="`inicio-${index}`" class="ml-2 block text-sm text-gray-900">
-                          {{ option.label }}
-                        </label>
-                      </div>
-                      <div class="mt-2 pt-2 border-t border-gray-200">
-                        <div class="text-sm font-medium text-gray-700 mb-1">Personalizado:</div>
-                        <div class="space-y-2">
-                          <input
-                            type="date"
-                            v-model="inicioFilters.startDate"
-                            @change="inicioFilterOption = 'custom'; applyFilters()"
-                            class="block w-full px-2 py-1 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500"
-                            placeholder="Desde"
-                          />
-                          <input
-                            type="date"
-                            v-model="inicioFilters.endDate"
-                            @change="inicioFilterOption = 'custom'; applyFilters()"
-                            class="block w-full px-2 py-1 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500"
-                            placeholder="Hasta"
-                          />
-                        </div>
-                      </div>
-                    </div>
-                    <div class="mt-2 flex justify-end">
-                      <button @click="clearDateFilter('inicio')" class="text-xs text-gray-600 hover:text-gray-800">Limpiar</button>
-                    </div>
-                  </div>
-                </th>
-                
-                <!-- F. Fin -->
-                <th scope="col" class="px-4 py-1 text-left text-xs font-medium text-Black uppercase tracking-wider">
-                  <div class="flex items-center justify-between">
-                    <div class="flex items-center cursor-pointer" @click="sortTareas('fecha_fin')">
-                      F. Fin
-                      <span class="ml-1">
-                        <svg v-if="getSortIcon('fecha_fin') === 'asc'" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"></path>
-                        </svg>
-                        <svg v-else-if="getSortIcon('fecha_fin') === 'desc'" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
-                        </svg>
-                      </span>
-                    </div>
-                    <button @click.stop="toggleFilter('fin')" class="text-black hover:text-gray-700">
-                      <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
-                      </svg>
-                    </button>
-                  </div>
-                  <div v-if="activeFilter === 'fin'" class="mt-2 p-2 bg-white shadow rounded border absolute z-10 w-48">
-                    <div class="space-y-1">
-                      <div v-for="(option, index) in dateOptions" :key="index" class="flex items-center">
-                        <input 
-                          type="radio" 
-                          :id="`fin-${index}`" 
-                          :value="option.value" 
-                          v-model="finFilterOption"
-                          @change="applyDateFilter('fin', option.value)"
-                          class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300"
-                        />
-                        <label :for="`fin-${index}`" class="ml-2 block text-sm text-gray-900">
-                          {{ option.label }}
-                        </label>
-                      </div>
-                      <div class="mt-2 pt-2 border-t border-gray-200">
-                        <div class="text-sm font-medium text-gray-700 mb-1">Personalizado:</div>
-                        <div class="space-y-2">
-                          <input
-                            type="date"
-                            v-model="finFilters.startDate"
-                            @change="finFilterOption = 'custom'; applyFilters()"
-                            class="block w-full px-2 py-1 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500"
-                            placeholder="Desde"
-                          />
-                          <input
-                            type="date"
-                            v-model="finFilters.endDate"
-                            @change="finFilterOption = 'custom'; applyFilters()"
-                            class="block w-full px-2 py-1 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500"
-                            placeholder="Hasta"
-                          />
-                        </div>
-                      </div>
-                    </div>
-                    <div class="mt-2 flex justify-end">
-                      <button @click="clearDateFilter('fin')" class="text-xs text-gray-600 hover:text-gray-800">Limpiar</button>
-                    </div>
-                  </div>
-                </th>
-                
-                
-                
-                <!-- En la sección de encabezados de la tabla, junto a las otras columnas de fecha -->
-                <th @click="sortTareas('fecha_creacion')" class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer">
-                  <div class="flex items-center">
-                    Fecha Creación
-                    <span v-if="sortColumn === 'fecha_creacion'" class="ml-1">
-                      <svg v-if="sortDirection === 'asc'" class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"></path>
-                      </svg>
-                      <svg v-else class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
-                      </svg>
-                    </span>
-                  </div>
-                </th>
                 
                 <!-- En la sección de filas de la tabla -->
                 <th scope="col" class="px-4 py-1 text-left text-xs font-medium text-Black uppercase tracking-wider">
@@ -537,9 +534,22 @@
                 <td class="px-3 py-2 whitespace-nowrap text-xs text-black">
                   {{ tarea.solicitud }} - {{ getSolicitudTitulo(tarea.solicitud) }}
                 </td>
+                <!-- Fecha de creación -->
+                <td class="px-4 py-2 whitespace-nowrap text-xs text-black">
+                  {{ formatDate(tarea.fecha_creacion) }}
+                </td>
                 <!-- F. Programada -->
                 <td :class="['px-3 py-2 whitespace-nowrap text-xs', getFechaProgramadaClass(tarea.fecha_programada)]">
                   {{ formatDate(tarea.fecha_programada) }}
+                </td>
+                <!-- F. Inicio -->
+                <td class="px-3 py-2 whitespace-nowrap text-xs text-black">
+                  {{ formatDate(tarea.fecha_inicio) }}
+                </td>
+                
+                <!-- F. Fin -->
+                <td class="px-3 py-2 whitespace-nowrap text-xs text-black">
+                  {{ formatDate(tarea.fecha_fin) }}
                 </td>
                 <!-- Celda de Descripción -->
                 <td class="px-3 py-3 text-xs w-64">
@@ -565,20 +575,9 @@
                   {{ getUserName(tarea.usuario_asignado) }}
                 </td>
                            
-                <!-- F. Inicio -->
-                <td class="px-3 py-2 whitespace-nowrap text-xs text-black">
-                  {{ formatDate(tarea.fecha_inicio) }}
-                </td>
                 
-                <!-- F. Fin -->
-                <td class="px-3 py-2 whitespace-nowrap text-xs text-black">
-                  {{ formatDate(tarea.fecha_fin) }}
-                </td>
                 
-                <!-- En la sección de datos de la tabla, dentro del v-for de las filas -->
-                <td class="px-4 py-2 whitespace-nowrap text-xs text-black">
-                  {{ formatDate(tarea.fecha_creacion) }}
-                </td>
+                
                 
                 <!-- En la sección de filas de la tabla -->
                 <td class="px-3 py-2 whitespace-nowrap text-xs">

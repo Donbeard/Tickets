@@ -109,25 +109,39 @@
                   }"
                   @click.stop
                 >
-                  <!-- Campo de búsqueda para empresas -->
-                  <div v-if="column.key === 'empresa'" class="p-2">
-                    <input 
-                      type="text" 
-                      v-model="empresaSearch" 
-                      placeholder="Buscar empresa..." 
-                      class="w-full px-2 py-1 text-xs border rounded"
-                      @input="filterEmpresas"
-                    >
-                    <div class="mt-2 flex justify-end">
-                      <button 
-                        @click="empresaSearch = ''; filterEmpresas()" 
-                        class="text-xs text-gray-600 hover:text-gray-800"
-                      >
-                        Limpiar
-                      </button>
+                  <!-- Contenido para el filtro de empresa -->
+                  <div v-if="column.key === 'clie'" class="py-2 px-3 w-64">
+                    <div class="mb-2">
+                      <input 
+                        type="text" 
+                        v-model="empresaSearchQuery" 
+                        placeholder="Buscar empresa..." 
+                        class="w-full px-2 py-1 text-xs border rounded"
+                      />
+                    </div>
+                    <div class="max-h-60 overflow-y-auto">
+                      <div v-for="empresa in filteredEmpresas" :key="empresa.id" class="flex items-center mb-1">
+                        <input 
+                          type="checkbox" 
+                          :id="`empresa-${empresa.id}`" 
+                          :value="empresa.id" 
+                          v-model="filters.empresa"
+                          @change="handleFilterChange"
+                          class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
+                        />
+                        <label :for="`empresa-${empresa.id}`" class="ml-2 block text-sm text-gray-900">
+                          {{ empresa.nombre }}
+                        </label>
+                      </div>
+                      <div v-if="filteredEmpresas.length === 0" class="text-sm text-gray-500 py-1">
+                        No se encontraron empresas
+                      </div>
+                    </div>
+                    <div class="mt-2 flex justify-between">
+                      <button @click="clearEmpresaFilter" class="text-xs text-gray-600 hover:text-gray-800">Limpiar</button>
+                      <button @click="selectAllEmpresas" class="text-xs text-gray-600 hover:text-gray-800">Seleccionar todo</button>
                     </div>
                   </div>
-                  
                   <div class="max-h-60 overflow-y-auto">
                     <template v-for="option in column.key === 'empresa' ? 
                       filteredEmpresas : 
@@ -157,7 +171,7 @@
           </tr>
         </thead>
         <tbody class="bg-white divide-y divide-gray-200">
-          <template v-for="(solicitud, index) in paginatedSolicitudes" :key="solicitud.id">
+          <template v-for="(solicitud, index) in solicitudes" :key="'sol-' + solicitud.id + '-' + index">
             <!-- Fila principal -->
             <tr :class="getRowClass(index)" class="hover:bg-gray-50 divide-x divide-gray-100">
               <!-- Columna de flecha para expandir tareas -->
@@ -1638,7 +1652,9 @@ data() {
     editingField: null, 
     editingRowId: null, 
     dropdownOpen: {},
-    filters: {},
+    filters: {
+      empresa: [], // Inicializar como array vacío
+    },
     solicitudes: [],
     filteredSolicitudes: [],
     usuariosSoporte: [],
@@ -1674,6 +1690,8 @@ data() {
       fecha_creacion_manual: null
     },
     anexos: [],
+    empresas: [], // Lista de empresas
+    empresaSearchQuery: '', // Búsqueda de empresas
     selectedFile: null,
     showModalDetails: false,
     showModalEdit: false,
@@ -1793,6 +1811,7 @@ data() {
     };
 },
 computed: {
+  
   filteredAndSortedSolicitudes() {
     let result = [...this.allSolicitudes];
 
@@ -1924,16 +1943,35 @@ computed: {
     };
   },
   filteredEmpresas() {
-    if (!this.columnOptions.empresa) return [];
-    if (!this.empresaSearch.trim()) return this.columnOptions.empresa;
+    console.log('Calculando filteredEmpresas, total empresas:', this.empresas?.length || 0);
     
-    const searchTerm = this.empresaSearch.toLowerCase().trim();
-    return this.columnOptions.empresa.filter(empresa => 
-      empresa.nombre.toLowerCase().includes(searchTerm)
-    );
-  }
+    if (!this.empresas || this.empresas.length === 0) {
+      console.log('No hay empresas disponibles');
+      return [];
+    }
+    
+    if (!this.empresaSearchQuery) {
+      console.log('Mostrando todas las empresas');
+      return this.empresas;
+    }
+    
+    const query = this.empresaSearchQuery.toLowerCase();
+    const filtered = this.empresas.filter(empresa => {
+      // Verificar que empresa y empresa.nombre existen
+      if (!empresa || !empresa.nombre) {
+        console.log('Empresa sin nombre:', empresa);
+        return false;
+      }
+      
+      return empresa.nombre.toLowerCase().includes(query);
+    });
+    
+    console.log('Empresas filtradas:', filtered.length);
+    return filtered;
+  },
 },
 created() {
+  this.fetchTerceros();
   const user = JSON.parse(localStorage.getItem('user'));
   const userData = localStorage.getItem('user');
   if (userData) {
@@ -2037,10 +2075,171 @@ beforeUnmount() {
   // Asegurarse de restaurar el scroll cuando el componente se desmonta
 },
 methods: {
+  clearEmpresaFilter() {
+    this.filters.empresa = [];
+    this.empresaSearchQuery = '';
+    this.applyFilters();
+  },
   
+  selectAllEmpresas() {
+    this.filters.empresa = this.filteredEmpresas.map(empresa => empresa.id);
+    this.applyFilters();
+  },
+  handleFilterChange() {
+  console.log('Filtros actuales:', JSON.stringify(this.filters));
+  
+  // Guardar copia original si no existe
+  if (!this.originalSolicitudes || this.originalSolicitudes.length === 0) {
+    console.log('Guardando copia original de solicitudes');
+    this.originalSolicitudes = JSON.parse(JSON.stringify(this.allSolicitudes));
+  }
+  
+  // Aplicar todos los filtros de una vez
+  this.applyAllFilters();
+},
+applyAllFilters() {
+  console.log('Aplicando todos los filtros...');
+  
+  // Comenzar con los datos originales
+  let filtered = [...this.originalSolicitudes];
+  
+  // Aplicar filtro de empresa si está activo
+  if (this.filters.empresa && this.filters.empresa.length > 0) {
+    console.log('Aplicando filtro de empresa:', this.filters.empresa);
+    
+    // Obtener nombres de empresas seleccionadas
+    const selectedCompanyIds = this.filters.empresa;
+    const selectedCompanies = selectedCompanyIds.map(id => 
+      this.empresas.find(e => e.id === id)?.nombre
+    ).filter(Boolean);
+    
+    console.log('Empresas seleccionadas:', selectedCompanies);
+    
+    // Filtrar por nombre de empresa
+    filtered = filtered.filter(solicitud => {
+      const empresaNombre = solicitud.empresa_nombre || solicitud.clie;
+      return selectedCompanies.includes(empresaNombre);
+    });
+    
+    console.log(`Después de filtro empresa: ${filtered.length} solicitudes`);
+  }
+  
+  // Aplicar otros filtros
+  Object.entries(this.filters).forEach(([key, values]) => {
+    if (key === 'empresa' || !values || values.length === 0) return; // Omitir filtro de empresa (ya aplicado)
+    
+    console.log(`Aplicando filtro ${key}:`, values);
+    
+    filtered = filtered.filter(solicitud => {
+      // Manejar diferentes tipos de filtros apropiadamente
+      if (['estado', 'prioridad', 'modulo', 'submodulo', 'accion'].includes(key)) {
+        return values.includes(solicitud[key]);
+      } else if (key === 'usuario_cliente_nombre') {
+        return values.includes(solicitud.usuario_cliente);
+      } else if (key === 'usuario_soporte_nombre') {
+        return values.includes(solicitud.usuario_soporte);
+      } else if (key.includes('fecha')) {
+        // Manejar filtros de fecha
+        const fechaSolicitud = new Date(solicitud[key]);
+        return this.isDateInFilter(fechaSolicitud, values);
+      } else {
+        // Caso por defecto
+        return values.includes(solicitud[key]);
+      }
+    });
+    
+    console.log(`Después de filtro ${key}: ${filtered.length} solicitudes`);
+  });
+  
+  // Aplicar búsqueda si existe
+  if (this.searchQuery) {
+    const searchLower = this.searchQuery.toLowerCase();
+    filtered = filtered.filter(solicitud => 
+      solicitud.titulo?.toLowerCase().includes(searchLower) ||
+      solicitud.descripcion?.toLowerCase().includes(searchLower) ||
+      solicitud.id?.toString().includes(searchLower)
+    );
+    console.log(`Después de búsqueda: ${filtered.length} solicitudes`);
+  }
+  
+  // Actualizar allSolicitudes con los resultados filtrados
+  this.allSolicitudes = filtered;
+  
+  // Resetear a la primera página y aplicar paginación
+  this.currentPage = 1;
+  
+  // CLAVE: Reset solicitudes antes de aplicar paginación
+  this.solicitudes = [];
+  
+  // Forzar actualización completa usando nextTick
+  this.$nextTick(() => {
+    this.applyPagination();
+  });
+  
+  console.log('Filtrado completado. Solicitudes a mostrar:', this.solicitudes.length);
+},
+isDateInFilter(date, filterValues) {
+  if (!date || isNaN(date.getTime())) return false;
+  
+  const today = new Date();
+  
+  return filterValues.some(filterId => {
+    switch (filterId) {
+      case 'today':
+        return date.toDateString() === today.toDateString();
+      case 'week': {
+        const startOfWeek = new Date(today);
+        startOfWeek.setDate(today.getDate() - today.getDay() + (today.getDay() === 0 ? -6 : 1));
+        startOfWeek.setHours(0, 0, 0, 0);
+        const endOfWeek = new Date(startOfWeek);
+        endOfWeek.setDate(startOfWeek.getDate() + 6);
+        endOfWeek.setHours(23, 59, 59, 999);
+        return date >= startOfWeek && date <= endOfWeek;
+      }
+      case 'month': {
+        return date.getMonth() === today.getMonth() && 
+               date.getFullYear() === today.getFullYear();
+      }
+      case 'year': {
+        return date.getFullYear() === today.getFullYear();
+      }
+      case 'past': {
+        const startOfYear = new Date(today.getFullYear(), 0, 1);
+        return date < startOfYear;
+      }
+      default:
+        return false;
+    }
+  });
+},
+
+  // Método auxiliar para filtrar por todos los criterios
+  filterSolicitudByAllCriteria(solicitud) {
+    // Aplicar todos los demás filtros
+    for (const [key, values] of Object.entries(this.filters)) {
+      if (key === 'empresa' || values.length === 0) continue; // Omitir empresa que ya se procesó
+      
+      // Obtener el valor a comparar
+      const solicitudValue = solicitud[key];
+      
+      // Si hay valores seleccionados y el valor de la solicitud no está entre ellos
+      if (values.length > 0 && !values.includes(solicitudValue)) {
+        return false;
+      }
+    }
+    
+    return true;
+  },
+
   async created() {
     await this.fetchSubmodulos();
     console.log('Componente creado - Iniciando carga de datos');
+    try {
+      const response = await apiClient.get('/terceros/');
+      this.empresas = response.data;
+    } catch (error) {
+      console.error('Error al cargar empresas:', error);
+    }
     try {
       this.isLoading = true;
       const token = localStorage.getItem('accessToken');
@@ -2148,26 +2347,30 @@ methods: {
     
     return formattedDate;
   },
-    async fetchTerceros() {
-      try {
-        const token = localStorage.getItem('accessToken');
-        const response = await apiClient.get('/terceros/', {
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        });
-
-        this.tercerosMap = {};
-        response.data.forEach(tercero => {
-          this.tercerosMap[tercero.id] = tercero;
-        });
-
-        console.log('Mapa de terceros creado:', this.tercerosMap); // Debug
-      } catch (error) {
-        console.error('Error en fetchTerceros:', error);
-        throw error;
+  async fetchTerceros() {
+  try {
+    console.log('Cargando terceros...');
+    const token = localStorage.getItem('accessToken');
+    const response = await apiClient.get('/terceros/', {
+      headers: {
+        'Authorization': `Bearer ${token}`
       }
-    },
+    });
+    
+    console.log('Terceros cargados:', response.data);
+    this.empresas = response.data;
+    
+    // Verificar que los datos tienen la estructura esperada
+    if (this.empresas.length > 0) {
+      console.log('Ejemplo de tercero:', this.empresas[0]);
+    }
+  } catch (error) {
+    console.error('Error al cargar terceros:', error);
+    if (error.response) {
+      console.error('Detalles del error:', error.response.data);
+    }
+  }
+},
   getRowClass(index) {
     return index % 2 === 0 ? 'bg-white' : 'bg-gray-100';
   },
@@ -2499,104 +2702,121 @@ async setFechaSistema() {
         return filtered;
       },
       async fetchSolicitudes() {
-  try {
-    console.log('Iniciando fetchSolicitudes()...');
-    const token = localStorage.getItem('accessToken');
-    
-    if (!token) {
-      console.error('No se encontró token de acceso');
-      return;
-    }
-    
-    // 1. Obtener datos de usuario
-    const userStr = localStorage.getItem('user');
-    const user = userStr ? JSON.parse(userStr) : {};
-    console.log('Datos de usuario:', user);
-    
-    // 2. Cargar relación usuario-tercero
-    const usuariosTercerosResponse = await apiClient.get('/usuariosTerceros/');
-    
-    // Crear mapa de relaciones usuario-tercero
-    const usuariosTercerosMap = {};
-    usuariosTercerosResponse.data.forEach(ut => {
-      if (ut.id) {
-        usuariosTercerosMap[ut.id] = {
-          tercero: ut.tercero,
-          usuario: ut.usuario
-        };
-      }
-    });
-    
-    // 3. Encontrar relación específica para usuario actual
-    let usuarioTerceroRelacionId = null;
-    if (user.tipo === 'C') {
-      const relacion = usuariosTercerosResponse.data.find(ut => 
-        ut.usuario && ut.tercero && 
-        ut.usuario.id === user.id
-      );
-      
-      if (relacion) {
-        usuarioTerceroRelacionId = relacion.id;
-        console.log(`Relación usuario-tercero encontrada: ${usuarioTerceroRelacionId}`);
-      } else {
-        console.warn('No se encontró relación usuario-tercero para este usuario');
-      }
-    }
-    
-    // 4. Cargar solicitudes
-    const response = await apiClient.get('/solicitudes/');
-    
-    // 5. Filtrar solicitudes según tipo de usuario
-    let solicitudes = response.data;
-    if (user.tipo === 'C' && usuarioTerceroRelacionId) {
-      solicitudes = solicitudes.filter(s => s.usuario_cliente == usuarioTerceroRelacionId);
-      console.log(`Solicitudes filtradas por relación ID ${usuarioTerceroRelacionId}: ${solicitudes.length}`);
-    }
-    
-    // 6. Procesar cada solicitud (mantener el código original)
-    this.allSolicitudes = solicitudes.map(solicitud => {
-      const usuarioTercero = usuariosTercerosMap[solicitud.usuario_cliente];
-      
-      return {
-        ...solicitud,
-        clie: usuarioTercero ? usuarioTercero.tercero.nombre : 'Sin empresa',
-        usuario_cliente_nombre: usuarioTercero ? 
-          `${usuarioTercero.usuario.first_name || ''} ${usuarioTercero.usuario.last_name || ''}`.trim() || 
-          usuarioTercero.usuario.username : 
-          'Usuario no encontrado',
-        usuario_soporte_nombre: this.getUserFullName(solicitud.usuario_soporte) || 'Sin asignar',
-        submodulo_nombre: this.getSubmoduloName(solicitud.submodulo) || 'Desconocido',
-        accion_nombre: this.getAccionName(solicitud.accion) || 'Desconocida',
-        showTareas: false
-      };
-    });
-    
-    // 7. Ordenar y aplicar paginación (mantener el código original)
-    this.allSolicitudes.sort((a, b) => 
-      new Date(b.fecha_creacion) - new Date(a.fecha_creacion)
-    );
-    
-    // Guardar una copia de las solicitudes originales para la búsqueda
-    this.originalSolicitudes = [...this.allSolicitudes];
-    
-    this.applyPagination();
-    
-    console.log("originalSolicitudes:", this.originalSolicitudes.length);
-    console.log("allSolicitudes:", this.allSolicitudes.length);
-  } catch (error) {
-    console.error("Error al obtener solicitudes:", error);
-  }
-},
+      try {
+        console.log('Iniciando fetchSolicitudes()...');
+        const token = localStorage.getItem('accessToken');
+        
+        if (!token) {
+          console.error('No se encontró token de acceso');
+          return;
+        }
+        
+        // 1. Obtener datos de usuario
+        const userStr = localStorage.getItem('user');
+        const user = userStr ? JSON.parse(userStr) : {};
+        console.log('Datos de usuario:', user);
+        
+        // 2. Cargar relación usuario-tercero
+        const usuariosTercerosResponse = await apiClient.get('/usuariosTerceros/');
+        
+        // Crear mapa de relaciones usuario-tercero
+        const usuariosTercerosMap = {};
+        usuariosTercerosResponse.data.forEach(ut => {
+          if (ut.id) {
+            usuariosTercerosMap[ut.id] = {
+              tercero: ut.tercero,
+              usuario: ut.usuario
+            };
+          }
+        });
+        
+        // 3. Encontrar relación específica para usuario actual
+        let usuarioTerceroRelacionId = null;
+        if (user.tipo === 'C') {
+          const relacion = usuariosTercerosResponse.data.find(ut => 
+            ut.usuario && ut.tercero && 
+            ut.usuario.id === user.id
+          );
+          
+          if (relacion) {
+            usuarioTerceroRelacionId = relacion.id;
+            console.log(`Relación usuario-tercero encontrada: ${usuarioTerceroRelacionId}`);
+          } else {
+            console.warn('No se encontró relación usuario-tercero para este usuario');
+          }
+        }
+        
+        // 4. Cargar solicitudes
+        const response = await apiClient.get('/solicitudes/');
+        
+        // 5. Filtrar solicitudes según tipo de usuario
+        let solicitudes = response.data;
+        if (user.tipo === 'C' && usuarioTerceroRelacionId) {
+          solicitudes = solicitudes.filter(s => s.usuario_cliente == usuarioTerceroRelacionId);
+          console.log(`Solicitudes filtradas por relación ID ${usuarioTerceroRelacionId}: ${solicitudes.length}`);
+        }
+        
+        // 6. Procesar cada solicitud (mantener el código original)
+        this.allSolicitudes = solicitudes.map(solicitud => {
+          const usuarioTercero = usuariosTercerosMap[solicitud.usuario_cliente];
+          
+          return {
+            ...solicitud,
+            clie: usuarioTercero ? usuarioTercero.tercero.nombre : 'Sin empresa',
+            usuario_cliente_nombre: usuarioTercero ? 
+              `${usuarioTercero.usuario.first_name || ''} ${usuarioTercero.usuario.last_name || ''}`.trim() || 
+              usuarioTercero.usuario.username : 
+              'Usuario no encontrado',
+            usuario_soporte_nombre: this.getUserFullName(solicitud.usuario_soporte) || 'Sin asignar',
+            submodulo_nombre: this.getSubmoduloName(solicitud.submodulo) || 'Desconocido',
+            accion_nombre: this.getAccionName(solicitud.accion) || 'Desconocida',
+            showTareas: false
+          };
+        });
+        
+        // 7. Ordenar y aplicar paginación (mantener el código original)
+        this.allSolicitudes.sort((a, b) => 
+          new Date(b.fecha_creacion) - new Date(a.fecha_creacion)
+        );
+        
+        // Después de procesar todas las solicitudes, guardar una copia profunda como originalSolicitudes
+        this.originalSolicitudes = JSON.parse(JSON.stringify(this.allSolicitudes));
+        
+        // Aplicar paginación
+        this.applyPagination();
 
-applyPagination() {
+        console.log("originalSolicitudes:", this.originalSolicitudes.length);
+        console.log("allSolicitudes:", this.allSolicitudes.length);
+      } catch (error) {
+        console.error("Error al obtener solicitudes:", error);
+      }
+    },
+
+    applyPagination() {
   const startIndex = (this.currentPage - 1) * this.pageSize;
   const endIndex = startIndex + this.pageSize;
-  this.solicitudes = this.allSolicitudes.slice(startIndex, endIndex);
-},
-
-prevPage() {
-  if (this.currentPage > 1) {
-    this.currentPage--;
+  console.log(`Aplicando paginación: página ${this.currentPage}, elementos ${startIndex} a ${endIndex}`);
+  
+  // Asegurarse de que estamos trabajando con un array válido
+  if (Array.isArray(this.allSolicitudes)) {
+    // Importante: Primero copia profunda para evitar problemas de referencia
+    const paginatedData = JSON.parse(JSON.stringify(
+      this.allSolicitudes.slice(startIndex, endIndex)
+    ));
+    
+    // Luego asigna a solicitudes
+    this.solicitudes = paginatedData;
+    
+    console.log(`Solicitudes paginadas: ${this.solicitudes.length}`);
+    
+    // Verificar el DOM después de la actualización
+    this.$nextTick(() => {
+      const filas = document.querySelectorAll('table tbody tr');
+      console.log(`Filas en DOM después de paginación: ${filas.length}`);
+    });
+  } else {
+    console.error('allSolicitudes no es un array:', this.allSolicitudes);
+    this.solicitudes = [];
   }
 },
 
@@ -3405,33 +3625,16 @@ calcularDuracion() {
 }),
   // Función con debounce para la búsqueda
   handleSearchInput() {
-    if (!this.searchQuery) {
-      // Si no hay texto de búsqueda, restaurar todas las solicitudes
-      this.allSolicitudes = [...this.originalSolicitudes];
-    } else {
-      // Filtrar por título, asegurando que solicitud.titulo existe
-      const query = this.searchQuery.toLowerCase();
-      this.allSolicitudes = this.originalSolicitudes.filter(solicitud => 
-        solicitud.titulo && solicitud.titulo.toLowerCase().includes(query)
-      );
-    }
-    
-    // Actualizar la paginación después de filtrar
-    this.currentPage = 1;
-    this.applyPagination();
-    
-    // Depuración
-    console.log("Búsqueda:", this.searchQuery);
-    console.log("Solicitudes filtradas:", this.allSolicitudes.length);
-    console.log("Solicitudes mostradas:", this.solicitudes.length);
+    // Aplicar debounce si es necesario
+    clearTimeout(this.debouncedSearchTimeout);
+    this.debouncedSearchTimeout = setTimeout(() => {
+      this.applyAllFilters();
+    }, 300);
   },
   // Función para limpiar la búsqueda
   clearSearch() {
     this.searchQuery = '';
-    this.allSolicitudes = [...this.originalSolicitudes];
-    this.currentPage = 1;
-    this.applyPagination();
-    console.log("Búsqueda limpiada, solicitudes restauradas:", this.allSolicitudes.length);
+    this.applyAllFilters();
   },
   
   // Método para cancelar la edición

@@ -1153,40 +1153,7 @@
     </Transition>
   </Teleport>
 
-  <!-- En la sección de filtros, junto a los otros filtros de fecha -->
-  <div class="mb-4">
-    <button 
-      @click="toggleFilter('creacion')" 
-      class="flex items-center px-3 py-2 text-sm font-medium rounded-md"
-      :class="activeFilter === 'creacion' ? 'bg-indigo-100 text-indigo-700' : 'text-gray-700 hover:bg-gray-100'"
-    >
-      <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
-      </svg>
-      Filtrar por Fecha Creación
-    </button>
-    
-    <div v-if="activeFilter === 'creacion'" class="mt-2 p-3 bg-white rounded-md shadow-md animate__animated animate__fadeIn">
-      <div class="grid grid-cols-2 gap-4">
-        <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">Desde:</label>
-          <input 
-            type="date" 
-            v-model="creacionFilters.startDate"
-            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-          >
-        </div>
-        <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">Hasta:</label>
-          <input 
-            type="date" 
-            v-model="creacionFilters.endDate"
-            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-          >
-        </div>
-      </div>
-    </div>
-  </div>
+
 </template>
 
 <script>
@@ -1777,8 +1744,20 @@ export default {
       return usuario.nombre || usuario.email || usuario.username || `Usuario #${userId}`;
     };
 
-    const toggleFilter = (filterName) => {
-      activeFilter.value = activeFilter.value === filterName ? null : filterName;
+
+    const toggleFilter = (filter) => {
+      if (activeFilter.value === filter) {
+        activeFilter.value = null;
+      } else {
+        activeFilter.value = filter;
+        
+        // Si es el filtro de empresa, cargar las empresas relevantes
+        if (filter === 'empresa') {
+          allEmpresas.value = getUniqueEmpresas();
+          filteredEmpresas.value = [...allEmpresas.value];
+          console.log("Empresas cargadas para el filtro:", filteredEmpresas.value.length);
+        }
+      }
     };
 
     const applyFilters = async () => {
@@ -1853,78 +1832,23 @@ export default {
       
       // Filtros de empresa
       if (empresaFilter.value) {
-        const terceroId = Number(empresaFilter.value);
-        console.log(`Filtrando por tercero ID: ${terceroId}`);
-        
-        // Intentar cargar tareas directamente por tercero
-        try {
-          // Guardar el estado actual de las tareas filtradas
-          const currentFiltered = [...filtered];
+        console.log('Filtrando por empresa:', empresaFilter.value);
+        filtered = filtered.filter(tarea => {
+          // Obtener la solicitud asociada a esta tarea
+          const solicitud = solicitudes.value.find(s => s.id === tarea.solicitud);
+          if (!solicitud) return false;
           
-          // Mostrar un indicador de carga
-          showNotification('Buscando tareas para este tercero...', true);
+          // Obtener el usuario_cliente de la solicitud
+          const usuarioClienteId = solicitud.usuario_cliente;
+          if (!usuarioClienteId) return false;
           
-          // Hacer una solicitud específica al backend para obtener tareas por tercero
-          const response = await apiClient.get(`/usuariosTerceros/${terceroId}/`);
-          const tareasDelTercero = response.data;
+          // Buscar la relación usuarioTercero
+          const relacion = usuariosTerceros.value.find(ut => ut.id === usuarioClienteId);
+          if (!relacion || !relacion.tercero) return false;
           
-          console.log(`Tareas obtenidas para el tercero ${terceroId}:`, tareasDelTercero.length);
-          
-          if (tareasDelTercero.length > 0) {
-            // Filtrar las tareas actuales para incluir solo las que están en la respuesta
-            filtered = currentFiltered.filter(tarea => 
-              tareasDelTercero.some(t => t.id === tarea.id)
-            );
-            
-            console.log('Después de filtro de tercero:', filtered.length, 'tareas');
-          } else {
-            console.log('No se encontraron tareas para este tercero desde el backend');
-            filtered = [];
-          }
-        } catch (error) {
-          console.error('Error al obtener tareas por tercero:', error);
-          
-          // Si el endpoint no existe, intentar un enfoque alternativo
-          console.log('Intentando enfoque alternativo...');
-          
-          // Buscar en todas las propiedades de las tareas y solicitudes
-          const tareasEncontradas = [];
-          
-          // Examinar cada tarea
-          for (const tarea of tareas.value) {
-            // Verificar si la tarea tiene alguna propiedad con el valor del tercero
-            let tareaCoincide = false;
-            for (const [key, value] of Object.entries(tarea)) {
-              if (Number(value) === terceroId) {
-                console.log(`Tarea ${tarea.id} tiene ${key}=${terceroId}`);
-                tareaCoincide = true;
-                break;
-              }
-            }
-            
-            if (tareaCoincide) {
-              tareasEncontradas.push(tarea);
-              continue;
-            }
-            
-            // Si la tarea no coincide directamente, verificar su solicitud
-            const solicitud = solicitudes.value.find(s => s.id === tarea.solicitud);
-            if (solicitud) {
-              for (const [key, value] of Object.entries(solicitud)) {
-                if (Number(value) === terceroId) {
-                  console.log(`Solicitud ${solicitud.id} de la tarea ${tarea.id} tiene ${key}=${terceroId}`);
-                  tareasEncontradas.push(tarea);
-                  break;
-                }
-              }
-            }
-          }
-          
-          console.log(`Se encontraron ${tareasEncontradas.length} tareas relacionadas con el tercero ${terceroId}`);
-          filtered = filtered.filter(tarea => 
-            tareasEncontradas.some(t => t.id === tarea.id)
-          );
-        }
+          // Verificar si el tercero coincide con la empresa seleccionada
+          return relacion.tercero.id === empresaFilter.value;
+        });
       }
       
       // Filtros de fecha programada
@@ -2397,6 +2321,7 @@ export default {
       applyFilters();
     };
     
+    
     // Función para aplicar filtros de fecha predefinidos
     const applyDateFilter = (type, option) => {
       console.log(`Aplicando filtro de fecha para ${type}, opción: ${option}`);
@@ -2773,27 +2698,40 @@ export default {
     const empresaSearchQuery = ref('');
     const empresaFilters = ref([]);
 
-    // Función para obtener todas las empresas únicas (corregida)
+    // Reemplazar o modificar la función getUniqueEmpresas
     const getUniqueEmpresas = () => {
-      // Obtener IDs únicos de empresas a través de las solicitudes
+      console.log("Obteniendo empresas únicas para el filtro");
+      
+      // Conjunto para almacenar IDs únicos de empresas
       const empresasIds = new Set();
       
-      // Para cada tarea, buscar su solicitud y agregar la empresa
+      // Para cada tarea, encontrar su empresa relacionada
       tareas.value.forEach(tarea => {
-        if (tarea.solicitud) {
-          const solicitud = solicitudes.value.find(s => s.id === tarea.solicitud);
-          if (solicitud && solicitud.empresa) {
-            empresasIds.add(Number(solicitud.empresa));
-          }
+        // Obtener la solicitud asociada
+        const solicitud = solicitudes.value.find(s => s.id === tarea.solicitud);
+        if (!solicitud || !solicitud.usuario_cliente) return;
+        
+        // Obtener la relación usuarioTercero
+        const relacion = usuariosTerceros.value.find(ut => ut.id === solicitud.usuario_cliente);
+        if (!relacion || !relacion.tercero) return;
+        
+        // Añadir el ID de la empresa al conjunto
+        if (relacion.tercero && relacion.tercero.id) {
+          empresasIds.add(relacion.tercero.id);
         }
       });
       
-      // Filtrar las empresas por los IDs encontrados
-      return Array.from(empresasIds).map(id => {
-        // Buscar la empresa en allEmpresas
-        const empresa = allEmpresas.value.find(e => e.id === id);
-        return empresa || { id, nombre: `Empresa #${id}` };
-      }).sort((a, b) => a.nombre.localeCompare(b.nombre));
+      console.log('Empresas únicas encontradas:', empresasIds.size);
+      
+      // Convertir el conjunto a un array de objetos empresa
+      const uniqueEmpresas = Array.from(empresasIds)
+        .map(id => {
+          const empresa = terceros.value.find(t => t.id === id);
+          return empresa || { id, nombre: `Empresa #${id}` };
+        })
+        .sort((a, b) => a.nombre.localeCompare(b.nombre));
+      
+      return uniqueEmpresas;
     };
 
     // Función para filtrar empresas basado en la búsqueda

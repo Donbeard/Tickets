@@ -1025,7 +1025,7 @@
                 </select>
               </div>
             <!-- Añadir dentro del modal de edición, después del selector de usuario de soporte -->
-            <div v-if="editableSolicitud.estado === 6" class="flex items-center mt-4 animate__animated animate__fadeIn">
+            <div class="flex items-center mt-4 animate__animated animate__fadeIn">
               <label for="fecha-asignacion" class="w-1/4 text-sm font-medium text-gray-700">Fecha Asignación:</label>
               <div class="w-3/4">
                 <DatePicker

@@ -134,7 +134,7 @@
                         </label>
                       </div>
                       <div v-if="filteredEmpresas.length === 0" class="text-sm text-gray-500 py-1">
-                        No se encontraron empresas
+                        No se encontraron empresas con solicitudes
                       </div>
                     </div>
                     <div class="mt-2 flex justify-between">
@@ -1024,7 +1024,38 @@
                   </option>
                 </select>
               </div>
-            </template>
+            <!-- Añadir dentro del modal de edición, después del selector de usuario de soporte -->
+            <div v-if="editableSolicitud.estado === 6" class="flex items-center mt-4 animate__animated animate__fadeIn">
+              <label for="fecha-asignacion" class="w-1/4 text-sm font-medium text-gray-700">Fecha Asignación:</label>
+              <div class="w-3/4">
+                <DatePicker
+                  v-model="fechaAsignacionManual"
+                  :model-config="{ type: 'string', mask: 'YYYY-MM-DDTHH:mm:00' }"
+                  :masks="{ input: 'DD/MM/YYYY HH:mm' }"
+                  :is-24hr="true"
+                  mode="dateTime"
+                  class="w-full"
+                  :popover="{ 
+                    visibility: 'click', 
+                    placement: 'auto', 
+                    isInteractive: true, 
+                    modifiers: [{ name: 'preventOverflow', options: { padding: 8 } }],
+                    positionFixed: true
+                  }"
+                >
+                  <template v-slot="{ inputValue, inputEvents }">
+                    <input
+                      id="fecha-asignacion"
+                      class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 text-sm"
+                      :value="inputValue"
+                      v-on="inputEvents"
+                      placeholder="Opcional: Seleccione fecha y hora de asignación"
+                    />
+                  </template>
+                </DatePicker>
+                <p class="text-xs text-gray-500 mt-1">Si no selecciona fecha, se usará la fecha actual al guardar.</p>
+              </div>
+            </div>
 
             <!-- Agregar dentro del modal de edición, justo después del selector de estado -->
             <div v-if="editableSolicitud.estado === 6 && originalEstado !== 6" class="flex items-center mt-4 animate__animated animate__fadeIn">
@@ -1040,7 +1071,7 @@
                 <p class="text-xs text-gray-500 mt-1">Esta tarea se creará automáticamente al guardar la solicitud.</p>
               </div>
             </div>
-
+          
             <!-- Fecha Programada para la tarea -->
             <div v-if="editableSolicitud.estado === 6 && originalEstado !== 6" class="flex items-center mt-4 animate__animated animate__fadeIn">
               <label for="tarea-fecha-programada" class="w-1/4 text-sm font-medium text-gray-700">Fecha Programada:</label>
@@ -1073,6 +1104,9 @@
                 <p class="text-xs text-gray-500 mt-1">Fecha y hora para programar la ejecución de la tarea.</p>
               </div>
             </div>
+          
+            
+          </template>
           </div>
         </div>
 
@@ -1811,6 +1845,7 @@ data() {
     nuevaTareaFechaProgramada: null,
     empresaActual: '',
     originalSolicitudes: [],
+    fechaAsignacionManual: null,
     };
 },
 computed: {
@@ -2032,6 +2067,34 @@ computed: {
     console.log('Empresas filtradas:', filtered.length);
     return filtered;
   },
+  empresasConSolicitudes() {
+    // Si no hay solicitudes originales, devolver array vacío
+    if (!this.originalSolicitudes || !Array.isArray(this.originalSolicitudes)) {
+      return [];
+    }
+    
+    // Obtener un conjunto único de IDs o nombres de empresas que aparecen en solicitudes
+    const empresasUnicas = new Set();
+    const nombresEmpresas = new Map(); // Para mapear nombres a IDs
+    
+    this.originalSolicitudes.forEach(solicitud => {
+      const empresaNombre = solicitud.empresa_nombre || solicitud.clie;
+      if (empresaNombre) {
+        // Buscar la empresa en la lista completa
+        const empresa = this.empresas.find(e => e.nombre === empresaNombre);
+        if (empresa) {
+          empresasUnicas.add(empresa.id);
+          nombresEmpresas.set(empresa.id, empresaNombre);
+        }
+      }
+    });
+    
+    // Convertir el conjunto a un array de objetos empresa
+    return Array.from(empresasUnicas).map(id => ({
+      id: id,
+      nombre: nombresEmpresas.get(id) || `Empresa ${id}` // Nombre de respaldo si no se encuentra
+    })).sort((a, b) => a.nombre.localeCompare(b.nombre)); // Ordenar alfabéticamente
+  },
 },
 created() {
   this.fetchTerceros();
@@ -2145,8 +2208,9 @@ methods: {
   },
   
   selectAllEmpresas() {
-    this.filters.empresa = this.filteredEmpresas.map(empresa => empresa.id);
-    this.applyFilters();
+    // Usar empresasConSolicitudes en lugar de todas las empresas
+    this.filters.empresa = this.empresasConSolicitudes.map(empresa => empresa.id);
+    this.handleFilterChange();
   },
   handleFilterChange() {
     console.log('Filtros cambiados:', JSON.stringify(this.filters));
@@ -2927,6 +2991,7 @@ isImage(anexo) {
   closeEditModal() {
     this.showModalEdit = false;
     this.currentSolicitudId = null;
+    this.fechaAsignacionManual = null; // Limpiamos la fecha manual
     this.editableSolicitud = {
       usuario_soporte: null,
       fecha_asignacion: "", 
@@ -3121,8 +3186,9 @@ isImage(anexo) {
   
   // Actualizar fecha de asignación solo cuando cambia de sin asignar (5) a asignado (6)
   if (this.originalEstado === 5 && this.editableSolicitud.estado === 6) {
-    this.editableSolicitud.fecha_asignacion = this.formatearFechaHoraActual();
-    console.log('Fecha de asignación actualizada:', this.editableSolicitud.fecha_asignacion);
+    // No asignamos automáticamente la fecha aquí, lo haremos en updateSolicitud
+    // para permitir que la fecha manual tenga prioridad
+    console.log('Estado cambiado a Asignado - se asignará fecha al guardar');
   }
   
   // Actualizar fecha de finalización cuando el estado es terminado (7) o cancelado (8)
@@ -3144,14 +3210,17 @@ async updateSolicitud() {
     
     // Guardar el estado y soporte anteriores para comparar después
     const estadoAnterior = this.originalEstado;
-
     
-    // Lógica para fecha de asignación (verificación adicional)
+    // Lógica para fecha de asignación (con soporte para fecha manual)
     if (this.originalEstado === 5 && this.editableSolicitud.estado === 6) {
-      // Doble verificación de fecha de asignación
-      if (!solicitudToUpdate.fecha_asignacion) {
+      if (this.fechaAsignacionManual) {
+        // Usar la fecha manual seleccionada por el usuario
+        solicitudToUpdate.fecha_asignacion = this.fechaAsignacionManual;
+        console.log('Aplicando fecha de asignación manual:', solicitudToUpdate.fecha_asignacion);
+      } else {
+        // Usar la fecha actual como antes si no hay selección manual
         solicitudToUpdate.fecha_asignacion = this.formatearFechaHoraActual();
-        console.log('Aplicando fecha de asignación:', solicitudToUpdate.fecha_asignacion);
+        console.log('Aplicando fecha de asignación automática:', solicitudToUpdate.fecha_asignacion);
       }
     }
     

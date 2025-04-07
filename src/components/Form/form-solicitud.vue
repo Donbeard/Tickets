@@ -86,7 +86,7 @@
                   </span>
                 </span>
                 <!-- Solo mostrar el botón de filtro si NO es ID, título o acciones -->
-                <div v-if="!['id', 'titulo', 'version_error', 'acciones', 'usuario_cliente_nombre'].includes(column.key)" class="dropdown-container">
+                <div v-if="!['id', 'titulo', 'version_error', 'acciones', 'usuario_cliente_nombre', 'orden'].includes(column.key)" class="dropdown-container">
                   <button 
                     @click="(event) => toggleDropdown(column.key, event)"
                     class="ml-1 p-1 hover:bg-gray-100 rounded-md"
@@ -2245,28 +2245,27 @@ methods: {
     
     // Aplicar otros filtros
     Object.entries(this.filters).forEach(([key, values]) => {
-      if (key === 'empresa' || !values || values.length === 0) return; // Omitir filtro de empresa (ya aplicado)
+      if (key === 'empresa' || !values || values.length === 0) return;
       
       console.log(`Aplicando filtro ${key}:`, values);
       
       filtered = filtered.filter(solicitud => {
-        // Manejar diferentes tipos de filtros apropiadamente
         if (['estado', 'prioridad', 'modulo', 'submodulo', 'accion'].includes(key)) {
           return values.includes(solicitud[key]);
         } else if (key === 'usuario_cliente_nombre') {
           return values.includes(solicitud.usuario_cliente);
         } else if (key === 'usuario_soporte_nombre') {
+          // CORREGIDO: Compara el ID del usuario con los valores filtrados
+          // Ya que guardamos IDs en el filtro, debemos comparar con solicitud.usuario_soporte
           return values.includes(solicitud.usuario_soporte);
         } else if (key.includes('fecha')) {
-          // Manejar filtros de fecha
           const fechaSolicitud = new Date(solicitud[key]);
           return this.isDateInFilter(fechaSolicitud, values);
         } else {
-          // Caso por defecto
           return values.includes(solicitud[key]);
         }
       });
-      
+        
       console.log(`Después de filtro ${key}: ${filtered.length} solicitudes`);
     });
     
@@ -2536,6 +2535,12 @@ getSubmoduloNombre(submoduloId) {
     
     return submodulo.nombre;
   },
+  startEditing(rowId, field) {
+      if (this.userType === 'S' || this.userType === 'A') {
+        this.editingRowId = rowId;
+        this.editingField = field;
+      }
+    },
   
   // Asegurarse que los submódulos estén cargados
   async fetchSubmodulos() {
@@ -2689,19 +2694,49 @@ async setFechaSistema() {
     // Toggle del dropdown actual
     this.dropdownOpen[columnKey] = !this.dropdownOpen[columnKey];
 
+    // Si acabamos de abrir, actualizar opciones y posición
     if (this.dropdownOpen[columnKey]) {
-      const rect = event.target.getBoundingClientRect();
-      this.dropdownPosition = {
-        x: rect.left,
-        y: rect.bottom + window.scrollY
-      };
+      // Actualizar opciones si es necesario
+      if (!this.columnOptions[columnKey] || this.columnOptions[columnKey].length === 0) {
+        console.log(`Regenerando opciones para ${columnKey}`);
+        this.columnOptions[columnKey] = this.getColumnOptions(columnKey);
+      }
+      
+      // Establecer la posición del dropdown DEBAJO de la columna
+      if (event && event.target) {
+        const rect = event.target.getBoundingClientRect();
+        this.dropdownPosition = {
+          x: rect.left,
+          y: rect.bottom + window.scrollY
+        };
+      }
     }
   },
   getColumnOptions(columnKey) {
-    if (this.columnOptions[columnKey]) {
-      return this.columnOptions[columnKey];
+    console.log(`Generando opciones para columna: ${columnKey}`);
+    
+    if (columnKey === 'usuario_soporte_nombre') {
+      // Extraer usuarios de soporte únicos de las solicitudes
+      const usuariosSoporteUnicos = [...new Set(
+        this.originalSolicitudes
+          .filter(s => s.usuario_soporte)
+          .map(s => s.usuario_soporte)
+      )];
+      
+      console.log('IDs de usuarios de soporte únicos:', usuariosSoporteUnicos);
+      
+      // Convertir IDs a objetos con id y nombre
+      const options = usuariosSoporteUnicos.map(id => {
+        const nombre = this.usuariosSoporteMap[id] || `Usuario ${id}`;
+        return { id, nombre };
+      });
+      
+      console.log('Opciones generadas para usuario_soporte_nombre:', options);
+      return options;
     }
-    return [];
+    
+    // Resto de la lógica para otras columnas
+    return this.columnOptions[columnKey] || [];
   },
   sortTable(columnKey) {
     if (this.sortBy === columnKey) {

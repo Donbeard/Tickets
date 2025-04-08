@@ -325,6 +325,20 @@
                     </div>
                   </div>
                 </th>
+                <!-- Duración -->
+                <th scope="col" class="px-4 py-1 text-left text-xs font-medium text-Black uppercase tracking-wider cursor-pointer" @click="sortTareas('duracion')">
+                  <div class="flex items-center">
+                    Duración
+                    <span class="ml-1">
+                      <svg v-if="getSortIcon('duracion') === 'asc'" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"></path>
+                      </svg>
+                      <svg v-else-if="getSortIcon('duracion') === 'desc'" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                      </svg>
+                    </span>
+                  </div>
+                </th>
                 <!-- Columna de Descripción -->
                 <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-black uppercase tracking-wider w-64">
                   <div class="flex items-center justify-between">
@@ -550,6 +564,10 @@
                 <!-- F. Fin -->
                 <td class="px-3 py-2 whitespace-nowrap text-xs text-black">
                   {{ formatDate(tarea.fecha_fin) }}
+                </td>
+                <!-- Duración -->
+                <td class="px-3 py-2 whitespace-nowrap text-xs text-black">
+                  {{ tarea.duracion }}
                 </td>
                 <!-- Celda de Descripción -->
                 <td class="px-3 py-3 text-xs w-64">

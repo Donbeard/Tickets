@@ -79,7 +79,8 @@
               class="px-1 py-1 text-left text-xs text-black tracking-wider cursor-pointer select-none relative"
             >
               <div class="flex items-center justify-between">
-                <span @click="sortTable(column.key)">
+                <!-- Asegurarse de que el evento click funcione correctamente -->
+                <span @click.stop="sortTable(column.key)" class="cursor-pointer flex items-center">
                   {{ column.label }}
                   <span v-if="sortBy === column.key" class="ml-1">
                     {{ sortOrder === 'asc' ? '▲' : '▼' }}
@@ -2097,6 +2098,8 @@ computed: {
   },
 },
 created() {
+  this.sortBy = 'fecha_creacion';
+  this.sortOrder = 'desc';
   this.fetchTerceros();
   const user = JSON.parse(localStorage.getItem('user'));
   const userData = localStorage.getItem('user');
@@ -2152,7 +2155,12 @@ mounted() {
   this.fetchPrioridades();
   this.fetchSubmodulos();
   this.sortOrder = 'desc';
-  
+  if (!this.sortBy) {
+      this.sortBy = 'fecha_creacion';
+      this.sortOrder = 'desc';
+    }
+    this.applyAllFilters(); // Esto aplicará el ordenamiento también
+
   // Cargar datos del usuario incluyendo el tercero seleccionado
   const userData = JSON.parse(localStorage.getItem('user') || '{}');
   this.terceroId = userData.terceroId || null;
@@ -2283,18 +2291,13 @@ methods: {
     // Actualizar allSolicitudes con los resultados filtrados
     this.allSolicitudes = filtered;
     
-    // Resetear a la primera página y aplicar paginación
+    // Aplicar ordenamiento a los datos filtrados
+    this.applySort();
+    
+    // Resetear a la primera página
     this.currentPage = 1;
     
-    // CLAVE: Reset solicitudes antes de aplicar paginación
-    this.solicitudes = [];
-    
-    // Forzar actualización completa usando nextTick
-    this.$nextTick(() => {
-      this.applyPagination();
-    });
-    
-    console.log('Filtrado completado. Solicitudes a mostrar:', this.solicitudes.length);
+    this.applyPagination();
   },
 isDateInFilter(date, filterValues) {
   if (!date || isNaN(date.getTime())) return false;
@@ -2504,6 +2507,19 @@ async fetchEstados() {
   try {
     const response = await apiClient.get('/estados/');
     this.estados = response.data;
+    
+    // Inicializar el filtro de estado con todos menos "terminadas"
+    // Asumo que el estado "terminadas" tiene ID 7 o 8 (verificar cuál es el correcto)
+    const estadoTerminadas = 7; // Ajustar este valor al ID correcto de "terminadas"
+    
+    // Seleccionar todos los estados excepto "terminadas"
+    this.filters.estado = this.estados
+      .filter(estado => estado.id !== estadoTerminadas)
+      .map(estado => estado.id);
+    
+    // Aplicar los filtros iniciales
+    this.applyAllFilters();
+    
   } catch (error) {
     console.error('Error al obtener estados:', error);
   }
@@ -2738,33 +2754,96 @@ async setFechaSistema() {
     // Resto de la lógica para otras columnas
     return this.columnOptions[columnKey] || [];
   },
-  sortTable(columnKey) {
-    if (this.sortBy === columnKey) {
+  sortTable(column) {
+    console.log(`Ordenando por columna: ${column}, estado actual: ${this.sortBy} ${this.sortOrder}`);
+    
+    // Lógica de toggle simple
+    if (this.sortBy === column) {
       this.sortOrder = this.sortOrder === 'asc' ? 'desc' : 'asc';
     } else {
-      this.sortBy = columnKey;
-      this.sortOrder = 'desc';
+      this.sortBy = column;
+      this.sortOrder = 'asc';
     }
     
-    // Ordenar allSolicitudes
-    this.allSolicitudes.sort((a, b) => {
-      if (columnKey === 'fecha_creacion') {
-        return this.sortOrder === 'desc'
-          ? new Date(b[columnKey]) - new Date(a[columnKey])
-          : new Date(a[columnKey]) - new Date(b[columnKey]);
-      }
-
-      const valueA = a[columnKey]?.toString().toLowerCase() ?? '';
-      const valueB = b[columnKey]?.toString().toLowerCase() ?? '';
+    console.log(`Nuevo orden: ${this.sortBy} ${this.sortOrder}`);
+    
+    // Clonar array para evitar mutaciones inesperadas
+    const solicitudesOrdenadas = [...this.solicitudes];
+    
+    // Ordenar el array de forma simple y directa
+    solicitudesOrdenadas.sort((a, b) => {
+      let valorA = a[this.sortBy];
+      let valorB = b[this.sortBy];
       
-      return this.sortOrder === 'desc'
-        ? valueB.localeCompare(valueA)
-        : valueA.localeCompare(valueB);
+      // Manejo especial para fechas
+      if (this.sortBy.includes('fecha')) {
+        valorA = valorA ? new Date(valorA).getTime() : 0;
+        valorB = valorB ? new Date(valorB).getTime() : 0;
+      } 
+      // Manejo para valores numéricos
+      else if (['id', 'orden'].includes(this.sortBy)) {
+        valorA = Number(valorA) || 0;
+        valorB = Number(valorB) || 0;
+      }
+      // Manejo para strings y otros valores
+      else {
+        valorA = String(valorA || '').toLowerCase();
+        valorB = String(valorB || '').toLowerCase();
+      }
+      
+      // Dirección de ordenamiento
+      const direccion = this.sortOrder === 'asc' ? 1 : -1;
+      
+      // Comparación simple
+      if (valorA < valorB) return -1 * direccion;
+      if (valorA > valorB) return 1 * direccion;
+      return 0;
     });
-
-    // Aplicar paginación después de ordenar
-    this.applyPagination();
+    
+    // Asignar directamente al array de solicitudes
+    this.solicitudes = solicitudesOrdenadas;
+    
+    console.log(`Ordenamiento completado. Primera solicitud:`, 
+      this.solicitudes.length > 0 ? {
+        id: this.solicitudes[0].id,
+        fecha: this.solicitudes[0].fecha_creacion
+      } : 'No hay solicitudes');
   },
+  applySort() {
+    if (!this.sortBy) return;
+    
+    console.log(`Aplicando ordenamiento: ${this.sortBy} ${this.sortOrder}`);
+    
+    // Ordenar array actual (ya filtrado)
+    this.allSolicitudes.sort((a, b) => {
+      let valueA = a[this.sortBy];
+      let valueB = b[this.sortBy];
+      
+      // Para fechas
+      if (this.sortBy.includes('fecha')) {
+        valueA = valueA ? new Date(valueA).getTime() : 0;
+        valueB = valueB ? new Date(valueB).getTime() : 0;
+      } 
+      // Para valores numéricos
+      else if (['id', 'orden'].includes(this.sortBy)) {
+        valueA = isNaN(Number(valueA)) ? 0 : Number(valueA);
+        valueB = isNaN(Number(valueB)) ? 0 : Number(valueB);
+      }
+      // Para strings
+      else {
+        valueA = valueA ? String(valueA).toLowerCase() : '';
+        valueB = valueB ? String(valueB).toLowerCase() : '';
+      }
+      
+      // Aplicar dirección de ordenamiento
+      if (this.sortOrder === 'asc') {
+        return valueA > valueB ? 1 : -1;
+      } else {
+        return valueA < valueB ? 1 : -1;
+      }
+    });
+  },
+
   filterEmpresas() {
     if (!this.empresaSearch) {
       // Mostrar todas las empresas disponibles

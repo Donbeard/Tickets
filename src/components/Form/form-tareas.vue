@@ -131,7 +131,7 @@
                   </div>
                 </th>
                 <!-- Fecha Creacion -->
-                <th @click="sortTareas('fecha_creacion')" class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer">
+                <th @click="sortTareas('fecha_creacion')" class="px-4 py-2 text-left text-xs font-medium text-Black uppercase tracking-wider cursor-pointer">
                   <div class="flex items-center">
                     Fecha Creación
                     <span v-if="sortColumn === 'fecha_creacion'" class="ml-1">
@@ -439,7 +439,12 @@
                       </svg>
                     </button>
                   </div>
-                  <div v-if="activeFilter === 'usuario_asignado'" class="mt-2 p-2 bg-white shadow rounded border absolute z-10 w-64" @click.stop>
+                  <div 
+                    v-if="activeFilter === 'usuario_asignado'" 
+                    class="mt-2 p-2 bg-white shadow-lg rounded border absolute z-10 w-64" 
+                    style="max-height: 400px; right: 0;"
+                    @click.stop
+                  >
                     <div class="mb-2">
                       <input 
                         type="text" 
@@ -449,7 +454,7 @@
                         class="w-full px-2 py-1 text-xs border rounded"
                       >
                     </div>
-                    <div class="max-h-60 overflow-y-auto">
+                    <div class="overflow-y-auto" style="max-height: 280px;">
                       <div v-for="usuario in filteredUsuariosAsignados" :key="usuario.id" class="flex items-center mb-1">
                         <input 
                           type="checkbox" 
@@ -459,7 +464,7 @@
                           @change="applyFilters"
                           class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
                         />
-                        <label :for="`usuario-asignado-${usuario.id}`" class="ml-2 block text-sm text-gray-900">
+                        <label :for="`usuario-asignado-${usuario.id}`" class="ml-2 block text-sm text-gray-900 truncate">
                           {{ usuario.nombre || usuario.email || `Usuario #${usuario.id}` }}
                         </label>
                       </div>
@@ -592,11 +597,6 @@
                 <td class="px-3 py-2 whitespace-nowrap text-xs text-black">
                   {{ getUserName(tarea.usuario_asignado) }}
                 </td>
-                           
-                
-                
-                
-                
                 <!-- En la sección de filas de la tabla -->
                 <td class="px-3 py-2 whitespace-nowrap text-xs">
                   <span :class="['px-2 py-0.5 rounded-full text-xs font-medium', getTipoClass(tarea.tipo)]">
@@ -784,7 +784,17 @@
                     Solicitud:
                   </label>
                   <div class="block w-3/4 px-3 py-2 bg-gray-100 border border-gray-300 rounded-lg text-sm">
-                    {{ currentTarea.solicitud }}
+                    {{ currentTarea.solicitud }} - {{ getSolicitudTitle(currentTarea.solicitud) }}
+                  </div>
+                </div>
+
+                <!-- Descripción de la Solicitud (solo lectura) -->
+                <div class="flex items-center mt-2">
+                  <label class="block text-sm font-medium text-gray-700 w-1/4">
+                    Desc. Solicitud:
+                  </label>
+                  <div class="block w-3/4 px-3 py-2 bg-gray-100 border border-gray-300 rounded-lg text-sm max-h-20 overflow-y-auto">
+                    {{ getSolicitudDescription(currentTarea.solicitud) || 'Sin descripción' }}
                   </div>
                 </div>
 
@@ -1082,6 +1092,25 @@
                     </select>
                   </div>
                 </div>
+
+                <!-- Después del campo de tipo y cita, agregar campo de prioridad -->
+                <div class="flex items-center mt-4">
+                  <label for="prioridad" class="block text-sm font-medium text-gray-700 w-1/4">
+                    Prioridad:
+                  </label>
+                  <select
+                    id="prioridad"
+                    v-model="currentTarea.prioridad"
+                    class="block w-3/4 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 text-sm"
+                  >
+                    <option value="" disabled>Seleccione prioridad</option>
+                    <option v-for="prioridad in prioridades" 
+                            :key="prioridad.id" 
+                            :value="prioridad.id">
+                      {{ prioridad.nombre }}
+                    </option>
+                  </select>
+                </div>
               </div>
 
               <div v-if="errorMessage" class="mt-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
@@ -1201,6 +1230,7 @@ export default {
     const errorMessage = ref('');
     const showModalCreate = ref(false);
     const showModalEdit = ref(false);
+    
     // Filtros
     const dateFilters = ref({
       startDate: '',
@@ -1227,9 +1257,18 @@ export default {
       usuario_asignado: '',
       usuario_reasignado: '',
       tipo: 'I',
-      cita: 'N' // Valor por defecto: No tiene cita
+      cita: 'N', // Valor por defecto: No tiene cita
+      prioridad: '' // Nuevo campo para la prioridad de la solicitud
     });
-
+    const prioridades = ref([]);
+    const fetchPrioridades = async () => {
+      try {
+        const response = await apiClient.get('/prioridades/');
+        prioridades.value = response.data;
+      } catch (error) {
+        console.error('Error al obtener prioridades:', error);
+      }
+    };
     // Filtros adicionales
     const inicioFilters = ref({
       startDate: '',
@@ -1282,13 +1321,14 @@ export default {
       }
     };
     
+    // Solo modificar fetchUsuarios para inicializar el filtro
     const fetchUsuarios = async () => {
       try {
+        console.log('Iniciando carga de usuarios...');
         const response = await apiClient.get('/usuarios/');
         
-        // Procesar los usuarios para asegurar que todos tengan un nombre válido
+        // Procesar usuarios
         usuarios.value = response.data.map(usuario => {
-          // Si el usuario no tiene nombre o es vacío, usar el correo o un valor por defecto
           if (!usuario.nombre || usuario.nombre.trim() === '') {
             return {
               ...usuario,
@@ -1299,8 +1339,29 @@ export default {
         });
         
         console.log('Usuarios cargados:', usuarios.value.length);
+        
+        // Inicializar lista filtrada
+        filteredUsuariosAsignados.value = [...usuarios.value];
+        console.log('Lista filtrada inicializada');
+        
+        // Obtener usuario actual con logs
+        console.log('Obteniendo usuario logueado para filtro inicial');
+        const usuarioLogueadoId = getUserLogueado();
+        console.log('ID de usuario logueado:', usuarioLogueadoId);
+        
+        if (usuarioLogueadoId) {
+          console.log('Inicializando filtro con usuario:', usuarioLogueadoId);
+          usuarioAsignadoFilters.value = [usuarioLogueadoId];
+          console.log('Filtro inicializado:', usuarioAsignadoFilters.value);
+          
+          // Aplicar filtros para actualizar la vista
+          console.log('Aplicando filtros iniciales');
+          applyFilters();
+        } else {
+          console.log('No se encontró usuario para filtro inicial');
+        }
       } catch (error) {
-        showNotification('Error al obtener usuarios:', error);
+        console.error('Error al cargar usuarios:', error);
       }
     };
     
@@ -1433,6 +1494,30 @@ export default {
         
         console.log('Respuesta del servidor:', response.data);
         
+        // Guardar claramente la información de la solicitud
+        const solicitudId = response.data.solicitud;
+        const prioridadId = currentTarea.value.prioridad;
+
+        console.log('Actualizando solicitud:', solicitudId, 'con prioridad:', prioridadId);
+
+        // Actualizar prioridad ANTES de limpiar el formulario y cerrar el modal
+        if (solicitudId && prioridadId) {
+          try {
+            const respuestaPrioridad = await apiClient.patch(`/solicitudes/${solicitudId}/`, 
+              { prioridad: prioridadId },
+              {
+                headers: {
+                  'Authorization': `Bearer ${token}`,
+                  'Content-Type': 'application/json'
+                }
+              }
+            );
+            console.log('Prioridad actualizada:', respuestaPrioridad.data);
+          } catch (errorPrioridad) {
+            console.error('Error al actualizar prioridad:', errorPrioridad);
+          }
+        }
+
         // Cerrar el modal y limpiar el formulario
         showModalCreate.value = false;
         currentTarea.value = { solicitud: '', tipo: 'I', cita: 'N' };
@@ -1446,6 +1531,16 @@ export default {
         
         // Recargar las tareas para actualizar la lista
         await fetchTareas();
+        
+        // Actualizar prioridad con las variables guardadas
+        await actualizarPrioridadSolicitud(solicitudId, prioridadId);
+        
+        // Guardar valores para actualización
+        const estadoId = tareaData.estado;
+        const usuarioId = tareaData.usuario_asignado;
+
+        // Actualizar estado y usuario en la solicitud
+        await actualizarEstadoYUsuarioSolicitud(solicitudId, estadoId, usuarioId);
         
       } catch (error) {
         showNotification('Error al crear tarea:', error);
@@ -1538,6 +1633,7 @@ export default {
     // Modificar el método updateTarea para manejar la reasignación
     const updateTarea = async () => {
       try {
+        errorMessage.value = '';
         // Validar campos requeridos
         if (!currentTarea.value.descripcion?.trim()) {
           errorMessage.value = 'La descripción es obligatoria';
@@ -1626,9 +1722,25 @@ export default {
         isSuccess.value = true;
         statusMessage.value = 'Tarea actualizada exitosamente';
         showToast.value = true;
-        
+        // Preparar datos de la tarea para actualizar
+    const tareaData = { ...currentTarea.value };
+    
+    // Extraer la prioridad para actualizar la solicitud por separado
+    const prioridadSolicitud = tareaData.prioridad;
+    delete tareaData.prioridad; // Quitar prioridad del objeto tarea
+    
+    
+    // Si hay prioridad y solicitud, actualizar la prioridad de la solicitud
+    if (prioridadSolicitud && tareaData.solicitud) {
+      await apiClient.patch(`/solicitudes/${tareaData.solicitud}/`, {
+        prioridad: prioridadSolicitud
+      });
+    }  
         // Recargar las tareas
         await fetchTareas();
+        
+        // Actualizar prioridad al final del método (justo antes de cerrar el modal)
+        await actualizarPrioridadSolicitud(currentTarea.value.solicitud, currentTarea.value.prioridad);
         
       } catch (error) {
         console.error('Error al actualizar tarea:', error);
@@ -1707,7 +1819,7 @@ export default {
         usuario_reasignado: ''
       };
     };
-
+    
     // Función para formatear fechas
     const formatDate = (dateString) => {
       if (!dateString) return '-';
@@ -1753,13 +1865,20 @@ export default {
     };
 
     // Modificar la función getUserName para manejar casos especiales
-    const getUserName = (userId) => {
-      if (!userId) return '-';
+    const getUserName = (id) => {
+      if (!id) return '-';
       
-      const usuario = usuarios.value.find(u => u.id === userId);
-      if (!usuario) return `Usuario #${userId}`;
+      const usuario = usuarios.value.find(u => u.id === id);
+      if (!usuario) return `Usuario #${id}`;
       
-      return usuario.nombre || usuario.email || usuario.username || `Usuario #${userId}`;
+      // Solo modificamos esta parte para manejar mejor la visualización del nombre
+      if (usuario.nombre && usuario.nombre.trim() !== '' && 
+          usuario.nombre !== 'null' && usuario.nombre !== 'undefined') {
+        return usuario.nombre;
+      }
+      
+      // Si no hay nombre válido, usar email o username
+      return usuario.email || usuario.username || `Usuario #${id}`;
     };
 
 
@@ -1779,6 +1898,8 @@ export default {
     };
 
     const applyFilters = async () => {
+      console.log('Ejecutando applyFilters con filtros de usuario:', usuarioAsignadoFilters.value);
+      
       showNotification('Aplicando filtros...');
       
       // Aplicar todos los filtros activos
@@ -2451,6 +2572,7 @@ export default {
         ]);
         
         initializeDefaultFilters();
+        await fetchPrioridades(); 
       } catch (error) {
         showNotification('Error al cargar datos:', error);
       }
@@ -2606,7 +2728,7 @@ export default {
     });
 
     // Agregar esta función donde defines tus métodos
-    const openEditModal = (tarea) => {
+    const openEditModal = async (tarea) => {
       
       // Crear una copia profunda de la tarea para evitar modificar la original
       currentTarea.value = JSON.parse(JSON.stringify(tarea));
@@ -2634,7 +2756,21 @@ export default {
       if (!currentTarea.value.tipo) {
         currentTarea.value.tipo = 'I'; // Valor por defecto
       }
-      
+      try {
+        // Obtener los datos de la solicitud relacionada para obtener su prioridad
+        const solicitudId = tarea.solicitud;
+        const solicitudData = solicitudes.value.find(s => s.id === solicitudId);
+        
+        // Copiar los datos de la tarea y agregar la prioridad de la solicitud
+        currentTarea.value = { 
+          ...tarea,
+          prioridad: solicitudData ? solicitudData.prioridad : ''
+        };
+        
+        showModalEdit.value = true;
+      } catch (error) {
+        console.error('Error al abrir modal de edición:', error);
+      }
 
       showModalEdit.value = true;
     };
@@ -2934,7 +3070,41 @@ export default {
       { value: 'I', label: 'Interno' },
       { value: 'F', label: 'Facturable' }
     ]);
-
+    // Función simple para obtener el ID del usuario actual
+    const getUserLogueado = () => {
+      try {
+        console.log('Intentando obtener usuario logueado...');
+        
+        // Verificar en localStorage
+        const userData = localStorage.getItem('userData');
+        if (userData) {
+          const user = JSON.parse(userData);
+          console.log('Usuario encontrado en localStorage:', user);
+          return user.id;
+        }
+        
+        // Verificar otros lugares comunes donde se guarda el usuario
+        const user = localStorage.getItem('user');
+        if (user) {
+          const parsed = JSON.parse(user);
+          console.log('Usuario encontrado en localStorage.user:', parsed);
+          return parsed.id;
+        }
+        
+        // Verificar el token para extraer información
+        const token = localStorage.getItem('accessToken');
+        if (token) {
+          console.log('Token encontrado, intentando extraer información');
+          // Aquí podríamos decodificar el JWT si es necesario
+        }
+        
+        console.log('No se pudo encontrar el usuario en almacenamiento local');
+        return null;
+      } catch (error) {
+        console.error('Error al obtener usuario:', error);
+        return null;
+      }
+    };
     // Función para obtener la etiqueta del tipo con manejo de valores nulos/vacíos
     const getTipoLabel = (tipo) => {
       if (!tipo) {
@@ -3216,7 +3386,109 @@ export default {
       endDate: ''
     });
 
+    // Después de guardar la tarea exitosamente, puedes llamar a esta función:
+    const actualizarPrioridadSolicitud = async (solicitudId, prioridadId) => {
+      if (solicitudId && prioridadId) {
+        try {
+          await apiClient.patch(`/solicitudes/${solicitudId}/`, {
+            prioridad: prioridadId
+          });
+          console.log("Prioridad de solicitud actualizada");
+        } catch (error) {
+          console.error("Error al actualizar prioridad:", error);
+        }
+      }
+    };
+
+    // Agregar este watcher después de los otros watchers en el setup
+    // Este código detectará cuando cambia la solicitud seleccionada y actualizará la prioridad
+
+    watch(() => currentTarea.value.solicitud, (newSolicitudId, oldSolicitudId) => {
+      if (newSolicitudId && newSolicitudId !== oldSolicitudId) {
+        console.log('Solicitud cambiada a:', newSolicitudId);
+        
+        // Buscar la solicitud en la lista de solicitudes
+        const solicitudSeleccionada = solicitudes.value.find(s => s.id === newSolicitudId);
+        
+        if (solicitudSeleccionada) {
+          console.log('Solicitud encontrada:', solicitudSeleccionada);
+          
+          // Actualizar la prioridad en el formulario
+          currentTarea.value.prioridad = solicitudSeleccionada.prioridad;
+          console.log('Prioridad actualizada a:', solicitudSeleccionada.prioridad);
+        }
+      }
+    }, { immediate: true });
+
+    // Función mejorada para actualizar con datos de la última tarea
+    const actualizarEstadoYUsuarioSolicitud = async (solicitudId) => {
+      if (!solicitudId) return;
+      
+      try {
+        // Obtener todas las tareas para esta solicitud
+        const token = localStorage.getItem('accessToken');
+        const responseTareas = await apiClient.get(`/tareas/?solicitud=${solicitudId}`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        
+        // Obtener las tareas y ordenarlas por fecha de creación (más reciente primero)
+        const tareasOrdenadas = responseTareas.data.sort((a, b) => 
+          new Date(b.fecha_creacion) - new Date(a.fecha_creacion)
+        );
+        
+        // Obtener la tarea más reciente
+        const tareaMasReciente = tareasOrdenadas[0];
+        if (!tareaMasReciente) {
+          console.log('No se encontraron tareas para esta solicitud');
+          return;
+        }
+        
+        // Usar los datos de la tarea más reciente
+        const estadoFinal = tareaMasReciente.estado;
+        const usuarioFinal = tareaMasReciente.usuario_asignado;
+        
+        console.log('Actualizando solicitud con datos de la última tarea:');
+        console.log('- Solicitud:', solicitudId);
+        console.log('- Estado:', estadoFinal);
+        console.log('- Usuario:', usuarioFinal);
+        
+        // Actualizar la solicitud con los datos de la última tarea
+        await apiClient.patch(`/solicitudes/${solicitudId}/`, 
+          { 
+            estado: estadoFinal,
+            usuario_soporte: usuarioFinal 
+          },
+          {
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json'
+            }
+          }
+        );
+        
+        console.log('Solicitud actualizada correctamente');
+      } catch (error) {
+        console.error('Error al actualizar solicitud:', error);
+      }
+    };
+
+    // Función para obtener el título de una solicitud por su ID
+    const getSolicitudTitle = (solicitudId) => {
+      if (!solicitudId) return '-';
+      const solicitud = solicitudes.value.find(s => s.id === solicitudId);
+      return solicitud ? solicitud.titulo : '-';
+    };
+
+    // Función para obtener la descripción de una solicitud por su ID
+    const getSolicitudDescription = (solicitudId) => {
+      if (!solicitudId) return '';
+      const solicitud = solicitudes.value.find(s => s.id === solicitudId);
+      return solicitud ? solicitud.descripcion : '';
+    };
+
     return {
+      getSolicitudTitle,
+      getSolicitudDescription,
       tareas,
       solicitudes,
       usuarios: [],
@@ -3267,7 +3539,8 @@ export default {
       inicioFilterOption,
       finFilterOption,
       dateOptions,
-      
+      prioridades,
+      actualizarPrioridadSolicitud,
       selectAllSolicitudes,
       selectAllEstados,
       selectAllUsuarios,

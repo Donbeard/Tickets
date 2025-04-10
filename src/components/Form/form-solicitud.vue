@@ -79,7 +79,7 @@
               class="px-1 py-1 text-left text-xs text-black tracking-wider cursor-pointer select-none relative"
             >
               <div class="flex items-center justify-between">
-                <!-- Asegurarse de que el evento click funcione correctamente -->
+                <!-- Asegurarse que el evento click esté en el span -->
                 <span @click.stop="sortTable(column.key)" class="cursor-pointer flex items-center">
                   {{ column.label }}
                   <span v-if="sortBy === column.key" class="ml-1">
@@ -1700,8 +1700,8 @@ data() {
     filterPrioridades: [],
     filterEstados: [],
     filterModulos: [],
-    sortBy: 'fecha_creacion',
-    sortOrder: 'desc',
+    sortBy: 'fecha_creacion', // Establecer el valor por defecto
+    sortOrder: 'desc',        // Descendente por defecto
     startDate: '',
     endDate: '',
     isSuccess: false,
@@ -2292,7 +2292,7 @@ methods: {
     this.allSolicitudes = filtered;
     
     // Aplicar ordenamiento a los datos filtrados
-    this.applySort();
+    this.ordenarSolicitudes();
     
     // Resetear a la primera página
     this.currentPage = 1;
@@ -2508,9 +2508,8 @@ async fetchEstados() {
     const response = await apiClient.get('/estados/');
     this.estados = response.data;
     
-    // Inicializar el filtro de estado con todos menos "terminadas"
-    // Asumo que el estado "terminadas" tiene ID 7 o 8 (verificar cuál es el correcto)
-    const estadoTerminadas = 7; // Ajustar este valor al ID correcto de "terminadas"
+
+    const estadoTerminadas = 7;
     
     // Seleccionar todos los estados excepto "terminadas"
     this.filters.estado = this.estados
@@ -2755,9 +2754,9 @@ async setFechaSistema() {
     return this.columnOptions[columnKey] || [];
   },
   sortTable(column) {
-    console.log(`Ordenando por columna: ${column}, estado actual: ${this.sortBy} ${this.sortOrder}`);
+    console.log(`Ordenando por ${column}`);
     
-    // Lógica de toggle simple
+    // Lógica de toggle
     if (this.sortBy === column) {
       this.sortOrder = this.sortOrder === 'asc' ? 'desc' : 'asc';
     } else {
@@ -2765,83 +2764,49 @@ async setFechaSistema() {
       this.sortOrder = 'asc';
     }
     
-    console.log(`Nuevo orden: ${this.sortBy} ${this.sortOrder}`);
+    // Llamar al método que aplica el ordenamiento
+    this.ordenarSolicitudes();
+  },
+  
+  // Método dedicado para aplicar ordenamiento
+  ordenarSolicitudes() {
+    console.log(`Aplicando ordenamiento: ${this.sortBy} ${this.sortOrder}`);
     
-    // Clonar array para evitar mutaciones inesperadas
-    const solicitudesOrdenadas = [...this.solicitudes];
+    // Si no hay datos o no hay columna de ordenamiento, no hacer nada
+    if (!this.allSolicitudes || !this.allSolicitudes.length || !this.sortBy) {
+      console.log('No hay datos para ordenar o no se ha especificado columna');
+      return;
+    }
     
-    // Ordenar el array de forma simple y directa
-    solicitudesOrdenadas.sort((a, b) => {
+    // Ordenar directamente el array
+    this.allSolicitudes.sort((a, b) => {
       let valorA = a[this.sortBy];
       let valorB = b[this.sortBy];
       
-      // Manejo especial para fechas
+      // Manejar valores nulos
+      if (valorA === null || valorA === undefined) valorA = '';
+      if (valorB === null || valorB === undefined) valorB = '';
+      
+      // Convertir según tipo de dato
       if (this.sortBy.includes('fecha')) {
         valorA = valorA ? new Date(valorA).getTime() : 0;
         valorB = valorB ? new Date(valorB).getTime() : 0;
-      } 
-      // Manejo para valores numéricos
-      else if (['id', 'orden'].includes(this.sortBy)) {
+      } else if (['id', 'orden', 'prioridad'].includes(this.sortBy)) {
         valorA = Number(valorA) || 0;
         valorB = Number(valorB) || 0;
-      }
-      // Manejo para strings y otros valores
-      else {
-        valorA = String(valorA || '').toLowerCase();
-        valorB = String(valorB || '').toLowerCase();
+      } else {
+        valorA = String(valorA).toLowerCase();
+        valorB = String(valorB).toLowerCase();
       }
       
-      // Dirección de ordenamiento
-      const direccion = this.sortOrder === 'asc' ? 1 : -1;
-      
-      // Comparación simple
-      if (valorA < valorB) return -1 * direccion;
-      if (valorA > valorB) return 1 * direccion;
+      // Comparación con dirección
+      const factor = this.sortOrder === 'asc' ? 1 : -1;
+      if (valorA < valorB) return -1 * factor;
+      if (valorA > valorB) return 1 * factor;
       return 0;
     });
     
-    // Asignar directamente al array de solicitudes
-    this.solicitudes = solicitudesOrdenadas;
-    
-    console.log(`Ordenamiento completado. Primera solicitud:`, 
-      this.solicitudes.length > 0 ? {
-        id: this.solicitudes[0].id,
-        fecha: this.solicitudes[0].fecha_creacion
-      } : 'No hay solicitudes');
-  },
-  applySort() {
-    if (!this.sortBy) return;
-    
-    console.log(`Aplicando ordenamiento: ${this.sortBy} ${this.sortOrder}`);
-    
-    // Ordenar array actual (ya filtrado)
-    this.allSolicitudes.sort((a, b) => {
-      let valueA = a[this.sortBy];
-      let valueB = b[this.sortBy];
-      
-      // Para fechas
-      if (this.sortBy.includes('fecha')) {
-        valueA = valueA ? new Date(valueA).getTime() : 0;
-        valueB = valueB ? new Date(valueB).getTime() : 0;
-      } 
-      // Para valores numéricos
-      else if (['id', 'orden'].includes(this.sortBy)) {
-        valueA = isNaN(Number(valueA)) ? 0 : Number(valueA);
-        valueB = isNaN(Number(valueB)) ? 0 : Number(valueB);
-      }
-      // Para strings
-      else {
-        valueA = valueA ? String(valueA).toLowerCase() : '';
-        valueB = valueB ? String(valueB).toLowerCase() : '';
-      }
-      
-      // Aplicar dirección de ordenamiento
-      if (this.sortOrder === 'asc') {
-        return valueA > valueB ? 1 : -1;
-      } else {
-        return valueA < valueB ? 1 : -1;
-      }
-    });
+    console.log('Ordenamiento completado');
   },
 
   filterEmpresas() {

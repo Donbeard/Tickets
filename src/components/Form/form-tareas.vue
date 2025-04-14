@@ -759,7 +759,7 @@
 
         <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
 
-        <div class="inline-block align-bottom bg-white rounded-lg text-left overflow-visible shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full border border-indigo-100">
+        <div class="inline-block align-bottom bg-white rounded-lg text-left overflow-visible shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-3xl sm:w-full border border-indigo-100">
           <form @submit.prevent="showModalCreate ? createTarea() : updateTarea()">
             <div class="bg-gradient-to-r from-indigo-600 to-blue-500 px-4 py-3 flex justify-between items-center">
               <h3 class="text-lg leading-6 font-medium text-white">
@@ -776,46 +776,53 @@
               </button>
             </div>
             
-            <div class="bg-white px-4 py-4">
+            <div class="bg-white px-6 py-5">
               <div class="space-y-4">
-                <!-- Campo Solicitud (solo lectura) -->
-                <div class="flex items-center">
-                  <label class="block text-sm font-medium text-gray-700 w-1/4">
-                    Solicitud:
-                  </label>
-                  <div class="block w-3/4 px-3 py-2 bg-gray-100 border border-gray-300 rounded-lg text-sm">
-                    {{ currentTarea.solicitud }} - {{ getSolicitudTitle(currentTarea.solicitud) }}
+                <!-- Información de la solicitud - 2 columnas -->
+                <div class="grid grid-cols-2 gap-4">
+                  <!-- Columna 1: Solicitud -->
+                  <div class="flex items-center">
+                    <label class="block text-sm font-medium text-gray-700 w-1/4">
+                      Solicitud:
+                    </label>
+                    <div class="block w-3/4 px-3 py-2 bg-gray-100 border border-gray-300 rounded-lg text-sm">
+                      {{ currentTarea.solicitud }} - {{ getSolicitudTitle(currentTarea.solicitud) }}
+                    </div>
+                  </div>
+                  
+                  <!-- Columna 2: Prioridad -->
+                  <div class="flex items-center">
+                    <label for="prioridad" class="block text-sm font-medium text-gray-700 w-1/4">
+                      Prioridad:
+                    </label>
+                    <select
+                      id="prioridad"
+                      v-model="currentTarea.prioridad"
+                      class="block w-3/4 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 text-sm"
+                    >
+                      <option value="" disabled>Seleccione prioridad</option>
+                      <option v-for="prioridad in prioridades" 
+                              :key="prioridad.id" 
+                              :value="prioridad.id">
+                        {{ prioridad.nombre }}
+                      </option>
+                    </select>
                   </div>
                 </div>
 
                 <!-- Descripción de la Solicitud (solo lectura) -->
-                <div class="flex items-center mt-2">
-                  <label class="block text-sm font-medium text-gray-700 w-1/4">
+                <div class="flex items-center">
+                  <label class="block text-sm font-medium text-gray-700 w-1/6">
                     Desc. Solicitud:
                   </label>
-                  <div class="block w-3/4 px-3 py-2 bg-gray-100 border border-gray-300 rounded-lg text-sm max-h-20 overflow-y-auto">
+                  <div class="block w-5/6 px-3 py-2 bg-gray-100 border border-gray-300 rounded-lg text-sm max-h-20 overflow-y-auto">
                     {{ getSolicitudDescription(currentTarea.solicitud) || 'Sin descripción' }}
                   </div>
                 </div>
 
-                <!-- Campo Descripción (ancho completo) -->
-                <div class="flex items-start">
-                  <label for="descripcion" class="block text-sm font-medium text-gray-700 w-1/4 pt-2">
-                    Descripción:
-                  </label>
-                  <textarea
-                    id="descripcion"
-                    v-model="currentTarea.descripcion"
-                    rows="3"
-                    required
-                    class="block w-3/4 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 text-sm"
-                    placeholder="Ingrese la descripción de la tarea"
-                  ></textarea>
-                </div>
-                
-                <!-- Campos en dos columnas -->
-                <div class="grid grid-cols-2 gap-4">
-                  <!-- Columna 1: Estado -->
+                <!-- Fila superior de controles: Estado, Usuario, Tipo, Cita -->
+                <div class="grid grid-cols-4 gap-4">
+                  <!-- Estado -->
                   <div class="flex items-center">
                     <label for="estado" class="block text-sm font-medium text-gray-700 w-1/3">
                       Estado:
@@ -834,10 +841,10 @@
                     </select>
                   </div>
                   
-                  <!-- Columna 2: Usuario Asignado (solo usuarios tipo S) -->
+                  <!-- Usuario Asignado -->
                   <div class="flex items-center">
                     <label for="usuario_asignado" class="block text-sm font-medium text-gray-700 w-1/3">
-                      Asignado a:
+                      Asignado:
                     </label>
                     <select
                       id="usuario_asignado"
@@ -854,28 +861,77 @@
                       </option>
                     </select>
                   </div>
+                  
+                  <!-- Tipo -->
+                  <div class="flex items-center">
+                    <label for="tipo" class="block text-sm font-medium text-gray-700 w-1/3">
+                      Tipo:
+                    </label>
+                    <select
+                      id="tipo"
+                      v-model="currentTarea.tipo"
+                      class="block w-2/3 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 text-sm"
+                    >
+                      <option v-for="option in tipoOptions" :key="option.value" :value="option.value">
+                        {{ option.label }}
+                      </option>
+                    </select>
+                  </div>
+                  
+                  <!-- Cita -->
+                  <div class="flex items-center">
+                    <label for="cita" class="block text-sm font-medium text-gray-700 w-1/3">
+                      ¿Cita?:
+                    </label>
+                    <select
+                      id="cita"
+                      v-model="currentTarea.cita"
+                      class="block w-2/3 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 text-sm"
+                    >
+                      <option value="N">No</option>
+                      <option value="S">Sí</option>
+                    </select>
+                  </div>
+                </div>
+                
+                <!-- Campo Descripción (ancho completo) -->
+                <div class="flex items-start">
+                  <label for="descripcion" class="block text-sm font-medium text-gray-700 w-1/6 pt-2">
+                    Descripción:
+                  </label>
+                  <textarea
+                    id="descripcion"
+                    v-model="currentTarea.descripcion"
+                    rows="3"
+                    required
+                    class="block w-5/6 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 text-sm"
+                    placeholder="Ingrese la descripción de la tarea"
+                  ></textarea>
                 </div>
                 
                 <!-- Campo Motivo Cancelación (mostrar solo si estado es cancelado) -->
                 <div v-if="currentTarea.estado == 8" class="flex items-center">
-                  <label for="motivo_cancelacion" class="block text-sm font-medium text-gray-700 w-1/4">
+                  <label for="motivo_cancelacion" class="block text-sm font-medium text-gray-700 w-1/6">
                     Motivo:
                   </label>
                   <textarea
                     id="motivo_cancelacion"
                     v-model="currentTarea.motivo_cancelacion"
                     rows="2"
-                    class="block w-3/4 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 text-sm"
+                    class="block w-5/6 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 text-sm"
                     placeholder="Motivo de cancelación"
                   ></textarea>
                 </div>
                 
-                <!-- Fecha Programada con selector personalizado -->
-                <div class="flex items-center">
-                  <label for="fecha_programada" class="block text-sm font-medium text-gray-700 w-1/4">
-                    F. Programada:
-                  </label>
-                  <div class="w-3/4">
+                <!-- Fechas en 3 columnas horizontales -->
+                <div class="grid grid-cols-3 gap-4">
+                  <!-- F. Programada -->
+                  <div>
+                    <div class="flex items-center mb-1">
+                      <label for="fecha_programada" class="block text-sm font-medium text-gray-700 w-1/3">
+                        F. Programada:
+                      </label>
+                    </div>
                     <DatePicker
                       v-model="currentTarea.fecha_programada"
                       :model-config="{ type: 'string', mask: 'YYYY-MM-DDTHH:mm:00', timeAdjust: 'none' }"
@@ -903,149 +959,142 @@
                       </template>
                     </DatePicker>
                   </div>
-                </div>
-                
-                <!-- Fecha Inicio con selector personalizado -->
-                <div class="flex items-center">
-                  <label for="fecha_inicio" class="block text-sm font-medium text-gray-700 w-1/4">
-                    F. Inicio:
-                  </label>
-                  <div class="flex w-3/4 space-x-1">
-                    <div class="flex-1">
-                      <DatePicker
-                        v-model="currentTarea.fecha_inicio"
-                        :model-config="{ type: 'string', mask: 'YYYY-MM-DDTHH:mm:00', timeAdjust: 'none' }"
-                        :time-picker-options="timePickerOptions"
-                        :masks="masks"
-                        :attributes="datePickerAttributes"
-                        :is-24hr="true"
-                        :min-date="new Date()"
-                        mode="dateTime"
-                        @update:model-value="(val) => updateDateTime('inicio', val)"
-                        class="w-full"
-                        :popover="{ 
-                          visibility: 'click', 
-                          placement: 'auto', 
-                          isInteractive: true, 
-                          modifiers: [{ name: 'preventOverflow', options: { padding: 8 } }],
-                          positionFixed: true
-                        }"
-                      >
-                        <template v-slot="{ inputValue, inputEvents }">
-                          <input
-                            class="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 text-sm"
-                            :value="inputValue"
-                            v-on="inputEvents"
-                          />
-                        </template>
-                      </DatePicker>
-                    </div>
-                    <!-- Botón para F. Inicio -->
-                    <button 
-                      type="button"
-                      @click.stop="() => { setCurrentDateTime('inicio'); $event.preventDefault(); $event.stopPropagation(); }"
-                      class="px-2 py-2 bg-indigo-100 text-indigo-700 rounded-lg hover:bg-indigo-200"
-                      title="Establecer hora actual"
-                    >
-                      <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
-                    </button>
-                  </div>
-                </div>
-                
-                <!-- Fecha Fin con selector personalizado (solo en edición) -->
-                <div v-if="!showModalCreate" class="flex items-center">
-                  <label for="fecha_fin" class="block text-sm font-medium text-gray-700 w-1/4">
-                    F. Fin:
-                  </label>
-                  <div class="flex w-3/4 space-x-1">
-                    <div class="flex-1">
-                      <DatePicker
-                        v-model="currentTarea.fecha_fin"
-                        :model-config="{ type: 'string', mask: 'YYYY-MM-DDTHH:mm:00', timeAdjust: 'none' }"
-                        :time-picker-options="timePickerOptions"
-                        :masks="masks"
-                        :attributes="datePickerAttributes"
-                        :is-24hr="true"
-                        :min-date="new Date()"
-                        mode="dateTime"
-                        @update:model-value="(val) => updateDateTime('fin', val)"
-                        class="w-full"
-                        :popover="{ 
-                          visibility: 'click', 
-                          placement: 'auto', 
-                          isInteractive: true, 
-                          modifiers: [{ name: 'preventOverflow', options: { padding: 8 } }],
-                          positionFixed: true
-                        }"
-                      >
-                        <template v-slot="{ inputValue, inputEvents }">
-                          <input
-                            class="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 text-sm"
-                            :value="inputValue"
-                            v-on="inputEvents"
-                          />
-                        </template>
-                      </DatePicker>
-                    </div>
-                    <!-- Botón para F. Fin -->
-                    <button 
-                      type="button"
-                      @click.stop="() => { setCurrentDateTime('fin'); $event.preventDefault(); $event.stopPropagation(); }"
-                      class="px-2 py-2 bg-indigo-100 text-indigo-700 rounded-lg hover:bg-indigo-200"
-                      title="Establecer hora actual"
-                    >
-                      <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
-                    </button>
-                  </div>
-                </div>
-                
-                <!-- Campos solo para edición, no para creación -->
-                <div v-if="showModalEdit">
-                  <!-- Campos en dos columnas para edición -->
-                  <div class="grid grid-cols-2 gap-4">
-                    <!-- Duración (calculada automáticamente) -->
-                    <div class="flex items-center">
-                      <label for="duracion" class="block text-sm font-medium text-gray-700 w-1/3">
-                        Duración:
+                  
+                  <!-- F. Inicio -->
+                  <div>
+                    <div class="flex items-center mb-1">
+                      <label for="fecha_inicio" class="block text-sm font-medium text-gray-700 flex-1">
+                        F. Inicio:
                       </label>
-                      <input
-                        type="text"
-                        id="duracion"
-                        v-model="currentTarea.duracion"
-                        readonly
-                        class="block w-2/3 px-3 py-2 bg-gray-100 border border-gray-300 rounded-lg text-sm"
-                        placeholder="Auto"
-                      />
+                      <!-- Botón para F. Inicio -->
+                      <button 
+                        type="button"
+                        @click.stop="() => { setCurrentDateTime('inicio'); $event.preventDefault(); $event.stopPropagation(); }"
+                        class="ml-1 px-2 py-1 bg-indigo-100 text-indigo-700 rounded-lg hover:bg-indigo-200"
+                        title="Establecer hora actual"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                      </button>
                     </div>
-
-                    <!-- Tiempo Facturable (solo en edición) -->
-                    <div class="flex items-center">
-                      <label for="tiempoFacturable" class="block text-sm font-medium text-gray-700 w-1/3">
-                        T. Facturable:
-                      </label>
-                      <input
-                        type="text"
-                        id="tiempoFacturable"
-                        v-model="currentTarea.tiempoFacturable"
-                        placeholder="Ej: 2h"
-                        class="block w-2/3 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 text-sm"
-                      />
-                    </div>
+                    <DatePicker
+                      v-model="currentTarea.fecha_inicio"
+                      :model-config="{ type: 'string', mask: 'YYYY-MM-DDTHH:mm:00', timeAdjust: 'none' }"
+                      :time-picker-options="timePickerOptions"
+                      :masks="masks"
+                      :attributes="datePickerAttributes"
+                      :is-24hr="true"
+                      :min-date="new Date()"
+                      mode="dateTime"
+                      @update:model-value="(val) => updateDateTime('inicio', val)"
+                      class="w-full"
+                      :popover="{ 
+                        visibility: 'click', 
+                        placement: 'auto', 
+                        isInteractive: true, 
+                        modifiers: [{ name: 'preventOverflow', options: { padding: 8 } }],
+                        positionFixed: true
+                      }"
+                    >
+                      <template v-slot="{ inputValue, inputEvents }">
+                        <input
+                          class="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 text-sm"
+                          :value="inputValue"
+                          v-on="inputEvents"
+                        />
+                      </template>
+                    </DatePicker>
                   </div>
                   
-                  <!-- Usuario Reasignado (solo en edición) -->
-                  <div class="flex items-center mt-4">
-                    <label for="usuario_reasignado" class="block text-sm font-medium text-gray-700 w-1/4">
-                      Reasignado a:
+                  <!-- F. Fin -->
+                  <div v-if="!showModalCreate">
+                    <div class="flex items-center mb-1">
+                      <label for="fecha_fin" class="block text-sm font-medium text-gray-700 flex-1">
+                        F. Fin:
+                      </label>
+                      <!-- Botón para F. Fin -->
+                      <button 
+                        type="button"
+                        @click.stop="() => { setCurrentDateTime('fin'); $event.preventDefault(); $event.stopPropagation(); }"
+                        class="ml-1 px-2 py-1 bg-indigo-100 text-indigo-700 rounded-lg hover:bg-indigo-200"
+                        title="Establecer hora actual"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                      </button>
+                    </div>
+                    <DatePicker
+                      v-model="currentTarea.fecha_fin"
+                      :model-config="{ type: 'string', mask: 'YYYY-MM-DDTHH:mm:00', timeAdjust: 'none' }"
+                      :time-picker-options="timePickerOptions"
+                      :masks="masks"
+                      :attributes="datePickerAttributes"
+                      :is-24hr="true"
+                      :min-date="new Date()"
+                      mode="dateTime"
+                      @update:model-value="(val) => updateDateTime('fin', val)"
+                      class="w-full"
+                      :popover="{ 
+                        visibility: 'click', 
+                        placement: 'auto', 
+                        isInteractive: true, 
+                        modifiers: [{ name: 'preventOverflow', options: { padding: 8 } }],
+                        positionFixed: true
+                      }"
+                    >
+                      <template v-slot="{ inputValue, inputEvents }">
+                        <input
+                          class="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 text-sm"
+                          :value="inputValue"
+                          v-on="inputEvents"
+                        />
+                      </template>
+                    </DatePicker>
+                  </div>
+                </div>
+                
+                <!-- Campos solo para edición -->
+                <div v-if="showModalEdit" class="grid grid-cols-3 gap-4">
+                  <!-- Duración -->
+                  <div class="flex items-center">
+                    <label for="duracion" class="block text-sm font-medium text-gray-700 w-1/3">
+                      Duración:
+                    </label>
+                    <input
+                      type="text"
+                      id="duracion"
+                      v-model="currentTarea.duracion"
+                      readonly
+                      class="block w-2/3 px-3 py-2 bg-gray-100 border border-gray-300 rounded-lg text-sm"
+                      placeholder="Auto"
+                    />
+                  </div>
+
+                  <!-- Tiempo Facturable -->
+                  <div class="flex items-center">
+                    <label for="tiempoFacturable" class="block text-sm font-medium text-gray-700 w-1/3">
+                      T. Facturable:
+                    </label>
+                    <input
+                      type="text"
+                      id="tiempoFacturable"
+                      v-model="currentTarea.tiempoFacturable"
+                      placeholder="Ej: 2h"
+                      class="block w-2/3 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 text-sm"
+                    />
+                  </div>
+                  
+                  <!-- Usuario Reasignado -->
+                  <div class="flex items-center">
+                    <label for="usuario_reasignado" class="block text-sm font-medium text-gray-700 w-1/3">
+                      Reasignar:
                     </label>
                     <select
                       id="usuario_reasignado"
                       v-model="currentTarea.usuario_reasignado"
-                      class="block w-3/4 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 text-sm"
+                      class="block w-2/3 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 text-sm"
                     >
                       <option value="">Sin reasignar</option>
                       <option 
@@ -1059,62 +1108,9 @@
                   </div>
                 </div>
 
-                <!-- Dentro del formulario, añadir el campo cita -->
-                <div class="grid grid-cols-2 gap-4">
-                  <!-- Columna 1: Tipo -->
-                  <div class="flex items-center">
-                    <label for="tipo" class="block text-sm font-medium text-gray-700 w-1/3">
-                      Tipo:
-                    </label>
-                    <select
-                      id="tipo"
-                      v-model="currentTarea.tipo"
-                      class="block w-2/3 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 text-sm"
-                    >
-                      <option v-for="option in tipoOptions" :key="option.value" :value="option.value">
-                        {{ option.label }}
-                      </option>
-                    </select>
-                  </div>
-                  
-                  <!-- Columna 2: Cita -->
-                  <div class="flex items-center">
-                    <label for="cita" class="block text-sm font-medium text-gray-700 w-1/3">
-                      ¿Cita?: 
-                    </label>
-                    <select
-                      id="cita"
-                      v-model="currentTarea.cita"
-                      class="block w-2/3 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 text-sm"
-                    >
-                      <option value="N">No</option>
-                      <option value="S">Sí</option>
-                    </select>
-                  </div>
+                <div v-if="errorMessage" class="mt-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
+                  {{ errorMessage }}
                 </div>
-
-                <!-- Después del campo de tipo y cita, agregar campo de prioridad -->
-                <div class="flex items-center mt-4">
-                  <label for="prioridad" class="block text-sm font-medium text-gray-700 w-1/4">
-                    Prioridad:
-                  </label>
-                  <select
-                    id="prioridad"
-                    v-model="currentTarea.prioridad"
-                    class="block w-3/4 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 text-sm"
-                  >
-                    <option value="" disabled>Seleccione prioridad</option>
-                    <option v-for="prioridad in prioridades" 
-                            :key="prioridad.id" 
-                            :value="prioridad.id">
-                      {{ prioridad.nombre }}
-                    </option>
-                  </select>
-                </div>
-              </div>
-
-              <div v-if="errorMessage" class="mt-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
-                {{ errorMessage }}
               </div>
             </div>
             
@@ -1632,6 +1628,7 @@ export default {
 
     // Modificar el método updateTarea para manejar la reasignación
     const updateTarea = async () => {
+      
       try {
         errorMessage.value = '';
         // Validar campos requeridos
@@ -1774,6 +1771,7 @@ export default {
         statusMessage.value = 'Error al actualizar la tarea';
         showToast.value = true;
       }
+      
     };
 
     // Función auxiliar para formatear la fecha y hora actual
@@ -3425,13 +3423,15 @@ export default {
       if (!solicitudId) return;
       
       try {
+        console.log('Actualizando solicitud:', solicitudId);
+        
         // Obtener todas las tareas para esta solicitud
         const token = localStorage.getItem('accessToken');
         const responseTareas = await apiClient.get(`/tareas/?solicitud=${solicitudId}`, {
           headers: { 'Authorization': `Bearer ${token}` }
         });
         
-        // Obtener las tareas y ordenarlas por fecha de creación (más reciente primero)
+        // Ordenar por fecha de creación (más reciente primero)
         const tareasOrdenadas = responseTareas.data.sort((a, b) => 
           new Date(b.fecha_creacion) - new Date(a.fecha_creacion)
         );
@@ -3443,17 +3443,18 @@ export default {
           return;
         }
         
+        console.log('Tarea más reciente encontrada:', tareaMasReciente);
+        
         // Usar los datos de la tarea más reciente
         const estadoFinal = tareaMasReciente.estado;
         const usuarioFinal = tareaMasReciente.usuario_asignado;
         
-        console.log('Actualizando solicitud con datos de la última tarea:');
-        console.log('- Solicitud:', solicitudId);
+        console.log('Actualizando solicitud con:');
         console.log('- Estado:', estadoFinal);
         console.log('- Usuario:', usuarioFinal);
         
-        // Actualizar la solicitud con los datos de la última tarea
-        await apiClient.patch(`/solicitudes/${solicitudId}/`, 
+        // Actualizar la solicitud
+        const respuestaActualizacion = await apiClient.patch(`/solicitudes/${solicitudId}/`, 
           { 
             estado: estadoFinal,
             usuario_soporte: usuarioFinal 
@@ -3466,7 +3467,7 @@ export default {
           }
         );
         
-        console.log('Solicitud actualizada correctamente');
+        console.log('Solicitud actualizada correctamente:', respuestaActualizacion.data);
       } catch (error) {
         console.error('Error al actualizar solicitud:', error);
       }

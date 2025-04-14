@@ -3616,7 +3616,8 @@ export default {
       filteredUsuariosReasignados,
       filterUsuarios,
       filterUsuariosReasignados,
-      creacionFilters
+      creacionFilters,
+      actualizarEstadoYUsuarioSolicitud
     };
   }
   

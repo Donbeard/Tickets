@@ -11,6 +11,11 @@
           Empresa: <span class="text-indigo-600">{{ empresaActual }}</span>
         </span>
       </h1>
+      <!-- Info de la ultima actualización -->
+        <div class="text-xs text-gray-500 flex items-center justify-end mb-2">
+          <span class="mr-1">Última actualización:</span>
+          <span class="font-medium">{{ lastUpdateTimestamp }}</span>
+        </div>
       
       <div class="flex flex-col sm:flex-row gap-4 mt-4 sm:mt-0">
         <!-- Mejora del campo de búsqueda -->
@@ -66,6 +71,8 @@
       </div>
     </div>
 
+    
+
     <!-- Tabla de solicitudes -->
     <div class="bg-white shadow-sm overflow-hidden sm:rounded-lg mb-4 pr-2">
       <div class="overflow-x-auto">
@@ -80,10 +87,20 @@
             >
               <div class="flex items-center justify-between">
                 <!-- Asegurarse que el evento click esté en el span -->
-                <span @click.stop="sortTable(column.key)" class="cursor-pointer flex items-center">
+                <span 
+                  @click.stop="sortTable(column.key)" 
+                  class="cursor-pointer flex items-center"
+                  :class="{'font-bold text-indigo-600': hasActiveFilter(column.key)}"
+                >
                   {{ column.label }}
                   <span v-if="sortBy === column.key" class="ml-1">
                     {{ sortOrder === 'asc' ? '▲' : '▼' }}
+                  </span>
+                  <!-- Indicador de filtro activo -->
+                  <span v-if="hasActiveFilter(column.key)" class="ml-1 text-xs text-indigo-600">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 inline" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+                    </svg>
                   </span>
                 </span>
                 <!-- Solo mostrar el botón de filtro si NO es ID, título o acciones -->
@@ -120,7 +137,7 @@
                         class="w-full px-2 py-1 text-xs border rounded"
                       />
                     </div>
-                    <div class="max-h-60 overflow-y-auto">
+                    <div class="max-h-96 overflow-y-auto">
                       <div v-for="empresa in filteredEmpresas" :key="empresa.id" class="flex items-center mb-1">
                         <input 
                           type="checkbox" 
@@ -143,7 +160,7 @@
                       <button @click="selectAllEmpresas" class="text-xs text-gray-600 hover:text-gray-800">Seleccionar todo</button>
                     </div>
                   </div>
-                  <div class="max-h-60 overflow-y-auto">
+                  <div class="max-h-96 overflow-y-auto">
                     <template v-for="option in column.key === 'empresa' ? 
                       filteredEmpresas : 
                       (column.key === 'modulo' || column.key === 'submodulo' ? 
@@ -442,6 +459,7 @@
                     <table class="w-full table-fixed divide-y divide-gray-200">
                       <thead class="bg-gray-50">
                         <tr>
+                          <th class="px-2 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-24" v-if="userType !== 'C'">Acciones</th>
                           <th class="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-16">ID</th>
                           <th class="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/4">Descripción</th>
                           <th class="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/6">Usuario Asignado</th>
@@ -451,7 +469,7 @@
                           <th class="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-32">Fecha Inicio</th>
                           <th class="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-32">Fecha Fin</th>
                           <th class="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-20">Duración</th>
-                          <th class="px-2 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-24" v-if="userType !== 'C'">Acciones</th>
+                          
                         </tr>
                       </thead>
                       <tbody class="bg-white divide-y divide-gray-200">
@@ -461,6 +479,46 @@
                           </td>
                         </tr>
                         <tr v-for="tarea in solicitud.tareas" :key="tarea.id" class="hover:bg-gray-50">
+                          <!-- Acciones -->
+                          <td class="px-2 py-2 text-xs text-center" v-if="userType !== 'C' || tarea.estado === 'S'">
+                            <div class="flex items-center justify-center gap-2">
+                              <!-- Botón Ver Detalles - visible para todos -->
+                              <button 
+                                @click="DetalleTareas(tarea.id)" 
+                                class="text-blue-600 hover:text-blue-900"
+                                title="Ver detalles"
+                              >
+                                <svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                </svg>
+                              </button>
+                              
+                              <!-- Botón Editar - visible para no clientes o clientes con estado 'S' -->
+                              <button 
+                                v-if="userType !== 'C' || tarea.estado === 'S'"
+                                @click="EditarTarea(tarea.id)" 
+                                class="text-indigo-600 hover:text-indigo-900"
+                                title="Editar tarea"
+                              >
+                                <svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                </svg>
+                              </button>
+                              
+                              <!-- Botón Eliminar - solo visible para no clientes -->
+                              <button 
+                                v-if="userType !== 'C'"
+                                @click="EliminarTarea(tarea.id)" 
+                                class="text-red-600 hover:text-red-900"
+                                title="Eliminar tarea"
+                              >
+                                <svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                </svg>
+                              </button>
+                            </div>
+                          </td>
                           <!-- ID -->
                           <td class="px-2 py-2 whitespace-nowrap text-sm text-gray-500">
                             {{ tarea.id }}
@@ -511,46 +569,7 @@
                             {{ tarea.duracion || '-' }}
                           </td>
                           
-                          <!-- Acciones -->
-                          <td class="px-2 py-2 text-xs text-center" v-if="userType !== 'C' || tarea.estado === 'S'">
-                            <div class="flex items-center justify-center gap-2">
-                              <!-- Botón Ver Detalles - visible para todos -->
-                              <button 
-                                @click="DetalleTareas(tarea.id)" 
-                                class="text-blue-600 hover:text-blue-900"
-                                title="Ver detalles"
-                              >
-                                <svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                                </svg>
-                              </button>
-                              
-                              <!-- Botón Editar - visible para no clientes o clientes con estado 'S' -->
-                              <button 
-                                v-if="userType !== 'C' || tarea.estado === 'S'"
-                                @click="EditarTarea(tarea.id)" 
-                                class="text-indigo-600 hover:text-indigo-900"
-                                title="Editar tarea"
-                              >
-                                <svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                                </svg>
-                              </button>
-                              
-                              <!-- Botón Eliminar - solo visible para no clientes -->
-                              <button 
-                                v-if="userType !== 'C'"
-                                @click="EliminarTarea(tarea.id)" 
-                                class="text-red-600 hover:text-red-900"
-                                title="Eliminar tarea"
-                              >
-                                <svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                </svg>
-                              </button>
-                            </div>
-                          </td>
+                          
                         </tr>
                       </tbody>
                     </table>
@@ -1847,6 +1866,7 @@ data() {
     empresaActual: '',
     originalSolicitudes: [],
     fechaAsignacionManual: null,
+    lastUpdateTimestamp: '',
     };
 },
 computed: {
@@ -1948,19 +1968,19 @@ computed: {
     // Aplicar ordenamiento
     if (this.sortBy) {
       result.sort((a, b) => {
-        let aValue = a[this.sortBy];
-        let bValue = b[this.sortBy];
+        let valorA = a[this.sortBy];
+        let valorB = b[this.sortBy];
 
         // Convertir a fechas si es necesario
         if (this.sortBy.includes('fecha')) {
-          aValue = new Date(aValue);
-          bValue = new Date(bValue);
+          valorA = new Date(valorA);
+          valorB = new Date(valorB);
         }
 
         if (this.sortOrder === 'asc') {
-          return aValue > bValue ? 1 : -1;
+          return valorA > valorA ? 1 : -1;
         } else {
-          return aValue < bValue ? 1 : -1;
+          return valorB < valorB ? 1 : -1;
         }
       });
     }
@@ -2003,18 +2023,100 @@ computed: {
     );
   },
   paginatedSolicitudes() {
+    console.log('Ejecutando paginatedSolicitudes');
+    
+    // Primero filtramos las solicitudes
+    let filtered = [...this.originalSolicitudes];
+    
+    // Aplicar filtros
+    if (this.filters.empresa && this.filters.empresa.length > 0) {
+      const selectedCompanyIds = this.filters.empresa;
+      const selectedCompanies = selectedCompanyIds.map(id => 
+        this.empresas.find(e => e.id === id)?.nombre
+      ).filter(Boolean);
+      
+      filtered = filtered.filter(solicitud => {
+        const empresaNombre = solicitud.empresa_nombre || solicitud.clie;
+        return selectedCompanies.includes(empresaNombre);
+      });
+    }
+    
+    // Aplicar otros filtros
+    Object.entries(this.filters).forEach(([key, values]) => {
+      if (key === 'empresa' || !values || values.length === 0) return;
+      
+      filtered = filtered.filter(solicitud => {
+        if (['estado', 'prioridad', 'modulo', 'submodulo', 'accion'].includes(key)) {
+          return values.includes(solicitud[key]);
+        } else if (key === 'usuario_cliente_nombre') {
+          return values.includes(solicitud.usuario_cliente);
+        } else if (key === 'usuario_soporte_nombre') {
+          return values.includes(solicitud.usuario_soporte);
+        } else if (key.includes('fecha')) {
+          const fechaSolicitud = new Date(solicitud[key]);
+          return this.isDateInFilter(fechaSolicitud, values);
+        } else {
+          return values.includes(solicitud[key]);
+        }
+      });
+    });
+    
+    // Aplicar búsqueda si existe
+    if (this.searchQuery) {
+      const searchLower = this.searchQuery.toLowerCase();
+      filtered = filtered.filter(solicitud => 
+        solicitud.titulo?.toLowerCase().includes(searchLower) ||
+        solicitud.descripcion?.toLowerCase().includes(searchLower) ||
+        solicitud.id?.toString().includes(searchLower)
+      );
+    }
+    
+    // Ordenar los resultados filtrados
+    if (this.sortBy) {
+      filtered.sort((a, b) => {
+        let valorA = a[this.sortBy];
+        let valorB = b[this.sortBy];
+        
+        // Manejar valores nulos
+        if (valorA === null || valorA === undefined) valorA = '';
+        if (valorB === null || valorB === undefined) valorB = '';
+        
+        // Convertir según tipo de dato
+        if (this.sortBy.includes('fecha')) {
+          valorA = valorA ? new Date(valorA).getTime() : 0;
+          valorB = valorB ? new Date(valorB).getTime() : 0;
+        } else if (['id', 'orden', 'prioridad'].includes(this.sortBy)) {
+          valorA = Number(valorA) || 0;
+          valorB = Number(valorB) || 0;
+        } else {
+          valorA = String(valorA).toLowerCase();
+          valorB = String(valorB).toLowerCase();
+        }
+        
+        // Comparación con dirección
+        const factor = this.sortOrder === 'asc' ? 1 : -1;
+        if (valorA < valorB) return -1 * factor;
+        if (valorA > valorB) return 1 * factor;
+        return 0;
+      });
+    }
+    
+    // Guardar los resultados filtrados y ordenados
+    this.allSolicitudes = filtered;
+    
+    // Aplicar paginación
     const startIndex = (this.currentPage - 1) * this.pageSize;
     const endIndex = startIndex + this.pageSize;
     
-    // Tomar una porción de las solicitudes filtradas
-    return this.filteredSolicitudes.slice(startIndex, endIndex);
+    return filtered.slice(startIndex, endIndex);
   },
   totalPages() {
     return Math.ceil(this.filteredSolicitudes.length / this.pageSize);
   },
   columnFilterOptions() {
+    // Siempre usar originalSolicitudes para generar opciones de filtro, no allSolicitudes
     const getUniqueModulos = () => {
-      const modulosUnicos = [...new Set(this.solicitudes.map(s => s.modulo))].filter(Boolean);
+      const modulosUnicos = [...new Set(this.originalSolicitudes.map(s => s.modulo))].filter(Boolean);
       return modulosUnicos.map(moduloId => {
         const modulo = this.modulos.find(m => m.id === moduloId);
         return modulo ? {
@@ -2025,7 +2127,7 @@ computed: {
     };
 
     const getUniqueSubmodulos = () => {
-      const submodulosUnicos = [...new Set(this.solicitudes.map(s => s.submodulo))].filter(Boolean);
+      const submodulosUnicos = [...new Set(this.originalSolicitudes.map(s => s.submodulo))].filter(Boolean);
       return submodulosUnicos.map(submoduloId => {
         const submodulo = this.submodulos.find(s => s.id === submoduloId);
         return submodulo ? {
@@ -2034,11 +2136,27 @@ computed: {
         } : null;
       }).filter(Boolean);
     };
-
+    
+    // Modificar los métodos que generan las opciones para otros campos
+    // Por ejemplo, para estados:
+    const getUniqueEstados = () => {
+      const estadosUnicos = [...new Set(this.originalSolicitudes.map(s => s.estado))].filter(Boolean);
+      return estadosUnicos.map(estadoId => {
+        const estado = this.estados.find(e => e.id === estadoId);
+        return estado ? {
+          id: estado.id,
+          nombre: estado.nombre
+        } : null;
+      }).filter(Boolean);
+    };
+    
+    // Para fechas y otros campos, usar originalSolicitudes en lugar de solicitudes:
     return {
       ...this.columnOptions,
       modulo: getUniqueModulos(),
-      submodulo: getUniqueSubmodulos()
+      submodulo: getUniqueSubmodulos(),
+      estado: getUniqueEstados(),
+      // Añadir otros campos según sea necesario
     };
   },
   filteredEmpresas() {
@@ -2200,6 +2318,28 @@ mounted() {
   } catch (error) {
     console.error('Error al obtener la empresa actual:', error);
   }
+
+  // Añadir botón temporal para depuración
+  window.inspeccionar = () => {
+    console.log('=== INSPECCIÓN DETALLADA DE DATOS ===');
+    
+    // 1. Verificar los valores reales en las solicitudes
+    this.originalSolicitudes.slice(0, 10).forEach((s, i) => {
+      console.log(`Solicitud ${i}:`, {
+        id: s.id,
+        usuario_soporte: s.usuario_soporte,
+        usuario_soporte_nombre: s.usuario_soporte_nombre,
+        es_nulo: s.usuario_soporte === null,
+        es_no_asignado: s.usuario_soporte_nombre === 'No asignado'
+      });
+    });
+    
+    // 2. Ver qué valores están en el filtro
+    console.log('Valores en filtro:', this.filters.usuario_soporte_nombre);
+  };
+
+  // Obtener timestamp de última actualización
+  this.getLastUpdateTimestamp();
 },
 beforeUnmount() {
   window.removeEventListener('click', this.closeDropdowns);
@@ -2727,30 +2867,59 @@ async setFechaSistema() {
       }
     }
   },
+  getLastUpdateTimestamp() {
+    fetch('/build-info.json')
+      .then(response => response.json())
+      .then(data => {
+        this.lastUpdateTimestamp = data.timestamp;
+      })
+      .catch(error => {
+        console.error('Error al obtener timestamp:', error);
+        this.lastUpdateTimestamp = new Date().toLocaleString();
+      });
+  },
   getColumnOptions(columnKey) {
-    console.log(`Generando opciones para columna: ${columnKey}`);
-    
+    // Usar originalSolicitudes como fuente de datos
     if (columnKey === 'usuario_soporte_nombre') {
-      // Extraer usuarios de soporte únicos de las solicitudes
-      const usuariosSoporteUnicos = [...new Set(
+      console.log('Generando opciones para columna:', columnKey);
+      
+      // Obtener IDs únicos de usuarios de soporte de TODAS las solicitudes
+      const usuariosSoporteIds = [...new Set(
         this.originalSolicitudes
-          .filter(s => s.usuario_soporte)
           .map(s => s.usuario_soporte)
+          .filter(id => id !== undefined && id !== null)
       )];
       
-      console.log('IDs de usuarios de soporte únicos:', usuariosSoporteUnicos);
+      console.log('IDs de usuarios de soporte únicos:', usuariosSoporteIds);
       
-      // Convertir IDs a objetos con id y nombre
-      const options = usuariosSoporteUnicos.map(id => {
-        const nombre = this.usuariosSoporteMap[id] || `Usuario ${id}`;
-        return { id, nombre };
+      // Verificar si hay solicitudes sin responsable asignado
+      const haySinAsignar = this.originalSolicitudes.some(s => 
+        s.usuario_soporte === null || s.usuario_soporte === undefined
+      );
+      
+      // Mapear IDs a objetos de opciones
+      let opciones = usuariosSoporteIds.map(id => {
+        return {
+          id: id,
+          nombre: this.usuariosSoporteMap[id] || `Usuario ${id}`
+        };
       });
       
-      console.log('Opciones generadas para usuario_soporte_nombre:', options);
-      return options;
+      // Añadir opción "Sin asignar" si hay solicitudes sin responsable
+      if (haySinAsignar) {
+        opciones.push({
+          id: 'No asignado', // Usamos un string como identificador especial
+          nombre: 'No asignado'
+        });
+      }
+      
+      console.log('Opciones generadas para usuario_soporte_nombre:', opciones);
+      return opciones;
     }
     
-    // Resto de la lógica para otras columnas
+    // Implementar lógica similar para otros tipos de columnas
+    // ...
+    
     return this.columnOptions[columnKey] || [];
   },
   sortTable(column) {
@@ -2764,8 +2933,8 @@ async setFechaSistema() {
       this.sortOrder = 'asc';
     }
     
-    // Llamar al método que aplica el ordenamiento
-    this.ordenarSolicitudes();
+    // La propiedad computada paginatedSolicitudes se encargará de aplicar
+    // el ordenamiento y mantener los filtros
   },
   
   // Método dedicado para aplicar ordenamiento
@@ -2807,6 +2976,9 @@ async setFechaSistema() {
     });
     
     console.log('Ordenamiento completado');
+    
+    // IMPORTANTE: Aplicar la paginación después de ordenar
+    this.applyPagination();
   },
 
   filterEmpresas() {
@@ -2822,84 +2994,66 @@ async setFechaSistema() {
     }
   },
   filterSolicitudes() {
-    if (!Array.isArray(this.allSolicitudes)) return [];
+    console.log('Ejecutando filterSolicitudes...');
+    if (!Array.isArray(this.originalSolicitudes)) return [];
 
-    let filtered = [...this.allSolicitudes];
+    let filtered = [...this.originalSolicitudes];
 
-    Object.keys(this.filters).forEach(key => {
-      if (this.filters[key] && this.filters[key].length > 0) {
-        filtered = filtered.filter(solicitud => {
-          // Filtros de fecha
-          if (key === 'fecha_creacion' || key === 'fecha_asignacion') {
-            const fechaSolicitud = new Date(solicitud[key]);
-            return this.filters[key].some(filterId => {
-              const today = new Date();
-              const fechaComparar = new Date(fechaSolicitud);
-
-              switch (filterId) {
-                case 'today': {
-                  return fechaComparar.toDateString() === today.toDateString();
-                }
-                case 'week': {
-                  const startOfWeek = new Date(today);
-                  startOfWeek.setDate(today.getDate() - today.getDay() + (today.getDay() === 0 ? -6 : 1)); // Ajuste para que la semana empiece en lunes
-                  startOfWeek.setHours(0, 0, 0, 0); // Inicio del día
-                  const endOfWeek = new Date(startOfWeek);
-                  endOfWeek.setDate(startOfWeek.getDate() + 6);
-                  endOfWeek.setHours(23, 59, 59, 999); // Fin del día
-                  return fechaComparar >= startOfWeek && fechaComparar <= endOfWeek;
-                }
-                case 'month': {
-                  const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
-                  startOfMonth.setHours(0, 0, 0, 0); // Inicio del día
-                  const endOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0);
-                  endOfMonth.setHours(23, 59, 59, 999); // Fin del día
-                  return fechaComparar >= startOfMonth && fechaComparar <= endOfMonth;
-                }
-                case 'year': {
-                  const startOfYear = new Date(today.getFullYear(), 0, 1);
-                  startOfYear.setHours(0, 0, 0, 0); // Inicio del día
-                  const endOfYear = new Date(today.getFullYear(), 11, 31);
-                  endOfYear.setHours(23, 59, 59, 999); // Fin del día
-                  return fechaComparar >= startOfYear && fechaComparar <= endOfYear;
-                }
-                case 'past': {
-                  const startOfYear = new Date(today.getFullYear(), 0, 1);
-                  startOfYear.setHours(0, 0, 0, 0); // Inicio del día
-                  return fechaComparar < startOfYear;
-                }
-                default:
-                  return false;
-              }
-            });
+    Object.entries(this.filters).forEach(([key, values]) => {
+      if (!values || values.length === 0) return;
+      
+      console.log(`Aplicando filtro ${key}:`, values);
+      
+      filtered = filtered.filter(solicitud => {
+        // Caso especial para usuario_soporte_nombre
+        if (key === 'usuario_soporte_nombre') {
+          // Verificar si "Sin asignar" está seleccionado
+          const sinAsignarSeleccionado = values.includes(null);
+          
+          // Si la solicitud no tiene usuario_soporte y "Sin asignar" está seleccionado
+          if ((solicitud.usuario_soporte === null || solicitud.usuario_soporte === undefined) && 
+              sinAsignarSeleccionado) {
+            console.log(`Solicitud ${solicitud.id}: Sin responsable asignado, incluida por filtro sin_asignar`);
+            return true;
           }
-              // Filtro de quien reporta
-              else if (key === 'usuario_cliente_nombre') {
-                return this.filters[key].includes(solicitud.usuario_cliente);
-              }
-              // Filtro de responsable
-              else if (key === 'usuario_soporte_nombre') {
-                return this.filters[key].includes(solicitud.usuario_soporte);
-              }
-              // Filtros de selección múltiple (estado, prioridad, etc.)
-              else if (['estado', 'prioridad', 'modulo', 'submodulo', 'accion'].includes(key)) {
-                return this.filters[key].includes(solicitud[key]);
-              }
-              // Filtro de texto para título
-              else if (key === 'titulo' && this.filters[key]) {
-                return solicitud[key]?.toLowerCase().includes(this.filters[key].toLowerCase());
-              }
-              // Otros filtros
-              else {
-                return this.filters[key].includes(solicitud[key]);
-              }
-            });
+          
+          // Si la solicitud tiene usuario_soporte y su ID está en los valores del filtro
+          if (solicitud.usuario_soporte !== null && 
+              solicitud.usuario_soporte !== undefined &&
+              values.includes(solicitud.usuario_soporte)) {
+            console.log(`Solicitud ${solicitud.id}: Responsable ${solicitud.usuario_soporte} en filtro`);
+            return true;
           }
-        });
-
-        return filtered;
-      },
-      async fetchSolicitudes() {
+          
+          // Si no cumple ninguna condición, no incluir
+          return false;
+        }
+        
+        // Resto de casos...
+        if (['estado', 'prioridad', 'modulo', 'submodulo', 'accion'].includes(key)) {
+          return values.includes(solicitud[key]);
+        } else if (key === 'usuario_cliente_nombre') {
+          return values.includes(solicitud.usuario_cliente);
+        } else if (key.includes('fecha')) {
+          const fechaSolicitud = new Date(solicitud[key]);
+          return this.isDateInFilter(fechaSolicitud, values);
+        } else if (key === 'empresa') {
+          const empresaNombre = solicitud.empresa_nombre || solicitud.clie;
+          const selectedCompanies = values.map(id => 
+            this.empresas.find(e => e.id === id)?.nombre
+          ).filter(Boolean);
+          return selectedCompanies.includes(empresaNombre);
+        } else {
+          return values.includes(solicitud[key]);
+        }
+      });
+        
+      console.log(`Después de filtro ${key}: ${filtered.length} solicitudes`);
+    });
+    
+    return filtered;
+  },
+  async fetchSolicitudes() {
       try {
         console.log('Iniciando fetchSolicitudes()...');
         const token = localStorage.getItem('accessToken');
@@ -4258,7 +4412,32 @@ calcularDuracion() {
     this.isSuccess = false;
   }
 },
-
+// Añadir método para verificar si una columna tiene filtros activos
+hasActiveFilter(columnKey) {
+  // Para campos que usan arrays de valores en los filtros
+  if (this.filters[columnKey] && Array.isArray(this.filters[columnKey])) {
+    return this.filters[columnKey].length > 0;
+  }
+  
+  // Para campos de fecha que pueden tener un formato diferente
+  if (columnKey.includes('fecha')) {
+    const dateFilters = [
+      'today', 'week', 'month', 'year', 'past',
+      'startDate', 'endDate', 'dateRange'
+    ];
+    
+    // Verificar si hay algún filtro de fecha activo para esta columna
+    return dateFilters.some(filter => 
+      this.filters[`${columnKey}_${filter}`] !== undefined && 
+      this.filters[`${columnKey}_${filter}`] !== null
+    );
+  }
+  
+  // Para filtros de texto u otros tipos
+  return this.filters[columnKey] !== undefined && 
+         this.filters[columnKey] !== null && 
+         this.filters[columnKey] !== '';
+},
 // Nueva Tarea
 NuevaTarea(solicitud) {
   // Obtener la fecha y hora actual en Colombia (UTC-5)
@@ -4431,6 +4610,7 @@ watch: {
     }
   }
 },
+
 
 
 };
@@ -4650,4 +4830,20 @@ opacity: 1;
 }
 
 /* ... resto de los estilos del tooltip ... */
+
+/* Añadir estilo para resaltar visualmente los filtros activos */
+.filter-active {
+  position: relative;
+}
+
+.filter-active::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background-color: #4f46e5; /* Color indigo-600 */
+}
 </style>
+

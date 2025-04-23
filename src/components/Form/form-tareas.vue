@@ -3487,6 +3487,96 @@ export default {
       return solicitud ? solicitud.descripcion : '';
     };
 
+    // Modificar la función handleReasignacion para garantizar que la tarea original cambie a terminado
+    const handleReasignacion = async () => {
+      console.log("Iniciando reasignación de tarea");
+      
+      if (!currentTarea.value.usuario_reasignado) {
+        showNotification('Debe seleccionar un usuario para reasignar', false);
+        return false;
+      }
+      
+      try {
+        console.log("Información de reasignación:", {
+          tareaId: currentTarea.value.id,
+          usuarioActual: currentTarea.value.usuario_asignado,
+          usuarioReasignado: currentTarea.value.usuario_reasignado
+        });
+        
+        // 1. Actualizar la tarea actual a estado TERMINADO (ID 7)
+        const tareaActualizada = { ...currentTarea.value };
+        tareaActualizada.estado = 7; // ID específico para "Terminado"
+        
+        const token = localStorage.getItem('accessToken');
+        await apiClient.put(`/tareas/${tareaActualizada.id}/`, tareaActualizada, {
+          headers: { 
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+        
+        console.log("Tarea original actualizada a estado TERMINADO (ID 7)");
+        
+        // Verificar que la tarea se actualizó correctamente
+        const verificacion = await apiClient.get(`/tareas/${tareaActualizada.id}/`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        console.log("Verificación de actualización:", verificacion.data);
+        
+        if (verificacion.data.estado !== 7) {
+          console.error("¡La tarea no se actualizó correctamente a estado Terminado!");
+          // Intentar nuevamente con un enfoque diferente
+          await apiClient.patch(`/tareas/${tareaActualizada.id}/`, { estado: 7 }, {
+            headers: { 
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json'
+            }
+          });
+          console.log("Segundo intento de actualización realizado");
+        }
+        
+        // 2. Crear una nueva tarea para el usuario reasignado
+        const nuevaTarea = {
+          titulo: `Reasignado: ${currentTarea.value.titulo}`,
+          descripcion: currentTarea.value.descripcion,
+          solicitud: currentTarea.value.solicitud,
+          fecha_programada: currentTarea.value.fecha_programada,
+          prioridad: currentTarea.value.prioridad,
+          estado: 6, // ID 6 = "Asignado" para la nueva tarea
+          usuario_asignado: currentTarea.value.usuario_reasignado,
+          tipo: currentTarea.value.tipo,
+          observaciones: `Tarea reasignada desde la tarea #${currentTarea.value.id}`
+        };
+        
+        console.log("Creando nueva tarea:", nuevaTarea);
+        
+        const responseNuevaTarea = await apiClient.post('/tareas/', nuevaTarea, {
+          headers: { 
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+        
+        console.log("Nueva tarea creada:", responseNuevaTarea.data);
+        
+        // 3. Actualizar la solicitud si es necesario
+        if (currentTarea.value.solicitud) {
+          await actualizarEstadoYUsuarioSolicitud(currentTarea.value.solicitud);
+        }
+        
+        showNotification('Tarea reasignada correctamente y original marcada como terminada', true);
+        closeModal();
+        fetchTareas(); // Recargar la lista de tareas
+        
+        return true;
+      } catch (error) {
+        console.error('Error al reasignar tarea:', error);
+        console.error('Detalles del error:', error.response?.data || error.message);
+        showNotification(`Error al reasignar la tarea: ${error.message}`, false);
+        return false;
+      }
+    };
+
     return {
       getSolicitudTitle,
       getSolicitudDescription,
@@ -3617,7 +3707,7 @@ export default {
       filterUsuarios,
       filterUsuariosReasignados,
       creacionFilters,
-      actualizarEstadoYUsuarioSolicitud
+      handleReasignacion
     };
   }
   

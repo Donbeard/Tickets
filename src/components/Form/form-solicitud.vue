@@ -14,7 +14,7 @@
       <!-- Info de la ultima actualización -->
         <div class="text-xs text-gray-500 flex items-center justify-end mb-2">
           <span class="mr-1">Última actualización:</span>
-          <span class="font-medium">{{ lastUpdateTimestamp }}</span>
+          <span class="font-medium">2025-04-27 17:37:22</span>
         </div>
       
       <div class="flex flex-col sm:flex-row gap-4 mt-4 sm:mt-0">
@@ -85,10 +85,13 @@
               :key="column.key"
               class="px-1 py-1 text-left text-xs text-black tracking-wider cursor-pointer select-none relative"
             >
-              <div class="flex items-center justify-between">
-                <!-- Asegurarse que el evento click esté en el span -->
+              <!-- Movemos el evento click al div principal para que abarque toda la celda -->
+              <div 
+                class="flex items-center justify-between"
+                @click.stop="sortTable(column.key)"
+              >
+                <!-- Ya no necesitamos el click aquí -->
                 <span 
-                  @click.stop="sortTable(column.key)" 
                   class="cursor-pointer flex items-center"
                   :class="{'font-bold text-indigo-600': hasActiveFilter(column.key)}"
                 >
@@ -103,10 +106,11 @@
                     </svg>
                   </span>
                 </span>
+                
                 <!-- Solo mostrar el botón de filtro si NO es ID, título o acciones -->
                 <div v-if="!['id', 'titulo', 'version_error', 'acciones', 'usuario_cliente_nombre', 'orden'].includes(column.key)" class="dropdown-container">
                   <button 
-                    @click="(event) => toggleDropdown(column.key, event)"
+                    @click.stop="toggleDropdown(column.key, $event)"
                     class="ml-1 p-1 hover:bg-gray-100 rounded-md"
                   >
                     <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -160,7 +164,7 @@
                       <button @click="selectAllEmpresas" class="text-xs text-gray-600 hover:text-gray-800">Seleccionar todo</button>
                     </div>
                   </div>
-                  <div class="max-h-96 overflow-y-auto">
+                  <div class="max-h-[615px] overflow-y-auto">
                     <template v-for="option in column.key === 'empresa' ? 
                       filteredEmpresas : 
                       (column.key === 'modulo' || column.key === 'submodulo' ? 
@@ -1142,7 +1146,7 @@
             </svg>
             Guardar Cambios
           </button>
-          <button @click="closeModal" type="button" class="mt-3 sm:mt-0 w-full sm:w-auto inline-flex justify-center items-center rounded-md px-6 py-2.5 border border-gray-300 bg-white text-gray-700 font-medium shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duración-200">
+          <button @click="closeModal" type="button" class="mt-3 sm:mt-0 w-full sm:w-auto inline-flex justify-center items-center rounded-md px-6 py-2.5 border border-gray-300 bg-white text-gray-700 font-medium shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all duración-200">
             <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
             </svg>
@@ -1352,7 +1356,8 @@
 
     <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
 
-    <div class="inline-block align-bottom bg-white rounded-lg text-left overflow-visible shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full border border-indigo-100">
+    <!-- Cambio principal: aumentar el ancho máximo del modal -->
+    <div class="inline-block align-bottom bg-white rounded-lg text-left overflow-visible shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-5xl sm:w-full border border-indigo-100">
       <!-- Header -->
       <div class="bg-gradient-to-r from-indigo-600 to-blue-500 px-4 py-3 flex justify-between items-center">
         <h3 class="text-lg leading-6 font-medium text-white">
@@ -1372,30 +1377,72 @@
       <!-- Contenido del formulario -->
       <div class="bg-white px-4 py-4">
         <div class="space-y-4">
-          <!-- Campo Descripción -->
+          <!-- Información de la solicitud - 2 columnas -->
+          <div class="grid grid-cols-2 gap-4">
+            <!-- Columna 1: Solicitud -->
+            <div class="flex items-center">
+              <label class="block text-sm font-medium text-gray-700 w-1/4 text-sm font-medium text-gray-700">
+                Solicitud:
+              </label>
+              <div class="block w-3/4 px-3 py-2 bg-gray-100 border border-gray-300 rounded-lg text-sm">
+                {{ currentTarea.solicitud }} - {{ getSolicitudTitle(currentTarea.solicitud) }}
+              </div>
+            </div>
+            
+            <!-- Prioridad editable con ancho corregido -->
+            <div class="flex items-center">
+              <label class="block text-sm font-medium text-gray-700 w-1/4">
+                Prioridad:
+              </label>
+              <select
+                v-model="currentTarea.prioridad"
+                class="w-3/4 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 text-sm"
+                @change="actualizarPrioridadSolicitud"
+              >
+                <option value="" disabled>Seleccione prioridad</option>
+                <option v-for="prioridad in prioridades" 
+                        :key="prioridad.id" 
+                        :value="prioridad.id">
+                  {{ prioridad.nombre }}
+                </option>
+              </select>
+            </div>
+          </div>
+
+          <!-- NUEVO: Descripción de la Solicitud -->
+          <div class="flex items-center">
+            <label class="block text-sm font-medium text-gray-700 w-[8%] shrink-0">
+              Desc. Solicitud:
+            </label>
+            <div class="block w-[92%] px-4 py-3 bg-gray-100 border border-gray-300 rounded-lg text-sm max-h-24 overflow-y-auto">
+              {{ getSolicitudDescription(currentTarea.solicitud) || 'Sin descripción' }}
+            </div>
+          </div>
+          
+          <!-- Campo Descripción - Manteniendo el ancho pero reduciendo la altura -->
           <div class="flex items-start">
-            <label class="block text-sm font-medium text-gray-700 w-1/4 pt-2">
+            <label class="block text-sm font-medium text-gray-700 w-[8%] pt-2 shrink-0">
               Descripción:
             </label>
             <textarea
               v-model="currentTarea.descripcion"
               :disabled="modalType === 'detail'"
-              rows="3"
-              class="block w-3/4 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 text-sm"
+              rows="3" 
+              class="block w-[92%] px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 text-sm"
               :class="{'bg-gray-50': modalType === 'detail'}"
             ></textarea>
           </div>
 
           <!-- Campos en dos columnas -->
-          <div class="grid grid-cols-2 gap-4">
+          <div class="grid grid-cols-4 gap-4">
             <!-- Estado -->
             <div class="flex items-center">
-              <label class="block text-sm font-medium text-gray-700 w-1/3">
+              <label class="block text-sm font-medium text-gray-700 w-2/5">
                 Estado:
               </label>
               <select
                 v-model="currentTarea.estado"
-                class="block w-2/3 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 text-sm"
+                class="block w-3/5 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 text-sm"
               >
                 <option v-for="estado in estados" :key="estado.id" :value="estado.id">
                   {{ estado.nombre }}
@@ -1405,12 +1452,12 @@
 
             <!-- Usuario Asignado -->
             <div class="flex items-center">
-              <label class="block text-sm font-medium text-gray-700 w-1/3">
+              <label class="block text-sm font-medium text-gray-700 w-2/5">
                 Asignado a:
               </label>
               <select
                 v-model="currentTarea.usuario_asignado"
-                class="block w-2/3 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 text-sm"
+                class="block w-3/5 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 text-sm"
               >
                 <option value="">Sin asignar</option>
                 <option v-for="(nombre, id) in usuariosSoporteMap" :key="id" :value="id">
@@ -1418,123 +1465,116 @@
                 </option>
               </select>
             </div>
+            
+            <!-- Tipo -->
+            <div class="flex items-center">
+              <label class="block text-sm font-medium text-gray-700 w-2/5">
+                Tipo:
+              </label>
+              <select
+                v-model="currentTarea.tipo"
+                class="block w-3/5 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 text-sm"
+              >
+                <option v-for="option in tipoOptions" :key="option.value" :value="option.value">
+                  {{ option.label }}
+                </option>
+              </select>
+            </div>
+            
+            <!-- Cita -->
+            <div class="flex items-center">
+              <label class="block text-sm font-medium text-gray-700 w-2/5">
+                ¿Cita?:
+              </label>
+              <select
+                v-model="currentTarea.cita"
+                class="block w-3/5 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 text-sm"
+              >
+                <option value="N">No</option>
+                <option value="S">Sí</option>
+              </select>
+            </div>
           </div>
           
           <!-- Fecha Programada -->
-          <div class="flex items-center">
-            <label class="block text-sm font-medium text-gray-700 w-1/4">
-              F. Programada:
-            </label>
-            <div class="w-3/4">
-              <DatePicker
-                v-model="currentTarea.fecha_programada"
-                :model-config="{ type: 'string', mask: 'YYYY-MM-DDTHH:mm:00' }"
-                :masks="{ input: 'DD/MM/YYYY HH:mm' }"
-                :time-picker-options="timePickerOptions"
-                :is-24hr="true"
-                mode="dateTime"
-                class="w-full"
-              >
-                <template v-slot="{ inputValue, inputEvents }">
-                  <input
-                    class="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 text-sm"
-                    :value="inputValue"
-                    v-on="inputEvents"
-                  />
-                </template>
-              </DatePicker>
-            </div>
-          </div>
-
-          <!-- Fecha Inicio -->
-          <div class="flex items-center">
-            <label class="block text-sm font-medium text-gray-700 w-1/4">
-              F. Inicio:
-            </label>
-            <div class="w-3/4">
-              <DatePicker
-                v-model="currentTarea.fecha_inicio"
-                :model-config="{ type: 'string', mask: 'YYYY-MM-DDTHH:mm:00', timeAdjust: 'none' }"
-                :masks="{ input: 'DD/MM/YYYY HH:mm' }"
-                :time-picker-options="timePickerOptions"
-                :is-24hr="true"
-                mode="dateTime"
-                class="w-full"
-                @update:model-value="calcularDuracion"
-                :popover="{ 
-                  visibility: 'click', 
-                  placement: 'auto', 
-                  isInteractive: true, 
-                  modifiers: [{ name: 'preventOverflow', options: { padding: 8 } }],
-                  positionFixed: true
-                }"
-              >
-                <template v-slot="{ inputValue, inputEvents }">
-                  <div class="relative">
-                    <input
-                      class="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 text-sm"
-                      :value="inputValue"
-                      v-on="inputEvents"
-                    />
-                    <button 
-                      type="button"
-                      @click="setCurrentDateTime('inicio')"
-                      class="absolute inset-y-0 right-0 px-3 flex items-center bg-gray-100 hover:bg-gray-200 text-gray-600 rounded-r-lg transition-colors"
-                      title="Usar fecha y hora actual"
-                    >
-                      <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
-                    </button>
-                  </div>
-                </template>
-              </DatePicker>
-            </div>
-          </div>
-
-          <!-- Campos adicionales solo para edición -->
-          <div v-if="modalType === 'edit'" class="flex items-center mt-4">
-            <label class="block text-sm font-medium text-gray-700 w-1/4">
-              Reasignar a:
-            </label>
-            <select
-              v-model="currentTarea.usuario_reasignado"
-              class="block w-3/4 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 text-sm"
-            >
-              <option value="">Sin reasignar</option>
-              <option 
-                v-for="(nombre, id) in usuariosSoporteMap" 
-                :key="id" 
-                :value="id"
-                :disabled="id == currentTarea.usuario_asignado"
-              >
-                {{ nombre }}
-              </option>
-            </select>
-          </div>
-          <template v-if="modalType === 'edit'">
-            <!-- Fecha Fin -->
+          <div class="grid grid-cols-3 gap-4">
             <div class="flex items-center">
-              <label class="block text-sm font-medium text-gray-700 w-1/4">
-                F. Fin:
+              <label class="block text-sm font-medium text-gray-700 w-2/5">
+                F. Programada:
               </label>
-              <div class="w-3/4">
+              <div class="w-3/5">
                 <DatePicker
-                  v-model="currentTarea.fecha_fin"
-                  :model-config="{ type: 'string', mask: 'YYYY-MM-DDTHH:mm:00', timeAdjust: 'none' }"
+                  v-model="currentTarea.fecha_programada"
+                  :model-config="{ type: 'string', mask: 'YYYY-MM-DDTHH:mm:00' }"
                   :masks="{ input: 'DD/MM/YYYY HH:mm' }"
                   :time-picker-options="timePickerOptions"
                   :is-24hr="true"
                   mode="dateTime"
                   class="w-full"
-                  @update:model-value="calcularDuracion"
-                  :popover="{ 
-                    visibility: 'click', 
-                    placement: 'auto', 
-                    isInteractive: true, 
-                    modifiers: [{ name: 'preventOverflow', options: { padding: 8 } }],
-                    positionFixed: true
-                  }"
+                >
+                  <template v-slot="{ inputValue, inputEvents }">
+                    <input
+                      class="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 text-sm"
+                      :value="inputValue"
+                      v-on="inputEvents"
+                    />
+                  </template>
+                </DatePicker>
+              </div>
+            </div>
+            
+            <!-- Fecha Inicio -->
+            <div class="flex items-center">
+              <label class="block text-sm font-medium text-gray-700 w-2/5">
+                F. Inicio:
+              </label>
+              <div class="w-3/5 relative">
+                <DatePicker
+                  v-model="currentTarea.fecha_inicio"
+                  :model-config="{ type: 'string', mask: 'YYYY-MM-DDTHH:mm:00' }"
+                  :masks="{ input: 'DD/MM/YYYY HH:mm' }"
+                  :time-picker-options="timePickerOptions"
+                  :is-24hr="true"
+                  mode="dateTime"
+                  class="w-full"
+                >
+                  <template v-slot="{ inputValue, inputEvents }">
+                    <div class="relative">
+                      <input
+                        class="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 text-sm"
+                        :value="inputValue"
+                        v-on="inputEvents"
+                      />
+                      <button 
+                        type="button"
+                        @click="setCurrentDateTime('inicio')"
+                        class="absolute inset-y-0 right-0 px-3 flex items-center bg-gray-100 hover:bg-gray-200 text-gray-600 rounded-r-lg transition-colors"
+                        title="Usar fecha y hora actual"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                      </button>
+                    </div>
+                  </template>
+                </DatePicker>
+              </div>
+            </div>
+            
+            <!-- Fecha Fin -->
+            <div class="flex items-center">
+              <label class="block text-sm font-medium text-gray-700 w-2/5">
+                F. Fin:
+              </label>
+              <div class="w-3/5 relative">
+                <DatePicker
+                  v-model="currentTarea.fecha_fin"
+                  :model-config="{ type: 'string', mask: 'YYYY-MM-DDTHH:mm:00' }"
+                  :masks="{ input: 'DD/MM/YYYY HH:mm' }"
+                  :time-picker-options="timePickerOptions"
+                  :is-24hr="true"
+                  mode="dateTime"
+                  class="w-full"
                 >
                   <template v-slot="{ inputValue, inputEvents }">
                     <div class="relative">
@@ -1558,62 +1598,48 @@
                 </DatePicker>
               </div>
             </div>
+          </div>
 
-            <!-- Duración y Tiempo Facturable -->
-            <div class="grid grid-cols-2 gap-4">
-              <div class="flex items-center">
-                <label class="block text-sm font-medium text-gray-700 w-1/3">
-                  Duración:
-                </label>
-                <input
-                  type="text"
-                  v-model="currentTarea.duracion"
-                  readonly
-                  class="block w-2/3 px-3 py-2 bg-gray-100 border border-gray-300 rounded-lg text-sm"
-                  placeholder="Auto"
-                />
-              </div>
-
-              <div class="flex items-center">
-                <label class="block text-sm font-medium text-gray-700 w-1/3">
-                  T. Facturable:
-                </label>
-                <input
-                  type="text"
-                  v-model="currentTarea.tiempoFacturable"
-                  placeholder="Ej: 2h"
-                  class="block w-2/3 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 text-sm"
-                />
-              </div>
-            </div>
-          </template>
-
-          <!-- Tipo y Cita -->
-          <div class="grid grid-cols-2 gap-4">
+          <!-- Duración y Tiempo Facturable -->
+          <div class="grid grid-cols-3 gap-4">
             <div class="flex items-center">
-              <label class="block text-sm font-medium text-gray-700 w-1/3">
-                Tipo:
+              <label class="block text-sm font-medium text-gray-700 w-2/5">
+                Duración:
+              </label>
+              <input
+                type="text"
+                v-model="currentTarea.duracion"
+                readonly
+                class="block w-3/5 px-3 py-2 bg-gray-100 border border-gray-300 rounded-lg text-sm"
+                placeholder="Auto"
+              />
+            </div>
+
+            <div class="flex items-center">
+              <label class="block text-sm font-medium text-gray-700 w-2/5">
+                T. Facturable:
+              </label>
+              <input
+                type="text"
+                v-model="currentTarea.tiempoFacturable"
+                placeholder="Ej: 2h"
+                class="block w-3/5 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 text-sm"
+              />
+            </div>
+            
+            <!-- Usuario Reasignado -->
+            <div class="flex items-center">
+              <label class="block text-sm font-medium text-gray-700 w-2/5">
+                Reasignar:
               </label>
               <select
-                v-model="currentTarea.tipo"
-                class="block w-2/3 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 text-sm"
+                v-model="currentTarea.usuario_reasignado"
+                class="block w-3/5 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 text-sm"
               >
-                <option v-for="option in tipoOptions" :key="option.value" :value="option.value">
-                  {{ option.label }}
+                <option value="">Sin reasignar</option>
+                <option v-for="(nombre, id) in usuariosSoporteMap" :key="id" :value="id">
+                  {{ nombre }}
                 </option>
-              </select>
-            </div>
-
-            <div class="flex items-center">
-              <label class="block text-sm font-medium text-gray-700 w-1/3">
-                ¿Cita?:
-              </label>
-              <select
-                v-model="currentTarea.cita"
-                class="block w-2/3 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 text-sm"
-              >
-                <option value="N">No</option>
-                <option value="S">Sí</option>
               </select>
             </div>
           </div>
@@ -1871,16 +1897,13 @@ data() {
 },
 computed: {
   filteredSolicitudes() {
-    console.log('Recalculando filteredSolicitudes...');
-    
-    // Si no hay datos originales, devolver array vacío
+  // Si no hay datos originales, devolver array vacío
     if (!this.originalSolicitudes || !Array.isArray(this.originalSolicitudes)) {
       return [];
     }
     
     // Comenzar con los datos originales
     let filtered = [...this.originalSolicitudes];
-    console.log('Datos originales:', filtered.length);
     
     // Aplicar filtro de empresa si está activo
     if (this.filters.empresa && this.filters.empresa.length > 0) {
@@ -1893,7 +1916,6 @@ computed: {
         const empresaNombre = solicitud.empresa_nombre || solicitud.clie;
         return selectedCompanies.includes(empresaNombre);
       });
-      console.log('Después de filtro empresa:', filtered.length);
     }
     
     // Aplicar otros filtros
@@ -1914,7 +1936,6 @@ computed: {
           return values.includes(solicitud[key]);
         }
       });
-      console.log(`Después de filtro ${key}:`, filtered.length);
     });
     
     // Aplicar búsqueda si existe
@@ -2023,8 +2044,7 @@ computed: {
     );
   },
   paginatedSolicitudes() {
-    console.log('Ejecutando paginatedSolicitudes');
-    
+   
     // Primero filtramos las solicitudes
     let filtered = [...this.originalSolicitudes];
     
@@ -2160,15 +2180,14 @@ computed: {
     };
   },
   filteredEmpresas() {
-    console.log('Calculando filteredEmpresas, total empresas:', this.empresas?.length || 0);
-    
+  
     if (!this.empresas || this.empresas.length === 0) {
-      console.log('No hay empresas disponibles');
+
       return [];
     }
     
     if (!this.empresaSearchQuery) {
-      console.log('Mostrando todas las empresas');
+
       return this.empresas;
     }
     
@@ -2176,14 +2195,13 @@ computed: {
     const filtered = this.empresas.filter(empresa => {
       // Verificar que empresa y empresa.nombre existen
       if (!empresa || !empresa.nombre) {
-        console.log('Empresa sin nombre:', empresa);
+
         return false;
       }
       
       return empresa.nombre.toLowerCase().includes(query);
     });
     
-    console.log('Empresas filtradas:', filtered.length);
     return filtered;
   },
   empresasConSolicitudes() {
@@ -2308,7 +2326,7 @@ mounted() {
         
         if (usuarioTercero && usuarioTercero.tercero) {
           this.empresaActual = usuarioTercero.tercero.nombre;
-          console.log('Empresa actual:', this.empresaActual);
+
         }
       })
       .catch(error => {
@@ -2321,7 +2339,7 @@ mounted() {
 
   // Añadir botón temporal para depuración
   window.inspeccionar = () => {
-    console.log('=== INSPECCIÓN DETALLADA DE DATOS ===');
+
     
     // 1. Verificar los valores reales en las solicitudes
     this.originalSolicitudes.slice(0, 10).forEach((s, i) => {
@@ -2334,8 +2352,6 @@ mounted() {
       });
     });
     
-    // 2. Ver qué valores están en el filtro
-    console.log('Valores en filtro:', this.filters.usuario_soporte_nombre);
   };
 
   // Obtener timestamp de última actualización
@@ -2361,18 +2377,17 @@ methods: {
     this.handleFilterChange();
   },
   handleFilterChange() {
-    console.log('Filtros cambiados:', JSON.stringify(this.filters));
     this.currentPage = 1; // Regresar a la primera página
   },
   applyAllFilters() {
-    console.log('Aplicando todos los filtros...');
+
     
     // Comenzar con los datos originales
     let filtered = [...this.originalSolicitudes];
     
     // Aplicar filtro de empresa si está activo
     if (this.filters.empresa && this.filters.empresa.length > 0) {
-      console.log('Aplicando filtro de empresa:', this.filters.empresa);
+
       
       // Obtener nombres de empresas seleccionadas
       const selectedCompanyIds = this.filters.empresa;
@@ -2380,22 +2395,18 @@ methods: {
         this.empresas.find(e => e.id === id)?.nombre
       ).filter(Boolean);
       
-      console.log('Empresas seleccionadas:', selectedCompanies);
-      
       // Filtrar por nombre de empresa
       filtered = filtered.filter(solicitud => {
         const empresaNombre = solicitud.empresa_nombre || solicitud.clie;
         return selectedCompanies.includes(empresaNombre);
       });
       
-      console.log(`Después de filtro empresa: ${filtered.length} solicitudes`);
     }
     
     // Aplicar otros filtros
     Object.entries(this.filters).forEach(([key, values]) => {
       if (key === 'empresa' || !values || values.length === 0) return;
       
-      console.log(`Aplicando filtro ${key}:`, values);
       
       filtered = filtered.filter(solicitud => {
         if (['estado', 'prioridad', 'modulo', 'submodulo', 'accion'].includes(key)) {
@@ -2414,7 +2425,6 @@ methods: {
         }
       });
         
-      console.log(`Después de filtro ${key}: ${filtered.length} solicitudes`);
     });
     
     // Aplicar búsqueda si existe
@@ -2425,7 +2435,6 @@ methods: {
         solicitud.descripcion?.toLowerCase().includes(searchLower) ||
         solicitud.id?.toString().includes(searchLower)
       );
-      console.log(`Después de búsqueda: ${filtered.length} solicitudes`);
     }
     
     // Actualizar allSolicitudes con los resultados filtrados
@@ -2473,6 +2482,60 @@ isDateInFilter(date, filterValues) {
     }
   });
 },
+// Método para actualizar la prioridad de la solicitud cuando cambia en la tarea
+actualizarPrioridadSolicitud() {
+    // Buscar la solicitud asociada a esta tarea
+    const solicitudId = this.currentTarea.solicitud;
+    if (!solicitudId) return;
+    
+    // Encontrar el índice de la solicitud en el array
+    const solicitudIndex = this.solicitudes.findIndex(s => s.id === solicitudId);
+    if (solicitudIndex === -1) return;
+    
+    // Actualizar la prioridad de la solicitud
+    this.solicitudes[solicitudIndex].prioridad = this.currentTarea.prioridad;
+    
+    // Si es la solicitud actual, actualizarla también
+    if (this.currentSolicitud && this.currentSolicitud.id === solicitudId) {
+      this.currentSolicitud.prioridad = this.currentTarea.prioridad;
+    }
+    
+    // Opcional: Guardar el cambio en el backend
+    this.actualizarPrioridadEnBackend(solicitudId, this.currentTarea.prioridad);
+  },
+  
+  // Método mejorado para persistir el cambio de prioridad en el servidor
+  actualizarPrioridadEnBackend(solicitudId, prioridad) {
+    // Obtener token de autenticación
+    const token = localStorage.getItem('accessToken');
+    
+    // Primero obtener los datos actuales de la solicitud
+    apiClient.get(`/solicitudes/${solicitudId}/`, {
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    })
+    .then(response => {
+      // Conservar todos los datos originales y solo actualizar la prioridad
+      const solicitudData = response.data;
+      solicitudData.prioridad = prioridad;
+      
+      // Enviar la solicitud de actualización con todos los datos
+      return apiClient.put(`/solicitudes/${solicitudId}/`, solicitudData, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+    })
+    .then(() => {
+    })
+    .catch(error => {
+      console.error('Error al actualizar prioridad:', error);
+      // Mostrar mensaje de error al usuario
+      this.showToast('Error al actualizar prioridad. Intente nuevamente.', 'error');
+    });
+  },
 
   // Método auxiliar para filtrar por todos los criterios
   filterSolicitudByAllCriteria(solicitud) {
@@ -2491,10 +2554,28 @@ isDateInFilter(date, filterValues) {
     
     return true;
   },
-
+// Método para obtener la descripción de una solicitud
+  getSolicitudDescription(solicitudId) {
+      if (this.currentSolicitud && this.currentSolicitud.id === solicitudId) {
+        return this.currentSolicitud.descripcion;
+      }
+      
+      const solicitud = this.solicitudes.find(s => s.id === solicitudId);
+      return solicitud ? solicitud.descripcion : '';
+    },
+    
+    // Método para obtener el título de una solicitud
+    getSolicitudTitle(solicitudId) {
+      if (this.currentSolicitud && this.currentSolicitud.id === solicitudId) {
+        return this.currentSolicitud.titulo;
+      }
+      
+      const solicitud = this.solicitudes.find(s => s.id === solicitudId);
+      return solicitud ? solicitud.titulo : '';
+    },
   async created() {
     await this.fetchSubmodulos();
-    console.log('Componente creado - Iniciando carga de datos');
+
     try {
       const response = await apiClient.get('/terceros/');
       this.empresas = response.data;
@@ -2510,17 +2591,15 @@ isDateInFilter(date, filterValues) {
         return;
       }
 
-      console.log('Token encontrado:', token);
-
       // 1. Cargar usuarios-terceros
-      console.log('Iniciando carga de usuarios-terceros...');
+
       const usuariosTercerosResponse = await apiClient.get('/usuariosTerceros/', {
         headers: {
           'Authorization': `Bearer ${token}`
         }
       });
       
-      console.log('Datos de usuariosTerceros:', usuariosTercerosResponse.data);
+
 
       // Crear mapa de usuarios-terceros
       this.usuariosTercerosMap = {};
@@ -2539,7 +2618,6 @@ isDateInFilter(date, filterValues) {
 
 
       // 2. Cargar solicitudes
-      console.log('Iniciando carga de solicitudes...');
       const solicitudesResponse = await apiClient.get('/solicitudes/', {
         headers: {
           'Authorization': `Bearer ${token}`
@@ -2566,7 +2644,6 @@ isDateInFilter(date, filterValues) {
         };
       });
 
-      console.log('Solicitudes procesadas:', this.allSolicitudes);
 
       // Ordenar y aplicar paginación
       this.allSolicitudes.sort((a, b) => 
@@ -2610,21 +2687,16 @@ isDateInFilter(date, filterValues) {
   },
   async fetchTerceros() {
   try {
-    console.log('Cargando terceros...');
+
     const token = localStorage.getItem('accessToken');
     const response = await apiClient.get('/terceros/', {
       headers: {
         'Authorization': `Bearer ${token}`
       }
     });
-    
-    console.log('Terceros cargados:', response.data);
+
     this.empresas = response.data;
     
-    // Verificar que los datos tienen la estructura esperada
-    if (this.empresas.length > 0) {
-      console.log('Ejemplo de tercero:', this.empresas[0]);
-    }
   } catch (error) {
     console.error('Error al cargar terceros:', error);
     if (error.response) {
@@ -2783,7 +2855,6 @@ getSubmoduloNombre(submoduloId) {
 
     // Crear fecha ISO
     const adjustedTime = `${year}-${month}-${day}T${hours}:${minutes}:${seconds}`;
-    console.log('Hora ajustada (+5):', adjustedTime);
     
     return new Date(adjustedTime);
   } catch (error) {
@@ -2831,7 +2902,6 @@ async setFechaSistema() {
     return solicitudDate >= start && solicitudDate <= end;
   },
   toggleDropdown(columnKey, event) {
-    console.log('Abriendo dropdown para:', columnKey);
     
     // Si es el dropdown de empresa, asegúrate de cargar todas las empresas
     if (columnKey === 'empresa') {
@@ -2853,7 +2923,6 @@ async setFechaSistema() {
     if (this.dropdownOpen[columnKey]) {
       // Actualizar opciones si es necesario
       if (!this.columnOptions[columnKey] || this.columnOptions[columnKey].length === 0) {
-        console.log(`Regenerando opciones para ${columnKey}`);
         this.columnOptions[columnKey] = this.getColumnOptions(columnKey);
       }
       
@@ -2881,7 +2950,7 @@ async setFechaSistema() {
   getColumnOptions(columnKey) {
     // Usar originalSolicitudes como fuente de datos
     if (columnKey === 'usuario_soporte_nombre') {
-      console.log('Generando opciones para columna:', columnKey);
+
       
       // Obtener IDs únicos de usuarios de soporte de TODAS las solicitudes
       const usuariosSoporteIds = [...new Set(
@@ -2890,7 +2959,6 @@ async setFechaSistema() {
           .filter(id => id !== undefined && id !== null)
       )];
       
-      console.log('IDs de usuarios de soporte únicos:', usuariosSoporteIds);
       
       // Verificar si hay solicitudes sin responsable asignado
       const haySinAsignar = this.originalSolicitudes.some(s => 
@@ -2913,7 +2981,7 @@ async setFechaSistema() {
         });
       }
       
-      console.log('Opciones generadas para usuario_soporte_nombre:', opciones);
+
       return opciones;
     }
     
@@ -2923,7 +2991,7 @@ async setFechaSistema() {
     return this.columnOptions[columnKey] || [];
   },
   sortTable(column) {
-    console.log(`Ordenando por ${column}`);
+
     
     // Lógica de toggle
     if (this.sortBy === column) {
@@ -2939,11 +3007,10 @@ async setFechaSistema() {
   
   // Método dedicado para aplicar ordenamiento
   ordenarSolicitudes() {
-    console.log(`Aplicando ordenamiento: ${this.sortBy} ${this.sortOrder}`);
+
     
     // Si no hay datos o no hay columna de ordenamiento, no hacer nada
     if (!this.allSolicitudes || !this.allSolicitudes.length || !this.sortBy) {
-      console.log('No hay datos para ordenar o no se ha especificado columna');
       return;
     }
     
@@ -2975,7 +3042,7 @@ async setFechaSistema() {
       return 0;
     });
     
-    console.log('Ordenamiento completado');
+
     
     // IMPORTANTE: Aplicar la paginación después de ordenar
     this.applyPagination();
@@ -2994,7 +3061,7 @@ async setFechaSistema() {
     }
   },
   filterSolicitudes() {
-    console.log('Ejecutando filterSolicitudes...');
+
     if (!Array.isArray(this.originalSolicitudes)) return [];
 
     let filtered = [...this.originalSolicitudes];
@@ -3002,7 +3069,7 @@ async setFechaSistema() {
     Object.entries(this.filters).forEach(([key, values]) => {
       if (!values || values.length === 0) return;
       
-      console.log(`Aplicando filtro ${key}:`, values);
+
       
       filtered = filtered.filter(solicitud => {
         // Caso especial para usuario_soporte_nombre
@@ -3013,7 +3080,6 @@ async setFechaSistema() {
           // Si la solicitud no tiene usuario_soporte y "Sin asignar" está seleccionado
           if ((solicitud.usuario_soporte === null || solicitud.usuario_soporte === undefined) && 
               sinAsignarSeleccionado) {
-            console.log(`Solicitud ${solicitud.id}: Sin responsable asignado, incluida por filtro sin_asignar`);
             return true;
           }
           
@@ -3021,7 +3087,6 @@ async setFechaSistema() {
           if (solicitud.usuario_soporte !== null && 
               solicitud.usuario_soporte !== undefined &&
               values.includes(solicitud.usuario_soporte)) {
-            console.log(`Solicitud ${solicitud.id}: Responsable ${solicitud.usuario_soporte} en filtro`);
             return true;
           }
           
@@ -3048,14 +3113,14 @@ async setFechaSistema() {
         }
       });
         
-      console.log(`Después de filtro ${key}: ${filtered.length} solicitudes`);
+
     });
     
     return filtered;
   },
   async fetchSolicitudes() {
       try {
-        console.log('Iniciando fetchSolicitudes()...');
+
         const token = localStorage.getItem('accessToken');
         
         if (!token) {
@@ -3066,7 +3131,7 @@ async setFechaSistema() {
         // 1. Obtener datos de usuario
         const userStr = localStorage.getItem('user');
         const user = userStr ? JSON.parse(userStr) : {};
-        console.log('Datos de usuario:', user);
+
         
         // 2. Cargar relación usuario-tercero
         const usuariosTercerosResponse = await apiClient.get('/usuariosTerceros/');
@@ -3092,7 +3157,6 @@ async setFechaSistema() {
           
           if (relacion) {
             usuarioTerceroRelacionId = relacion.id;
-            console.log(`Relación usuario-tercero encontrada: ${usuarioTerceroRelacionId}`);
           } else {
             console.warn('No se encontró relación usuario-tercero para este usuario');
           }
@@ -3105,7 +3169,6 @@ async setFechaSistema() {
         let solicitudes = response.data;
         if (user.tipo === 'C' && usuarioTerceroRelacionId) {
           solicitudes = solicitudes.filter(s => s.usuario_cliente == usuarioTerceroRelacionId);
-          console.log(`Solicitudes filtradas por relación ID ${usuarioTerceroRelacionId}: ${solicitudes.length}`);
         }
         
         // 6. Procesar cada solicitud (mantener el código original)
@@ -3137,8 +3200,7 @@ async setFechaSistema() {
         // Aplicar paginación
         this.applyPagination();
 
-        console.log("originalSolicitudes:", this.originalSolicitudes.length);
-        console.log("allSolicitudes:", this.allSolicitudes.length);
+
       } catch (error) {
         console.error("Error al obtener solicitudes:", error);
       }
@@ -3147,7 +3209,7 @@ async setFechaSistema() {
     applyPagination() {
     const startIndex = (this.currentPage - 1) * this.pageSize;
     const endIndex = startIndex + this.pageSize;
-    console.log(`Aplicando paginación: página ${this.currentPage}, elementos ${startIndex} a ${endIndex}`);
+
     
     // Asegurarse de que estamos trabajando con un array válido
     if (Array.isArray(this.allSolicitudes)) {
@@ -3159,7 +3221,7 @@ async setFechaSistema() {
       // Luego asigna a solicitudes
       this.solicitudes = paginatedData;
       
-      console.log(`Solicitudes paginadas: ${this.solicitudes.length}`);
+
       
       // Verificar el DOM después de la actualización
       this.$nextTick(() => {
@@ -3167,7 +3229,6 @@ async setFechaSistema() {
         console.log(`Filas en DOM después de paginación: ${filas.length}`);
       });
     } else {
-      console.error('allSolicitudes no es un array:', this.allSolicitudes);
       this.solicitudes = [];
     }
   },
@@ -3180,14 +3241,11 @@ nextPage() {
 isImage(anexo) {
     const imageExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp'];
     const extension = anexo.archivo.toLowerCase().split('.').pop();
-    console.log('Extensión del archivo:', extension);
-    console.log('¿Es imagen?:', imageExtensions.includes('.' + extension));
     return imageExtensions.includes('.' + extension);
   },
 
   isPDF(anexo) {
     const extension = anexo.archivo.toLowerCase().split('.').pop();
-    console.log('¿Es PDF?:', extension === 'pdf');
     return extension === 'pdf';
   },
 
@@ -3197,7 +3255,6 @@ isImage(anexo) {
   },
 
   viewAnexo(anexo) {
-    console.log('Anexo completo:', anexo);
     anexo.isViewing = !anexo.isViewing;
   },
   async showSolicitudDetails(id) {
@@ -3258,8 +3315,7 @@ isImage(anexo) {
     try {
       // Debug del token
       const token = localStorage.getItem('accessToken');
-      console.log('Token encontrado:', token ? 'Sí' : 'No');
-      console.log('Primeros 10 caracteres del token:', token ? token.substring(0, 10) + '...' : 'No hay token');
+
 
       if (!token) {
         throw new Error('No se encontró el token de autenticación');
@@ -3272,7 +3328,7 @@ isImage(anexo) {
         }
       });
 
-      console.log('Respuesta del servidor:', anexoInfoResponse.data);
+
 
       // Verificar que tenemos la URL del archivo
       const fileUrl = anexoInfoResponse.data.archivo;
@@ -3357,7 +3413,17 @@ isImage(anexo) {
       this.isSuccess = false;
     }
   },
-
+  // Método para obtener el texto de prioridad de una solicitud
+  getSolicitudPrioridadText(solicitudId) {
+    // Si tenemos la solicitud actual y coincide con el ID
+    if (this.currentSolicitud && this.currentSolicitud.id === solicitudId) {
+      return this.currentSolicitud.prioridad_texto || '-';
+    }
+    
+    // Si no, buscar en la lista de solicitudes
+    const solicitud = this.solicitudes.find(s => s.id === solicitudId);
+    return solicitud ? solicitud.prioridad_texto : '-';
+  },
   // Editar solicitud
   async editSolicitud(id) {
     try {
@@ -3393,11 +3459,11 @@ isImage(anexo) {
     // Formato: YYYY-MM-DDTHH:MM:00
     const formattedDate = `${year}-${month}-${day}T${hours}:${minutes}:00`;
     
-    console.log('Fecha actual formateada:', formattedDate);
+
     
     if (field === 'inicio') {
       this.currentTarea.fecha_inicio = formattedDate;
-      console.log('Fecha inicio actualizada a:', this.currentTarea.fecha_inicio);
+
       
       // Recalcular duración si es necesario
       if (this.currentTarea.fecha_fin) {
@@ -3406,7 +3472,7 @@ isImage(anexo) {
     } 
     else if (field === 'fin') {
       this.currentTarea.fecha_fin = formattedDate;
-      console.log('Fecha fin actualizada a:', this.currentTarea.fecha_fin);
+
       
       // Recalcular duración si es necesario
       if (this.currentTarea.fecha_inicio) {
@@ -3415,19 +3481,19 @@ isImage(anexo) {
     }
   },
   handleEstadoChange() {
-  console.log('Estado cambiado de', this.originalEstado, 'a', this.editableSolicitud.estado);
+
   
   // Actualizar fecha de asignación solo cuando cambia de sin asignar (5) a asignado (6)
   if (this.originalEstado === 5 && this.editableSolicitud.estado === 6) {
     // No asignamos automáticamente la fecha aquí, lo haremos en updateSolicitud
     // para permitir que la fecha manual tenga prioridad
-    console.log('Estado cambiado a Asignado - se asignará fecha al guardar');
+
   }
   
   // Actualizar fecha de finalización cuando el estado es terminado (7) o cancelado (8)
   if (this.editableSolicitud.estado === 7 || this.editableSolicitud.estado === 8) {
     this.editableSolicitud.fecha_finalizacion = this.formatearFechaHoraActual();
-    console.log('Fecha de finalización actualizada:', this.editableSolicitud.fecha_finalizacion);
+
   }
 
   // Asignar usuario de soporte automáticamente si cambia a asignado y no tiene uno
@@ -3449,11 +3515,11 @@ async updateSolicitud() {
       if (this.fechaAsignacionManual) {
         // Usar la fecha manual seleccionada por el usuario
         solicitudToUpdate.fecha_asignacion = this.fechaAsignacionManual;
-        console.log('Aplicando fecha de asignación manual:', solicitudToUpdate.fecha_asignacion);
+
       } else {
         // Usar la fecha actual como antes si no hay selección manual
         solicitudToUpdate.fecha_asignacion = this.formatearFechaHoraActual();
-        console.log('Aplicando fecha de asignación automática:', solicitudToUpdate.fecha_asignacion);
+
       }
     }
     
@@ -3462,7 +3528,7 @@ async updateSolicitud() {
       // Doble verificación de fecha de finalización
       if (!solicitudToUpdate.fecha_finalizacion) {
         solicitudToUpdate.fecha_finalizacion = this.formatearFechaHoraActual();
-        console.log('Aplicando fecha de finalización:', solicitudToUpdate.fecha_finalizacion);
+
       }
     }
 
@@ -3477,7 +3543,7 @@ async updateSolicitud() {
     
     // Si cambió a estado asignado y tiene usuario de soporte, crear tarea automáticamente
     if (cambioASoporteAsignado) {
-      console.log("Creando tarea automática para solicitud asignada");
+
       
       // Usar la descripción personalizada o una descripción por defecto
       const descripcionTarea = this.nuevaTareaDescripcion || 
@@ -3497,7 +3563,6 @@ async updateSolicitud() {
       try {
         // Crear la tarea
         await apiClient.post("/tareas/", nuevaTarea);
-        console.log("Tarea creada automáticamente");
       } catch (tareaError) {
         console.error("Error al crear tarea automática:", tareaError);
       }
@@ -3516,7 +3581,6 @@ async updateSolicitud() {
 
   async createSolicitud() {
   try {
-    console.log('Iniciando creación de solicitud...');
     
     // Obtener el usuario directamente de localStorage como JSON
     const currentUser = JSON.parse(localStorage.getItem('user'));
@@ -3539,7 +3603,7 @@ async updateSolicitud() {
     
     // Comprobar el token
     const token = localStorage.getItem('accessToken');
-    console.log('Token disponible:', !!token);
+
     
     // Cargar usuarios-terceros para validar la relación
     const usuariosTercerosResponse = await apiClient.get('/usuariosTerceros/', {
@@ -3547,8 +3611,7 @@ async updateSolicitud() {
         'Authorization': `Bearer ${token}`
       }
     });
-    
-    console.log('Datos de usuariosTerceros:', usuariosTercerosResponse.data);
+
 
     // Buscar el ID de la relación usuario-tercero
     const usuarioTercero = usuariosTercerosResponse.data.find(ut => 
@@ -3572,7 +3635,7 @@ async updateSolicitud() {
       fechaCreacion = this.formatearFechaHoraActual();
     }
     
-    console.log('Fecha de creación a usar:', fechaCreacion);
+
 
     const solicitudData = {
       titulo: this.newSolicitud.titulo,
@@ -3587,12 +3650,11 @@ async updateSolicitud() {
       fecha_creacion: fechaCreacion // Campo para la fecha de creación
     };
     
-    // Depurar datos antes de enviar
-    console.log('Datos de solicitud a enviar:', JSON.stringify(solicitudData));
+
     
     // Crear la solicitud
     const solicitudResponse = await apiClient.post('/solicitudes/', solicitudData);
-    console.log('Solicitud creada:', solicitudResponse.data);
+
     
     // Manejar anexos si existen
     if (this.selectedFile) {
@@ -3649,7 +3711,7 @@ calcularDuracion() {
     if (!this.currentTarea.fecha_inicio || !this.currentTarea.fecha_fin) return;
     
     try {
-      console.log('Calculando duración entre:', this.currentTarea.fecha_inicio, 'y', this.currentTarea.fecha_fin);
+
       
       // Crear objetos Date a partir de los strings
       const inicio = new Date(this.currentTarea.fecha_inicio);
@@ -3676,7 +3738,7 @@ calcularDuracion() {
       
       // Formatear como HH:MM
       this.currentTarea.duracion = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
-      console.log('Duración calculada:', this.currentTarea.duracion);
+
       
       // Por defecto, el tiempo facturable es igual a la duración
       this.currentTarea.tiempoFacturable = this.currentTarea.duracion;
@@ -4028,7 +4090,7 @@ calcularDuracion() {
       solicitud.tareas = tareasFiltradasManualmente;
       
       // Log para depuración
-      console.log(`Cargadas ${solicitud.tareas.length} tareas para la solicitud #${solicitud.id}`);
+
       
     } catch (error) {
       console.error('Error al cargar tareas:', error);
@@ -4147,7 +4209,7 @@ calcularDuracion() {
       try {
         // Guardar el ID de la solicitud antes de eliminar la tarea
         const solicitudId = this.currentTarea.solicitud;
-        console.log('Eliminando tarea:', tareaId, 'de solicitud:', solicitudId);
+
         
         // Eliminar la tarea
         await apiClient.delete(`/tareas/${tareaId}/`);
@@ -4166,7 +4228,7 @@ calcularDuracion() {
               tarea => tarea.solicitud === solicitudId
             );
             
-            console.log(`Recargadas ${tareasFiltradas.length} tareas para la solicitud #${solicitudId}`);
+
             
             // Actualizar las tareas en todas las instancias de la solicitud
             this.solicitudes.forEach(solicitud => {
@@ -4361,7 +4423,6 @@ calcularDuracion() {
         };
         
         await apiClient.post("/tareas/", nuevaTarea);
-        console.log("Tarea creada automáticamente por reasignación");
       } catch (tareaError) {
         console.error("Error al crear tarea por reasignación:", tareaError);
       }
@@ -4845,5 +4906,10 @@ opacity: 1;
   height: 2px;
   background-color: #4f46e5; /* Color indigo-600 */
 }
+
+
+
+  
+
 </style>
 

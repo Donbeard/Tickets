@@ -14,7 +14,7 @@
       <!-- Info de la ultima actualización -->
         <div class="text-xs text-gray-500 flex items-center justify-end mb-2">
           <span class="mr-1">Última actualización:</span>
-          <span class="font-medium">2025-04-27 17:37:22</span>
+          <span class="font-medium">2025-04-29 15:28:22</span>
         </div>
       
       <div class="flex flex-col sm:flex-row gap-4 mt-4 sm:mt-0">
@@ -1622,7 +1622,7 @@
               <input
                 type="text"
                 v-model="currentTarea.tiempoFacturable"
-                placeholder="Ej: 2h"
+                placeholder="Ej: 2:30"
                 class="block w-3/5 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 text-sm"
               />
             </div>
@@ -1862,6 +1862,7 @@ data() {
     showModalTarea: false,
     modalType: '', // 'new', 'edit', 'detail'
     currentTarea: {
+      prioridad:'',
       id: null,
       descripcion: '',
       fecha_programada: null,
@@ -3739,9 +3740,6 @@ calcularDuracion() {
       // Formatear como HH:MM
       this.currentTarea.duracion = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
 
-      
-      // Por defecto, el tiempo facturable es igual a la duración
-      this.currentTarea.tiempoFacturable = this.currentTarea.duracion;
     } catch (error) {
       console.error('Error al calcular duración:', error);
     }
@@ -4669,6 +4667,13 @@ watch: {
     if (typeof window !== 'undefined' && window.document) {
       window.document.body.style.overflow = newValue ? 'hidden' : 'auto';
     }
+  },
+  // Vigilar cambios en fecha_inicio y fecha_fin para calcular duración
+  'currentTarea.fecha_inicio': function() {
+    this.calcularDuracion();
+  },
+  'currentTarea.fecha_fin': function() {
+    this.calcularDuracion();
   }
 },
 

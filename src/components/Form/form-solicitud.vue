@@ -1081,6 +1081,35 @@
               </div>
             </div>
 
+            <!-- Campo de Solución - visible solo cuando el estado es terminado -->
+            <div v-if="editableSolicitud.estado === 7 " class="flex items-center mt-4 animate__animated animate__fadeIn">
+              <label for="solucion" class="w-1/4 text-sm font-medium text-gray-700">Solución:</label>
+              <div class="w-3/4">
+                <textarea 
+                  id="solucion" 
+                  v-model="editableSolicitud.solucion" 
+                  rows="3"
+                  placeholder="Describa la solución implementada"
+                  class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                ></textarea>
+              </div>
+            </div>
+
+            <!-- Campo de Motivo de Cancelación - visible solo cuando el estado es cancelado -->
+            <div v-if="editableSolicitud.estado === 8" class="flex items-center mt-4 animate__animated animate__fadeIn">
+              <label for="motivo-cancelacion" class="w-1/4 text-sm font-medium text-gray-700">Motivo Cancelación:</label>
+              <div class="w-3/4">
+                <textarea 
+                  id="motivo-cancelacion" 
+                  v-model="editableSolicitud.motivo_cancelacion" 
+                  rows="2"
+                  placeholder="Indique el motivo de la cancelación"
+                  class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                ></textarea>
+              </div>
+            </div>
+
+          
             <!-- Agregar dentro del modal de edición, justo después del selector de estado -->
             <div v-if="editableSolicitud.estado === 6 && originalEstado !== 6" class="flex items-center mt-4 animate__animated animate__fadeIn">
               <label for="tarea-descripcion" class="w-1/4 text-sm font-medium text-gray-700">Descripción de tarea:</label>
@@ -1760,6 +1789,8 @@ data() {
       usuario_soporte: null,
       fecha_asignacion: "",
       orden: null,
+      solucion: null,
+      motivo_cancelacion: null,
     },
     isFechaAsignada: false,
     newSolicitud: {

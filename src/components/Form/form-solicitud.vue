@@ -1280,6 +1280,8 @@
                 detalleSolicitud.estado === 1 ? 'bg-yellow-100 text-yellow-800' :
                 detalleSolicitud.estado === 2 ? 'bg-blue-100 text-blue-800' :
                 detalleSolicitud.estado === 3 ? 'bg-green-100 text-green-800' :
+                detalleSolicitud.estado === 6 ? 'bg-green-100 text-green-800' :
+                detalleSolicitud.estado === 7 ? 'bg-red-100 text-red-800' :
                 'bg-gray-100 text-gray-800'
               ]">
                 {{ getModuloName(detalleSolicitud.estado, 'estados') }}
@@ -1292,6 +1294,29 @@
             <label class="block text-sm font-semibold text-gray-700 mb-2">Descripción</label>
             <p class="text-gray-700 whitespace-pre-wrap">{{ detalleSolicitud.descripcion }}</p>
           </div>
+          
+          <!-- Solución - mostrar solo si existe y estado es terminado -->
+          <div v-if="detalleSolicitud.solucion && detalleSolicitud.estado === 7" class="bg-green-50 p-4 rounded-lg border border-green-200 animate__animated animate__fadeIn">
+            <label class="block text-sm font-semibold text-green-700 mb-2 flex items-center">
+              <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+              </svg>
+              Solución Implementada
+            </label>
+            <p class="text-gray-700 whitespace-pre-wrap">{{ detalleSolicitud.solucion }}</p>
+          </div>
+          
+          <!-- Motivo de Cancelación - mostrar solo si existe y estado es cancelado -->
+          <div v-if="detalleSolicitud.motivo_cancelacion && detalleSolicitud.estado === 8" class="bg-red-50 p-4 rounded-lg border border-red-200 animate__animated animate__fadeIn">
+            <label class="block text-sm font-semibold text-red-700 mb-2 flex items-center">
+              <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+              </svg>
+              Motivo de Cancelación
+            </label>
+            <p class="text-gray-700 whitespace-pre-wrap">{{ detalleSolicitud.motivo_cancelacion }}</p>
+          </div>
+          
 
           <!-- Anexos con previsualización -->
           <div class="bg-white rounded-lg">

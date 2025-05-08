@@ -14,7 +14,7 @@
       <!-- Info de la ultima actualización -->
         <div class="text-xs text-gray-500 flex items-center justify-end mb-2">
           <span class="mr-1">Última actualización:</span>
-          <span class="font-medium">2025-05-08 08:28:32</span>
+          <span class="font-medium">2025-05-08 11:51:15</span>
         </div>
       
       <div class="flex flex-col sm:flex-row gap-4 mt-4 sm:mt-0">

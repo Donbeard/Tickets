@@ -220,213 +220,224 @@
                 v-for="column in filteredColumns"
                 :key="column.key"
                 :style="getColumnStyle(column.key)"
-                class="px-1 py-1 whitespace-nowrap text-xs text-black-500"
+                class="px-1 py-1 text-xs text-black-500"
               >
-
-                <!-- Prioridad (editable) -->
-                <template v-if="column.key === 'prioridad'">
-                  <template v-if="editingRowId === solicitud.id && editingField === 'prioridad'">
-                    <select
-                      v-model="solicitud.prioridad"
-                      @blur="saveField(solicitud, 'prioridad')"
-                      class="w-full px-2 py-1 border rounded focus:ring-indigo-500 focus:border-indigo-500"
-                    >
-                      <option v-for="prioridad in prioridades" :key="prioridad.id" :value="prioridad.id">
-                        {{ prioridad.nombre }}
-                      </option>
-                    </select>
-                  </template>
-                  <template v-else>
-                    <span
-                      v-if="userType === 'S' || userType === 'A'"
-                      @click="startEditing(solicitud.id, 'prioridad')"
-                      class="cursor-pointer"
-                    >
-                      <span :class="[
-                        'px-2 inline-flex text-xs leading-5 font-semibold rounded-full',
-                        solicitud.prioridad === 3 ? 'bg-red-100 text-red-800' :
-                        solicitud.prioridad === 2 ? 'bg-yellow-100 text-yellow-800' :
-                        solicitud.prioridad === 1 ? 'bg-green-100 text-green-800' :
-                        solicitud.prioridad === 4 ? 'bg-black text-white' :
-                        'bg-gray-100 text-gray-800'
-                      ]">
+                <!-- Eliminar las clases que truncan el texto para título y empresa -->
+                <template v-if="column.key === 'titulo'">
+                  <div class="single-line-text">{{ solicitud.titulo }}</div>
+                </template>
+                
+                <template v-else-if="column.key === 'clie'">
+                  <div class="single-line-text">{{ solicitud.cliente_nombre || solicitud.clie }}</div>
+                </template>
+                
+                <!-- Para el resto de columnas mantener el comportamiento normal -->
+                <template v-else>
+                  <!-- Prioridad (editable) -->
+                  <template v-if="column.key === 'prioridad'">
+                    <template v-if="editingRowId === solicitud.id && editingField === 'prioridad'">
+                      <select
+                        v-model="solicitud.prioridad"
+                        @blur="saveField(solicitud, 'prioridad')"
+                        class="w-full px-2 py-1 border rounded focus:ring-indigo-500 focus:border-indigo-500"
+                      >
+                        <option v-for="prioridad in prioridades" :key="prioridad.id" :value="prioridad.id">
+                          {{ prioridad.nombre }}
+                        </option>
+                      </select>
+                    </template>
+                    <template v-else>
+                      <span
+                        v-if="userType === 'S' || userType === 'A'"
+                        @click="startEditing(solicitud.id, 'prioridad')"
+                        class="cursor-pointer"
+                      >
+                        <span :class="[
+                          'px-2 inline-flex text-xs leading-5 font-semibold rounded-full',
+                          solicitud.prioridad === 3 ? 'bg-red-100 text-red-800' :
+                          solicitud.prioridad === 2 ? 'bg-yellow-100 text-yellow-800' :
+                          solicitud.prioridad === 1 ? 'bg-green-100 text-green-800' :
+                          solicitud.prioridad === 4 ? 'bg-black text-white' :
+                          'bg-gray-100 text-gray-800'
+                        ]">
+                          {{ getModuloName(solicitud.prioridad, 'prioridades') }}
+                        </span>
+                      </span>
+                      <span v-else>
                         {{ getModuloName(solicitud.prioridad, 'prioridades') }}
                       </span>
-                    </span>
-                    <span v-else>
-                      {{ getModuloName(solicitud.prioridad, 'prioridades') }}
-                    </span>
+                    </template>
                   </template>
-                </template>
 
-                <!-- Estado (editable) -->
-                <template v-else-if="column.key === 'estado'">
-                  <template v-if="editingRowId === solicitud.id && editingField === 'estado'">
-                    <select
-                      v-model="solicitud.estado"
-                      @change="saveField(solicitud, 'estado')"
-                      class="w-full px-2 py-1 border rounded focus:ring-indigo-500 focus:border-indigo-500"
-                    >
-                      <option v-for="estado in estados" :key="estado.id" :value="estado.id">
-                        {{ getModuloName(estado.id, 'estados') }}
-                      </option>
-                    </select>
+                  <!-- Estado (editable) -->
+                  <template v-else-if="column.key === 'estado'">
+                    <template v-if="editingRowId === solicitud.id && editingField === 'estado'">
+                      <select
+                        v-model="solicitud.estado"
+                        @change="saveField(solicitud, 'estado')"
+                        class="w-full px-2 py-1 border rounded focus:ring-indigo-500 focus:border-indigo-500"
+                      >
+                        <option v-for="estado in estados" :key="estado.id" :value="estado.id">
+                          {{ getModuloName(estado.id, 'estados') }}
+                        </option>
+                      </select>
+                    </template>
+                    <template v-else>
+                      <span
+                        v-if="userType === 'S' || userType === 'A'"
+                        @click="startEditing(solicitud.id, 'estado')"
+                        class="cursor-pointer"
+                      >
+                        {{ getModuloName(solicitud.estado, 'estados') }}
+                      </span>
+                      <span v-else>
+                        {{ getModuloName(solicitud.estado, 'estados') }}
+                      </span>
+                    </template>
                   </template>
-                  <template v-else>
-                    <span
-                      v-if="userType === 'S' || userType === 'A'"
-                      @click="startEditing(solicitud.id, 'estado')"
-                      class="cursor-pointer"
-                    >
-                      {{ getModuloName(solicitud.estado, 'estados') }}
-                    </span>
-                    <span v-else>
-                      {{ getModuloName(solicitud.estado, 'estados') }}
-                    </span>
-                  </template>
-                </template>
 
-                <!-- Orden (editable) -->
-                <template v-else-if="column.key === 'orden'">
-                  <template v-if="editingRowId === solicitud.id && editingField === 'orden'">
-                    <input
-                      v-model="solicitud.orden"
-                      @blur="saveField(solicitud, 'orden')"
-                      type="number"
-                      class="w-16 px-2 py-1 text-sm border rounded focus:ring-indigo-500 focus:border-indigo-500 text-center"
-                      min="0"
-                    />
+                  <!-- Orden (editable) -->
+                  <template v-else-if="column.key === 'orden'">
+                    <template v-if="editingRowId === solicitud.id && editingField === 'orden'">
+                      <input
+                        v-model="solicitud.orden"
+                        @blur="saveField(solicitud, 'orden')"
+                        type="number"
+                        class="w-16 px-2 py-1 text-sm border rounded focus:ring-indigo-500 focus:border-indigo-500 text-center"
+                        min="0"
+                      />
+                    </template>
+                    <template v-else>
+                      <span
+                        v-if="userType === 'S' || userType === 'A'"
+                        @click="startEditing(solicitud.id, 'orden')"
+                        class="inline-flex items-center px-2 py-1 text-xs font-medium text-gray-600 bg-gray-100 rounded hover:bg-gray-200 cursor-pointer transition-colors duration-200"
+                      >
+                        <template v-if="solicitud.orden">
+                          {{ solicitud.orden }}
+                        </template>
+                        <template v-else>
+                          <svg 
+                            class="h-3 w-3 mr-1" 
+                            xmlns="http://www.w3.org/2000/svg" 
+                            fill="none" 
+                            viewBox="0 0 24 24" 
+                            stroke="currentColor"
+                          >
+                            <path 
+                              stroke-linecap="round" 
+                              stroke-linejoin="round" 
+                              stroke-width="2" 
+                              d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
+                            />
+                          </svg>
+                        </template>
+                      </span>
+                      <span v-else>
+                        {{ solicitud.orden || 'N/A' }}
+                      </span>
+                    </template>
                   </template>
-                  <template v-else>
-                    <span
-                      v-if="userType === 'S' || userType === 'A'"
-                      @click="startEditing(solicitud.id, 'orden')"
-                      class="inline-flex items-center px-2 py-1 text-xs font-medium text-gray-600 bg-gray-100 rounded hover:bg-gray-200 cursor-pointer transition-colors duration-200"
-                    >
-                      <template v-if="solicitud.orden">
-                        {{ solicitud.orden }}
-                      </template>
-                      <template v-else>
-                        <svg 
-                          class="h-3 w-3 mr-1" 
-                          xmlns="http://www.w3.org/2000/svg" 
-                          fill="none" 
-                          viewBox="0 0 24 24" 
-                          stroke="currentColor"
-                        >
-                          <path 
-                            stroke-linecap="round" 
-                            stroke-linejoin="round" 
-                            stroke-width="2" 
-                            d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
-                          />
+
+                  <!-- Otros campos no editables con tooltips -->
+                  <template v-else-if="column.key === 'usuario_cliente_nombre'">
+                    <div class="tooltip-container">
+                      <span class="block truncate">{{ solicitud.usuario_cliente_nombre }}</span>
+                      <span class="tooltip-text">{{ solicitud.usuario_cliente_nombre }}</span>
+                    </div>
+                  </template>
+                  <template v-else-if="column.key === 'usuario_soporte_nombre'">
+                    <div class="tooltip-container">
+                      <span class="block truncate">{{ solicitud.usuario_soporte_nombre }}</span>
+                      <span class="tooltip-text">{{ solicitud.usuario_soporte_nombre }}</span>
+                    </div>
+                  </template>
+                  <template v-else-if="column.key === 'accion'">
+                    <div class="tooltip-container">
+                      <span class="block truncate">{{ solicitud.accion_nombre }}</span>
+                      <span class="tooltip-text">{{ solicitud.accion_nombre }}</span>
+                    </div>
+                  </template>
+                  <template v-else-if="column.key === 'opcion'">
+                    <div class="tooltip-container">
+                      <span class="block truncate">{{ getModuloName(solicitud[column.key], 'opciones') }}</span>
+                      <span class="tooltip-text">{{ getModuloName(solicitud[column.key], 'opciones') }}</span>
+                    </div>
+                  </template>
+                  <template v-else-if="column.key === 'submodulo'">
+                    <div class="tooltip-container">
+                      <span class="block truncate">
+                        {{ getSubmoduloNombre(solicitud.submodulo) || 'No asignado' }}
+                      </span>
+                      <span class="tooltip-text">
+                        {{ getSubmoduloNombre(solicitud.submodulo) || 'No asignado' }}
+                      </span>
+                    </div>
+                  </template>
+                  <template v-else-if="column.key === 'modulo'">
+                    <div class="tooltip-container">
+                      <span class="block truncate">{{ getModuloName(solicitud.modulo, 'modulos') }}</span>
+                      <span class="tooltip-text">{{ getModuloName(solicitud.modulo, 'modulos') }}</span>
+                    </div>
+                  </template>
+                  <template v-else-if="column.key === 'acciones'">
+                    <div class="flex space-x-2 justify-center">
+                      <!-- Botón Ver -->
+                      <button 
+                        @click="showSolicitudDetails(solicitud.id)" 
+                        class="text-indigo-600 hover:text-indigo-900 p-1 bg-indigo-50 rounded-full hover:bg-indigo-100 transition-colors duration-150"
+                        title="Ver detalles"
+                      >
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                         </svg>
-                      </template>
-                    </span>
-                    <span v-else>
-                      {{ solicitud.orden || 'N/A' }}
-                    </span>
+                      </button>
+                      
+                      <!-- Botón Editar -->
+                      <button
+                        v-if="userType !== 'C' || (userType === 'C' && solicitud.estado === 5) && solicitud.estado !== 7 && solicitud.estado !== 8"
+                        @click="editSolicitud(solicitud.id)"
+                        class="text-yellow-600 hover:text-yellow-900 p-1 bg-yellow-50 rounded-full hover:bg-yellow-100 transition-colors duration-150"
+                        title="Editar solicitud"
+                      >
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                        </svg>
+                      </button>
+                      
+                      <!-- Botón Eliminar -->
+                      <button
+                        v-if="userType !== 'C'"
+                        @click="deleteSolicitud(solicitud.id)"
+                        class="text-red-600 hover:text-red-900 p-1 bg-red-50 rounded-full hover:bg-red-100 transition-colors duration-150"
+                        title="Eliminar solicitud"
+                      >
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        </svg>
+                      </button>
+                    </div>
                   </template>
-                </template>
-
-                <!-- Otros campos no editables con tooltips -->
-                <template v-else-if="column.key === 'usuario_cliente_nombre'">
-                  <div class="tooltip-container">
-                    <span class="block truncate">{{ solicitud.usuario_cliente_nombre }}</span>
-                    <span class="tooltip-text">{{ solicitud.usuario_cliente_nombre }}</span>
-                  </div>
-                </template>
-                <template v-else-if="column.key === 'usuario_soporte_nombre'">
-                  <div class="tooltip-container">
-                    <span class="block truncate">{{ solicitud.usuario_soporte_nombre }}</span>
-                    <span class="tooltip-text">{{ solicitud.usuario_soporte_nombre }}</span>
-                  </div>
-                </template>
-                <template v-else-if="column.key === 'accion'">
-                  <div class="tooltip-container">
-                    <span class="block truncate">{{ solicitud.accion_nombre }}</span>
-                    <span class="tooltip-text">{{ solicitud.accion_nombre }}</span>
-                  </div>
-                </template>
-                <template v-else-if="column.key === 'opcion'">
-                  <div class="tooltip-container">
-                    <span class="block truncate">{{ getModuloName(solicitud[column.key], 'opciones') }}</span>
-                    <span class="tooltip-text">{{ getModuloName(solicitud[column.key], 'opciones') }}</span>
-                  </div>
-                </template>
-                <template v-else-if="column.key === 'submodulo'">
-                  <div class="tooltip-container">
-                    <span class="block truncate">
-                      {{ getSubmoduloNombre(solicitud.submodulo) || 'No asignado' }}
-                    </span>
-                    <span class="tooltip-text">
-                      {{ getSubmoduloNombre(solicitud.submodulo) || 'No asignado' }}
-                    </span>
-                  </div>
-                </template>
-                <template v-else-if="column.key === 'modulo'">
-                  <div class="tooltip-container">
-                    <span class="block truncate">{{ getModuloName(solicitud.modulo, 'modulos') }}</span>
-                    <span class="tooltip-text">{{ getModuloName(solicitud.modulo, 'modulos') }}</span>
-                  </div>
-                </template>
-                <template v-else-if="column.key === 'acciones'">
-                  <div class="flex space-x-2 justify-center">
-                    <!-- Botón Ver -->
-                    <button 
-                      @click="showSolicitudDetails(solicitud.id)" 
-                      class="text-indigo-600 hover:text-indigo-900 p-1 bg-indigo-50 rounded-full hover:bg-indigo-100 transition-colors duration-150"
-                      title="Ver detalles"
-                    >
-                      <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                      </svg>
-                    </button>
-                    
-                    <!-- Botón Editar -->
-                    <button
-                      v-if="userType !== 'C' || (userType === 'C' && solicitud.estado === 5) && solicitud.estado !== 7 && solicitud.estado !== 8"
-                      @click="editSolicitud(solicitud.id)"
-                      class="text-yellow-600 hover:text-yellow-900 p-1 bg-yellow-50 rounded-full hover:bg-yellow-100 transition-colors duration-150"
-                      title="Editar solicitud"
-                    >
-                      <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                      </svg>
-                    </button>
-                    
-                    <!-- Botón Eliminar -->
-                    <button
-                      v-if="userType !== 'C'"
-                      @click="deleteSolicitud(solicitud.id)"
-                      class="text-red-600 hover:text-red-900 p-1 bg-red-50 rounded-full hover:bg-red-100 transition-colors duration-150"
-                      title="Eliminar solicitud"
-                    >
-                      <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                      </svg>
-                    </button>
-                  </div>
-                </template>
-                <template v-else-if="column.key.includes('fecha')">
-                  {{ formatDate(solicitud[column.key]) }}
-                </template>
-                <template v-else-if="column.key === 'empresa'">
-                  <div class="tooltip-container">
-                    <span class="inline-block truncate empresa-text overflow-hidden">
-                      {{ solicitud.empresa_nombre }}
-                    </span>
-                    <span class="tooltip-text">
-                      {{ solicitud.empresa_nombre }}
-                    </span>
-                  </div>
-                </template>
-                <template v-else>
-                  <div class="tooltip-container">
-                    <span class="block truncate">{{ getModuloName(solicitud[column.key]) }}</span>
-                    <span class="tooltip-text">{{ getModuloName(solicitud[column.key]) }}</span>
-                  </div>
+                  <template v-else-if="column.key.includes('fecha')">
+                    {{ formatDate(solicitud[column.key]) }}
+                  </template>
+                  <template v-else-if="column.key === 'empresa'">
+                    <div class="tooltip-container">
+                      <span class="inline-block truncate empresa-text overflow-hidden">
+                        {{ solicitud.empresa_nombre }}
+                      </span>
+                      <span class="tooltip-text">
+                        {{ solicitud.empresa_nombre }}
+                      </span>
+                    </div>
+                  </template>
+                  <template v-else>
+                    <div class="tooltip-container">
+                      <span class="block truncate">{{ getModuloName(solicitud[column.key]) }}</span>
+                      <span class="tooltip-text">{{ getModuloName(solicitud[column.key]) }}</span>
+                    </div>
+                  </template>
                 </template>
               </td>
             </tr>
@@ -4968,7 +4979,11 @@ opacity: 1;
   background-color: #4f46e5; /* Color indigo-600 */
 }
 
-
+.single-line-text {
+  white-space: nowrap; /* Mantiene el texto en una sola línea */
+  overflow: visible; /* Permite que el texto se extienda más allá del contenedor */
+  /* Sin text-overflow: ellipsis para evitar el truncamiento */
+}
 
   
 

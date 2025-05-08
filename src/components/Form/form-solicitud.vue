@@ -3304,7 +3304,13 @@ async setFechaSistema() {
       this.solicitudes = [];
     }
   },
-
+ // Método para ir a la página anterior
+ prevPage() {
+    if (this.currentPage > 1) {
+      this.currentPage--;
+    }
+  },
+  // Método para ir a la página siguiente
 nextPage() {
   if (this.currentPage < this.totalPages) {
     this.currentPage++;

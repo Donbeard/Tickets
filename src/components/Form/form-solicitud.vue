@@ -14,7 +14,7 @@
       <!-- Info de la ultima actualización -->
         <div class="text-xs text-gray-500 flex items-center justify-end mb-2">
           <span class="mr-1">Última actualización:</span>
-          <span class="font-medium">2025-05-07 15:40:58</span>
+          <span class="font-medium">2025-05-08 08:28:32</span>
         </div>
       
       <div class="flex flex-col sm:flex-row gap-4 mt-4 sm:mt-0">
@@ -228,7 +228,11 @@
                 </template>
                 
                 <template v-else-if="column.key === 'clie'">
-                  <div class="single-line-text">{{ solicitud.cliente_nombre || solicitud.clie }}</div>
+                  <div class="client-name-cell">
+                    <span class="truncate-cell" :title="solicitud.cliente_nombre || solicitud.clie">
+                      {{ solicitud.cliente_nombre || solicitud.clie }}
+                    </span>
+                  </div>
                 </template>
                 
                 <!-- Para el resto de columnas mantener el comportamiento normal -->
@@ -420,7 +424,7 @@
                     </div>
                   </template>
                   <template v-else-if="column.key.includes('fecha')">
-                    {{ formatDate(solicitud[column.key]) }}
+                    <div class="date-cell">{{ formatDate(solicitud[column.key]) }}</div>
                   </template>
                   <template v-else-if="column.key === 'empresa'">
                     <div class="tooltip-container">
@@ -4983,6 +4987,26 @@ opacity: 1;
   white-space: nowrap; /* Mantiene el texto en una sola línea */
   overflow: visible; /* Permite que el texto se extienda más allá del contenedor */
   /* Sin text-overflow: ellipsis para evitar el truncamiento */
+}
+
+/* Estilos para la celda de nombre de cliente */
+.client-name-cell {
+  max-width: 150px;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.truncate-cell {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Estilos para celdas de fecha */
+.date-cell {
+  white-space: nowrap;
+  min-width: 80px;
 }
 
   

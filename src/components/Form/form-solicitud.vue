@@ -14,7 +14,7 @@
       <!-- Info de la ultima actualización -->
         <div class="text-xs text-gray-500 flex items-center justify-end mb-2">
           <span class="mr-1">Última actualización:</span>
-          <span class="font-medium">2025-05-08 11:51:15</span>
+          <span class="font-medium">2025-05-16 17:41:37</span>
         </div>
       
       <div class="flex flex-col sm:flex-row gap-4 mt-4 sm:mt-0">
@@ -497,7 +497,7 @@
                             No hay tareas registradas para esta solicitud
                           </td>
                         </tr>
-                        <tr v-for="tarea in solicitud.tareas" :key="tarea.id" class="hover:bg-gray-50">
+                        <tr v-for="tarea in getTareasOrdenadas(solicitud)" :key="tarea.id" class="hover:bg-gray-50">
                           <!-- Acciones -->
                           <td class="px-2 py-2 text-xs text-center" v-if="userType !== 'C' || tarea.estado === 'S'">
                             <div class="flex items-center justify-center gap-2">
@@ -889,6 +889,7 @@
               <label for="new-descripcionanexo" class="w-1/4 text-sm font-medium text-gray-700">Descripción del anexo:</label>
               <input id="new-descripcionanexo" v-model="newSolicitud.descripcion_anexo" type="text" class="w-3/4 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition duration-200" placeholder="Ingresa descripción del anexo">
             </div>
+
           </div>
         </div>
 
@@ -949,7 +950,7 @@
               >
             </div>
 
-            <!-- Módulo -->
+            <!-- Módulo --> 
             <div class="flex items-center">
               <label for="edit-modulo" class="w-1/4 text-sm font-medium text-gray-700">Módulo:</label>
               <select 
@@ -1053,15 +1054,19 @@
               <div class="flex items-center">
                 <label for="edit-soporte" class="w-1/4 text-sm font-medium text-gray-700">Usuario Soporte:</label>
                 <select 
-                  id="edit-soporte" 
-                  v-model="editableSolicitud.usuario_soporte"
-                  class="w-3/4 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                >
-                  <option value="">Seleccione usuario de soporte</option>
-                  <option v-for="(nombre, id) in usuariosSoporteMap" :key="id" :value="id">
-                    {{ nombre }}
-                  </option>
-                </select>
+                    id="edit-soporte" 
+                    v-model="editableSolicitud.usuario_soporte"
+                    class="w-3/4 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                  >
+                    <option value="">Seleccione usuario de soporte</option>
+                    <option
+                      v-for="([id, nombre]) in Object.entries(usuariosSoporteMap).sort((a, b) => a[1].localeCompare(b[1]))"
+                      :key="id"
+                      :value="id"
+                    >
+                      {{ nombre }}
+                    </option>
+                  </select>
               </div>
             <!-- Añadir dentro del modal de edición, después del selector de usuario de soporte -->
             <div class="flex items-center mt-4 animate__animated animate__fadeIn">
@@ -1457,53 +1462,60 @@
                 {{ currentTarea.solicitud }} - {{ getSolicitudTitle(currentTarea.solicitud) }}
               </div>
             </div>
-            
-            <!-- Prioridad editable con ancho corregido -->
+          
+          </div>
+
+          <!-- NUEVO: Descripción de la Solicitud (más alta) -->
             <div class="flex items-center">
-              <label class="block text-sm font-medium text-gray-700 w-1/4">
+              <label class="block text-sm font-medium text-gray-700 w-[8%] shrink-0">
+                Desc. Solicitud:
+              </label>
+              <div
+                class="block w-[92%] px-4 py-3 bg-gray-100 border border-gray-300 rounded-lg text-sm overflow-y-auto"
+                style="max-height: 200px;" 
+              >
+                {{ getSolicitudDescription(currentTarea.solicitud) || 'Sin descripción' }}
+              </div>
+            </div>
+
+            <!-- Campo Descripción (más alto) -->
+            <div class="flex items-center">
+              <label class="block text-sm font-medium text-gray-700 w-[8%] shrink-0">
+                Descripción:
+              </label>
+              <div
+                class="block w-[92%] px-4 py-3 border border-gray-300 rounded-lg text-sm overflow-y-auto"
+                :class="{'bg-gray-50': modalType === 'detail', 'bg-white': modalType !== 'detail'}"
+                style="max-height: 200px; min-height: 44px;"
+                :contenteditable="modalType !== 'detail'"
+                @input="currentTarea.descripcion = $event.target.innerText"
+                v-text="currentTarea.descripcion"
+              ></div>
+            </div>
+
+          <!-- Campos en cuadrícula, ahora con prioridad integrada -->
+          <div class="grid grid-cols-5 gap-4">
+            <!-- Prioridad -->
+            <div class="flex items-center">
+              <label class="block text-sm font-medium text-gray-700 w-2/5">
                 Prioridad:
               </label>
               <select
                 v-model="currentTarea.prioridad"
-                class="w-3/4 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 text-sm"
+                class="block w-3/5 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 text-sm"
                 @change="actualizarPrioridadSolicitud"
               >
-                <option value="" disabled>Seleccione prioridad</option>
-                <option v-for="prioridad in prioridades" 
-                        :key="prioridad.id" 
-                        :value="prioridad.id">
+                <option value="" disabled>Seleccione</option>
+                  <option
+                  v-for="prioridad in prioridades"
+                  :key="prioridad.id"
+                  :value="Number(prioridad.id)" 
+                >
                   {{ prioridad.nombre }}
                 </option>
               </select>
             </div>
-          </div>
 
-          <!-- NUEVO: Descripción de la Solicitud -->
-          <div class="flex items-center">
-            <label class="block text-sm font-medium text-gray-700 w-[8%] shrink-0">
-              Desc. Solicitud:
-            </label>
-            <div class="block w-[92%] px-4 py-3 bg-gray-100 border border-gray-300 rounded-lg text-sm max-h-24 overflow-y-auto">
-              {{ getSolicitudDescription(currentTarea.solicitud) || 'Sin descripción' }}
-            </div>
-          </div>
-          
-          <!-- Campo Descripción - Manteniendo el ancho pero reduciendo la altura -->
-          <div class="flex items-start">
-            <label class="block text-sm font-medium text-gray-700 w-[8%] pt-2 shrink-0">
-              Descripción:
-            </label>
-            <textarea
-              v-model="currentTarea.descripcion"
-              :disabled="modalType === 'detail'"
-              rows="3" 
-              class="block w-[92%] px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 text-sm"
-              :class="{'bg-gray-50': modalType === 'detail'}"
-            ></textarea>
-          </div>
-
-          <!-- Campos en dos columnas -->
-          <div class="grid grid-cols-4 gap-4">
             <!-- Estado -->
             <div class="flex items-center">
               <label class="block text-sm font-medium text-gray-700 w-2/5">
@@ -1529,12 +1541,16 @@
                 class="block w-3/5 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 text-sm"
               >
                 <option value="">Sin asignar</option>
-                <option v-for="(nombre, id) in usuariosSoporteMap" :key="id" :value="id">
+                <option
+                  v-for="([id, nombre]) in Object.entries(usuariosSoporteMap).sort((a, b) => a[1].localeCompare(b[1]))"
+                  :key="id"
+                  :value="id"
+                >
                   {{ nombre }}
                 </option>
               </select>
             </div>
-            
+
             <!-- Tipo -->
             <div class="flex items-center">
               <label class="block text-sm font-medium text-gray-700 w-2/5">
@@ -1549,7 +1565,7 @@
                 </option>
               </select>
             </div>
-            
+
             <!-- Cita -->
             <div class="flex items-center">
               <label class="block text-sm font-medium text-gray-700 w-2/5">
@@ -1706,7 +1722,11 @@
                 class="block w-3/5 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 text-sm"
               >
                 <option value="">Sin reasignar</option>
-                <option v-for="(nombre, id) in usuariosSoporteMap" :key="id" :value="id">
+                <option
+                  v-for="([id, nombre]) in Object.entries(usuariosSoporteMap).sort((a, b) => a[1].localeCompare(b[1]))"
+                  :key="id"
+                  :value="id"
+                >
                   {{ nombre }}
                 </option>
               </select>
@@ -4548,6 +4568,13 @@ calcularDuracion() {
     this.isSuccess = false;
   }
 },
+// Método para ordenar tareas por ID
+getTareasOrdenadas(solicitud) {
+    if (!solicitud.tareas || !solicitud.tareas.length) {
+      return [];
+    }
+    return [...solicitud.tareas].sort((a, b) => a.id - b.id);
+  },
 // Añadir método para verificar si una columna tiene filtros activos
 hasActiveFilter(columnKey) {
   // Para campos que usan arrays de valores en los filtros
@@ -4696,6 +4723,7 @@ watch: {
       }, 3000) // Duración de 3 segundos
     }
   },
+  
   // Observar cambios en solicitudes para actualizar opciones
   currentPage() {
     this.applyPagination(); // Actualizar las solicitudes paginadas cuando cambia la página

@@ -14,7 +14,7 @@
       <!-- Info de la ultima actualización -->
         <div class="text-xs text-gray-500 flex items-center justify-end mb-2">
           <span class="mr-1">Última actualización:</span>
-          <span class="font-medium">2025-05-16 17:41:37</span>
+          <span class="font-medium">2025-05-19 10:31:37</span>
         </div>
       
       <div class="flex flex-col sm:flex-row gap-4 mt-4 sm:mt-0">
@@ -1483,16 +1483,15 @@
               <label class="block text-sm font-medium text-gray-700 w-[8%] shrink-0">
                 Descripción:
               </label>
-              <div
-                  class="block w-[92%] px-4 py-3 border border-gray-300 rounded-lg text-sm overflow-y-auto"
-                  :class="{'bg-gray-50': modalType === 'detail', 'bg-white': modalType !== 'detail'}"
-                  style="max-height: 200px; min-height: 44px;"
-                  :contenteditable="modalType !== 'detail'"
-                  @input="formatearDescripcionTarea($event)"
-                  ref="descripcionTareaDiv"
-                >
-                  {{ currentTarea.descripcion }}
-                </div>
+              <textarea
+                class="block w-[92%] px-4 py-3 border border-gray-300 rounded-lg text-sm overflow-y-auto"
+                :class="{'bg-gray-50': modalType === 'detail', 'bg-white': modalType !== 'detail'}"
+                style="max-height: 200px; min-height: 44px;"
+                :readonly="modalType === 'detail'"
+                v-model="currentTarea.descripcion"
+                @input="formatearTexto($event, 'currentTarea', 'descripcion')"
+                rows="4"
+              ></textarea>
             </div>
 
           <!-- Campos en cuadrícula, ahora con prioridad integrada -->
@@ -3544,36 +3543,7 @@ isImage(anexo) {
       this.isSuccess = false;
     }
   },
-  formatearDescripcionTarea(event) {
-    const div = event.target;
-    const start = window.getSelection().getRangeAt(0).startOffset;
-    const end = window.getSelection().getRangeAt(0).endOffset;
-    let texto = div.innerText;
 
-    // Elimina dobles saltos de línea y espacios extra
-    texto = texto.split('\n').map(linea => linea.trim()).join('\n');
-    texto = texto.replace(/(\n\s*){2,}/g, '\n');
-
-    // Primera letra en mayúscula, resto igual (o en minúscula si prefieres)
-    if (texto.length > 0) {
-      texto = texto.charAt(0).toUpperCase() + texto.slice(1);
-    }
-
-    this.currentTarea.descripcion = texto;
-
-    // Espera a que Vue actualice el DOM y luego restaura el cursor
-    this.$nextTick(() => {
-      // Restaurar el texto en el div (por si fue modificado)
-      this.$refs.descripcionTareaDiv.innerText = texto;
-      // Restaurar la posición del cursor
-      const range = document.createRange();
-      const sel = window.getSelection();
-      range.setStart(this.$refs.descripcionTareaDiv.firstChild || this.$refs.descripcionTareaDiv, start);
-      range.setEnd(this.$refs.descripcionTareaDiv.firstChild || this.$refs.descripcionTareaDiv, end);
-      sel.removeAllRanges();
-      sel.addRange(range);
-    });
-  },
   setCurrentDateTime(field) {
     // Obtener la fecha y hora actual
     const now = new Date();
@@ -3935,25 +3905,23 @@ calcularDuracion() {
     }
   },
   formatearTexto(event, objetoName, campo) {
-      const textarea = event.target;
-      const start = textarea.selectionStart;
-      const end = textarea.selectionEnd;
-      let texto = textarea.value;
+    const textarea = event.target;
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    let texto = textarea.value;
 
-      if (texto && texto.length > 0) {
-        // 1. Quitar espacios al inicio y final de cada línea
-        texto = texto.split('\n').map(linea => linea.trim()).join('\n');
-        // 2. Reemplazar saltos de línea dobles (o más) por uno solo
-        texto = texto.replace(/(\n\s*){2,}/g, '\n');
-        // 3. Primera letra en mayúscula, el resto en minúscula
-        texto = texto.charAt(0).toUpperCase() + texto.slice(1).toLowerCase();
+    if (texto && texto.length > 0) {
+      // 1. Reemplazar saltos de línea dobles (o más) por uno solo, pero NO eliminar espacios
+      texto = texto.replace(/\n{2,}/g, '\n');
+      // 2. Solo la primera letra en mayúscula, el resto igual
+      texto = texto.charAt(0).toUpperCase() + texto.slice(1);
 
-        this[objetoName][campo] = texto;
+      this[objetoName][campo] = texto;
 
-        this.$nextTick(() => {
-          textarea.setSelectionRange(start, end);
-        });
-      }
+      this.$nextTick(() => {
+        textarea.setSelectionRange(start, end);
+      });
+    }
   },
   initializeColumnWidths() {
     this.columns.forEach((column) => {

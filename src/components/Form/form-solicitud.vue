@@ -32,7 +32,7 @@
               name="search"
               id="search"
               class="focus:ring-indigo-500 focus:border-indigo-500 block w-full pl-10 pr-10 py-2 border-gray-300 rounded-md"
-              placeholder="Buscar titulo de solicitud..."
+              placeholder="Buscar titulo o id de solicitud..."
               @input="handleSearchInput"
             />
             <button
@@ -1484,13 +1484,15 @@
                 Descripción:
               </label>
               <div
-                class="block w-[92%] px-4 py-3 border border-gray-300 rounded-lg text-sm overflow-y-auto"
-                :class="{'bg-gray-50': modalType === 'detail', 'bg-white': modalType !== 'detail'}"
-                style="max-height: 200px; min-height: 44px;"
-                :contenteditable="modalType !== 'detail'"
-                @input="currentTarea.descripcion = $event.target.innerText"
-                v-text="currentTarea.descripcion"
-              ></div>
+                  class="block w-[92%] px-4 py-3 border border-gray-300 rounded-lg text-sm overflow-y-auto"
+                  :class="{'bg-gray-50': modalType === 'detail', 'bg-white': modalType !== 'detail'}"
+                  style="max-height: 200px; min-height: 44px;"
+                  :contenteditable="modalType !== 'detail'"
+                  @input="formatearDescripcionTarea($event)"
+                  ref="descripcionTareaDiv"
+                >
+                  {{ currentTarea.descripcion }}
+                </div>
             </div>
 
           <!-- Campos en cuadrícula, ahora con prioridad integrada -->
@@ -3542,6 +3544,36 @@ isImage(anexo) {
       this.isSuccess = false;
     }
   },
+  formatearDescripcionTarea(event) {
+    const div = event.target;
+    const start = window.getSelection().getRangeAt(0).startOffset;
+    const end = window.getSelection().getRangeAt(0).endOffset;
+    let texto = div.innerText;
+
+    // Elimina dobles saltos de línea y espacios extra
+    texto = texto.split('\n').map(linea => linea.trim()).join('\n');
+    texto = texto.replace(/(\n\s*){2,}/g, '\n');
+
+    // Primera letra en mayúscula, resto igual (o en minúscula si prefieres)
+    if (texto.length > 0) {
+      texto = texto.charAt(0).toUpperCase() + texto.slice(1);
+    }
+
+    this.currentTarea.descripcion = texto;
+
+    // Espera a que Vue actualice el DOM y luego restaura el cursor
+    this.$nextTick(() => {
+      // Restaurar el texto en el div (por si fue modificado)
+      this.$refs.descripcionTareaDiv.innerText = texto;
+      // Restaurar la posición del cursor
+      const range = document.createRange();
+      const sel = window.getSelection();
+      range.setStart(this.$refs.descripcionTareaDiv.firstChild || this.$refs.descripcionTareaDiv, start);
+      range.setEnd(this.$refs.descripcionTareaDiv.firstChild || this.$refs.descripcionTareaDiv, end);
+      sel.removeAllRanges();
+      sel.addRange(range);
+    });
+  },
   setCurrentDateTime(field) {
     // Obtener la fecha y hora actual
     const now = new Date();
@@ -3903,15 +3935,25 @@ calcularDuracion() {
     }
   },
   formatearTexto(event, objetoName, campo) {
-    const texto = event.target.value;
-    // Solo aplicar si hay texto
-    if (texto && texto.length > 0) {
-      // Convertir primera letra a mayúscula y el resto a minúscula
-      const textoFormateado = texto.charAt(0).toUpperCase() + texto.slice(1).toLowerCase();
-      
-      // Actualizar el valor en el objeto correspondiente
-      this[objetoName][campo] = textoFormateado;
-    }
+      const textarea = event.target;
+      const start = textarea.selectionStart;
+      const end = textarea.selectionEnd;
+      let texto = textarea.value;
+
+      if (texto && texto.length > 0) {
+        // 1. Quitar espacios al inicio y final de cada línea
+        texto = texto.split('\n').map(linea => linea.trim()).join('\n');
+        // 2. Reemplazar saltos de línea dobles (o más) por uno solo
+        texto = texto.replace(/(\n\s*){2,}/g, '\n');
+        // 3. Primera letra en mayúscula, el resto en minúscula
+        texto = texto.charAt(0).toUpperCase() + texto.slice(1).toLowerCase();
+
+        this[objetoName][campo] = texto;
+
+        this.$nextTick(() => {
+          textarea.setSelectionRange(start, end);
+        });
+      }
   },
   initializeColumnWidths() {
     this.columns.forEach((column) => {

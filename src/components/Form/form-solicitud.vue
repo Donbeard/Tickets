@@ -1478,10 +1478,10 @@
               </div>
             </div>
 
-            <!-- Campo Descripción (más alto) -->
+            <!-- Campo Solucion (más alto) -->
             <div class="flex items-center">
               <label class="block text-sm font-medium text-gray-700 w-[8%] shrink-0">
-                Descripción:
+                Solucion:
               </label>
               <textarea
                 class="block w-[92%] px-4 py-3 border border-gray-300 rounded-lg text-sm overflow-y-auto"

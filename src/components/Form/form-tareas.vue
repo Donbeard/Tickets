@@ -895,10 +895,10 @@
                   </div>
                 </div>
                 
-                <!-- Campo Descripción (ancho completo) -->
+                <!-- Campo Solucion (ancho completo) -->
                 <div class="flex items-start">
                   <label for="descripcion" class="block text-sm font-medium text-gray-700 w-1/6 pt-2">
-                    Descripción:
+                    Solucion:
                   </label>
                   <textarea
                     id="descripcion"

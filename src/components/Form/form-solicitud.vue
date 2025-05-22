@@ -2380,6 +2380,7 @@ mounted() {
   window.addEventListener('click', this.closeDropdowns); 
   this.fetchAcciones();
   this.fetchEstados();
+  document.addEventListener('click', this.handleClickOutsideDropdown);
   this.fetchModulos();
   this.fetchPrioridades();
   this.fetchSubmodulos();
@@ -2451,6 +2452,7 @@ mounted() {
   this.getLastUpdateTimestamp();
 },
 beforeUnmount() {
+  document.removeEventListener('click', this.handleClickOutsideDropdown);
   window.removeEventListener('click', this.closeDropdowns);
   if (this.toastTimeout) {
     clearTimeout(this.toastTimeout)
@@ -2458,6 +2460,19 @@ beforeUnmount() {
   // Asegurarse de restaurar el scroll cuando el componente se desmonta
 },
 methods: {
+  // Método para cerrar los dropdowns cuando se hace clic fuera de ellos
+  handleClickOutsideDropdown(event) {
+    // Si el click NO fue dentro de un dropdown-container ni en el menú desplegable
+    if (
+      !event.target.closest('.dropdown-container') &&
+      !event.target.closest('.origin-top-right')
+    ) {
+      // Cierra todos los dropdowns
+      for (const key in this.dropdownOpen) {
+        this.dropdownOpen[key] = false;
+      }
+    }
+  },
   clearEmpresaFilter() {
     this.filters.empresa = [];
     this.empresaSearchQuery = '';
@@ -3913,8 +3928,8 @@ calcularDuracion() {
     if (texto && texto.length > 0) {
       // 1. Reemplazar saltos de línea dobles (o más) por uno solo, pero NO eliminar espacios
       texto = texto.replace(/\n{2,}/g, '\n');
-      // 2. Solo la primera letra en mayúscula, el resto igual
-      texto = texto.charAt(0).toUpperCase() + texto.slice(1);
+      // 2. Solo la primera letra en mayúscula, el resto en minúscula
+      texto = texto.charAt(0).toUpperCase() + texto.slice(1).toLowerCase();
 
       this[objetoName][campo] = texto;
 
